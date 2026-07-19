@@ -1,0 +1,16 @@
+# CORRECTED CONFIGURATION FILE:
+filter-chain.rules = [
+  {
+    matches = [
+      {
+        node.name = "effect_input.virtual-surround-7.1-hesuvi" 
+      }
+    ]
+    actions = {
+      update-props = {
+        priority.driver = 1500
+        priority.session = 1500
+      }
+    }
+  }
+]

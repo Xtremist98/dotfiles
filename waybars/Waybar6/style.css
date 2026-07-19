@@ -1,0 +1,121 @@
+@import "../omarchy/current/theme/waybar.css";
+@import "theme.css";
+
+* {
+  border: none;
+  border-radius: 0px;
+
+  font-family: 'JetBrainsMono Nerd Font';
+  font-weight: bold;
+
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+tooltip {
+  background: @background;
+  border: 1px solid @bg3;
+  border-radius: 12px;
+}
+
+tooltip label {
+  color: @foreground;
+  padding: 6px;
+}
+
+#workspaces {
+  background-color: @background;
+  padding: 5px 3px;
+  margin: 0 0 0 12px;
+  border-radius: 18px;
+  color: @foreground;
+}
+
+#workspaces button {
+  padding: 0px 6px;
+  margin: 0px 3px;
+  border-radius: 45px;
+  color: @foreground;
+  transition: all .3s ease-in-out
+}
+
+#workspaces button.active {
+  background-color: @blue;
+  color: @background;
+  min-width: 45px;
+  transition: all .3s ease-in-out;
+  font-size: 13px;
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+.modules-center,
+#tray-expander,
+#bluetooth,
+#battery,
+#pulseaudio,
+#network,
+#clock,
+#custom-notification {
+  background-color: @background;
+  padding: 0 15px 0 15px;
+  margin: 0 0 0 12px;
+  border-radius: 45px;
+}
+
+.modules-center {
+  padding: 0 15 0 15;
+}
+
+#clock {
+  color: @blue;
+}
+
+#custom-notification {
+  color: @foreground;
+  margin: 0 12px 0 12px;
+  padding: 0 15 0 13;
+}
+
+#pulseaudio {
+  color: @yellow;
+  padding: 0 20 0 13;
+}
+
+#network {
+  color: @purple;
+  padding: 0 20 0 13;
+}
+
+#battery {
+  color: @green;
+}
+
+#bluetooth {
+  color: @orange;
+}
+
+#tray-expander {
+  color: @red;
+}
+
+#tray {
+  margin-left: 10px;
+}
+
+#custom-screenrecording-indicator {
+  min-width: 12px;
+  padding: 10 15 10 13;
+  font-size: 13px;
+}
+
+#custom-screenrecording-indicator.active {
+  color: #a55555;
+}

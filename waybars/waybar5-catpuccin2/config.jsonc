@@ -1,0 +1,230 @@
+{
+  "exclusive": true,
+  "reload_style_on_change": true,
+  "layer": "top",
+  "position": "top",
+  "spacing": 4,
+  "height": 32,
+
+  // "margin-top": 10,
+  // "margin-left": 200,
+  // "margin-right": 200,
+
+  "margin-top": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+
+  "modules-left": ["custom/arch", "clock", "custom/weather", "mpris", "custom/window_info"],
+  "modules-center": [
+    "hyprland/workspaces",
+    "custom/update", 
+    "custom/screenrecording-indicator"
+  ],
+  "modules-right": [
+    "tray",
+    "custom/system",
+    "network",
+    "backlight",
+    "bluetooth",
+    "pulseaudio",
+    "battery"
+  ],
+    "hyprland/workspaces": {
+    "on-click": "activate",
+    "format": "{icon}",
+    "format-icons": {
+      "default": "",
+      "1": "一",
+      "2": "二",
+      "3": "三",
+      "4": "四",
+      "5": "五",
+      "6": "六",
+      "7": "七",
+      "8": "八",
+      "9": "九",
+    "active": " "
+    },
+    "persistent-workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": [],
+      "5": []
+      // "6": []
+      // "7": [],
+      // "8": []   
+    }
+  },
+
+    "custom/arch": {
+        "format": "",
+        "on-click": "omarchy-menu",
+        "on-click-right": "omarchy-cmd-screenrecord --with-desktop-audio",
+        "tooltip-format": "Omarchy Menu\n\nSuper + Alt + Space"
+  },
+  "custom/update": {
+    "format": "",
+    "exec": "omarchy-update-available",
+    "on-click": "omarchy-launch-floating-terminal-with-presentation omarchy-update",
+    "tooltip-format": "Omarchy update available",
+    "signal": 7,
+    "interval": 3600
+  },
+  
+     "clock": {
+        "format": " {:%I:%M %p}",
+        "format-alt": "󰃭 {:%A, %d %B %Y}",
+        "tooltip-format": "<tt>{calendar}</tt>",
+        "calendar": {
+            "mode"          : "month",
+            "mode-mon-col"  : 3,
+            "weeks-pos"     : "left", // Moved to left for better alignment
+            "on-scroll"     : 1,
+            "format": {
+                "months":     "<span color='#11111b' background='#cba6f7'><b>  {}  </b></span>",
+                "days":       "<span color='#cdd6f4'>{}</span>",
+                "weeks":      "<span color='#94e2d5'><b>W{}</b></span>",
+                "weekdays":   "<span color='#fab387'><b>{}</b></span>",
+                // FIXED: Removed spaces inside the quotes to keep columns aligned
+                "today":      "<span color='#11111b' background='#f38ba8'><b>{}</b></span>"
+            }
+        },
+        "actions":  {
+            "on-click-right": "mode",
+            "on-scroll-up": "shift_up",
+            "on-scroll-down": "shift_down"
+        }
+    },
+
+  "network": {
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", ""],
+    "format": "{icon}",
+    "format-wifi": " {bandwidthDownBytes} {icon}",
+    "format-ethernet": " {bandwidthDownBytes} 󰀂 ",
+    "format-disconnected": "󰤭",
+    "format-disabled": "",
+    "tooltip-format-wifi": "{essid} ({frequency} GHz)",
+    "tooltip-format-ethernet": "IP: {ipaddr} | CIDR: {cidr} | Interface: {ifname}",
+    "tooltip-format-disconnected": "Disconnected",
+    "interval": 1,
+    "spacing": 1,
+    "on-click": "omarchy-launch-tui gazelle"
+  },
+
+      "battery": {
+        "interval": 2, // Check every 2 seconds instead of every 60
+        "states": {
+            "warning": 30,
+            "critical": 15
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": "󱐋 {icon} {capacity}%",
+        "format-plugged": " {icon} {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "on-click": "omarchy-menu system",
+        "max-length": 25
+    },
+
+    "bluetooth": {
+    "format": "",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-connected": "",
+    "tooltip-format": "{device_alias} • {device_address}",
+    "on-click": "omarchy-launch-bluetooth"
+  },
+  "pulseaudio": {
+    "format": "{icon} {volume}%",
+    "format-muted": " 󰖁 0% ",
+    "format-icons": {
+      "headphone": "",
+      "hands-free": "  ",
+      "headset": "  ",
+      "phone": "  ",
+      "portable": "  ",
+      "car": "  ",
+      "headphone": "",
+      "default": [
+        "  ",
+        "  ",
+        "  "
+      ]
+    },
+    "on-click": "/usr/bin/pavucontrol",
+    "on-click-right": "pactl -- set-sink-mute 0 toggle",
+    "tooltip": true,
+    "tooltip-format": "Playing at: {volume}%"
+  },
+
+  "group/tray-expander": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 600,
+      "children-class": "tray-group-item"
+    },
+    "modules": ["custom/expand-icon", "tray", "memory"]
+  },
+  "custom/expand-icon": {
+    "format": " ",
+    "tooltip": false
+  },
+  "custom/screenrecording-indicator": {
+    "on-click": "omarchy-cmd-screenrecord",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/screen-recording.sh",
+    "signal": 8,
+    "return-type": "json"
+  },
+  
+  "tray": {
+    "icon-size": 12,
+    "spacing": 12
+  },
+  
+  "custom/weather": {
+    "format": "{}°",
+    "tooltip": true,
+    "interval": 600,
+    "exec": "~/.config/waybar/scripts/weather.py",
+    "on-click": "~/.config/waybar/scripts/weather-tooltip.sh",
+    "return-type": "json"
+  },
+  "mpris": {
+    "format": "{player_icon} {position}",
+    "format-paused": "{status_icon} {position}",
+    "interval": 1,
+    "player-icons": {
+      "default": "󰐊",
+      "mpv": "󰐊"
+    },
+     "status-icons": {
+      "paused": "⏸"
+    },
+    "max-length": 13
+  },
+     "custom/window_info": {
+        "exec": "python ~/.config/waybar/scripts/window_info.py",
+        "return-type": "json",
+        "interval": 1,
+        "format": "{}",
+        "max-length": 50
+    },
+       "custom/system": {
+        "exec": "python ~/.config/waybar/scripts/system_info.py",
+        "return-type": "json",
+        "interval": 2,
+        "format": "{}", 
+        "on-click": "omarchy-launch-tui btop",
+        "on-click-right": "omarchy-toggle-idle",
+        "tooltip": true
+    },
+    
+     "backlight": {
+     "device": "intel_backlight",
+     "format": "{icon} {percent}% ",
+     "tooltip": true,
+     "tooltip-format": "Brightness: {percent}%",
+     "format-icons": ["", "󰖨"],
+     "on-click-right": "omarchy-toggle-nightlight"
+   }
+}

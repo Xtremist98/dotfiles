@@ -1,0 +1,7 @@
+--downloader aria2c
+--downloader-args "aria2c:-x16 -s16 -k1M"
+--concurrent-fragments 12
+-P "/mnt/media/"
+--embed-metadata
+--embed-thumbnail
+-o "%(title)s.%(ext)s"
