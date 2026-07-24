@@ -5,9 +5,18 @@ import re
 import time
 
 # --- CONFIGURATION ---
-TITLE_LIMIT = 25 
-# Animation frames for the music visualizer (Nerd Font icons)
+TITLE_LIMIT = 25
+MARQUEE_WIDTH = 25
 ANIMATION_FRAMES = ["󰎊", "󰎋", "󰎌"]
+
+def marquee_text(text, width):
+    """Slides only the text continuously from right to left if it exceeds width."""
+    if not text or len(text) <= width:
+        return text
+    padded = text + "     "
+    shift = int(time.time() * 3) % len(padded)
+    scrolling = (padded + padded)[shift:shift + width]
+    return scrolling
 
 def get_active_window():
     """Fetches the title and class of the currently focused window via hyprctl."""
@@ -21,16 +30,12 @@ def get_active_window():
 def get_music_animation():
     """Returns a cycling animation frame if music is playing on supported apps."""
     try:
-        # Check playback status
         status = subprocess.check_output(["playerctl", "status"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
-        # Get the name of the current player
         player = subprocess.check_output(["playerctl", "-f", "{{playerName}}", "metadata"], stderr=subprocess.DEVNULL).decode("utf-8").strip().lower()
         
-        # Supported apps for the animation
-        music_apps = ["spotify", "applemusic", "youtubemusic", "gaana", "jiosaavn", "chromium", "firefox", "brave"]
+        music_apps = ["spotify", "applemusic", "youtubemusic", "gaana", "jiosaavn", "chromium", "firefox", "brave", "mpv", "stremio", "Stremio"]
         
         if status == "Playing" and any(app in player for app in music_apps):
-            # Cycle frames based on system time (1-second updates)
             frame_index = int(time.time()) % len(ANIMATION_FRAMES)
             return f"{ANIMATION_FRAMES[frame_index]} "
         return ""
@@ -45,36 +50,35 @@ def truncate(text, limit):
 def get_brand_info(title, app_class):
     """Returns icon, label, and color based on the window details."""
     brands = {
-
         # --- Development & Version Control ---
-        "vscode": ("󰨞", "VS Code", "#89B4FA"),       # Lite Blue
-        "code": ("󰨞", "VS Code", "#89B4FA"),         # Lite Blue
-        "neovim": ("", "Neovim", "#A6E3A1"),       # Lite Green
-        "terminal": ("", "Terminal", "#9399B2"),   # Soft Muted Blue
-        "github": ("󰊤", "GitHub", "#B4BEFE"),       # Lavender
-        "git": ("󰊢", "Git", "#F38BA8"),             # Lite Coral
-        "docker": ("", "Docker", "#74C7EC"),       # Lite Sky Blue
-        "postman": ("󱓎", "Postman", "#FAB387"),     # Lite Peach
-        "bitbucket": ("󰊭", "Bitbucket", "#89B4FA"),  # Lite Blue
+        "vscode": ("󰨞", "VS Code", "#89B4FA"),
+        "code": ("󰨞", "VS Code", "#89B4FA"),
+        "neovim": ("", "Neovim", "#A6E3A1"),
+        "terminal": ("", "Terminal", "#9399B2"),
+        "github": ("󰊤", "GitHub", "#B4BEFE"),
+        "git": ("󰊢", "Git", "#F38BA8"),
+        "docker": ("", "Docker", "#74C7EC"),
+        "postman": ("󱓎", "Postman", "#FAB387"),
+        "bitbucket": ("󰊭", "Bitbucket", "#89B4FA"),
 
         # --- Terminal Emulators & Shells ---
         "alacritty": ("", "Alacritty", "#F9E2AF"),
-        "kitty": ("󰄛", "Kitty", "#EBCB8B"),         # Lite Sand
-        "foot": ("󰞷", "Foot", "#89DCEB"),           # Lite Cyan
-        "wezterm": ("󰞷", "WezTerm", "#94E2D5"),      # Lite Teal
-        "konsole": ("󰞷", "Konsole", "#89B4FA"),      # Lite Blue
+        "kitty": ("󰄛", "Kitty", "#EBCB8B"),
+        "foot": ("󰞷", "Foot", "#89DCEB"),
+        "wezterm": ("󰞷", "WezTerm", "#94E2D5"),
+        "konsole": ("󰞷", "Konsole", "#89B4FA"),
         "gnome-terminal": ("", "GNOME Terminal", "#6E6C7E"),
         "xfce4-terminal": ("󰞷", "XFCE Terminal", "#9399B2"),
         "st": ("", "Simple Terminal", "#BAC2DE"),
 
         # --- Linux Distributions & Kernel ---
-        "tux": ("", "Kernel", "#F9E2AF"),          # Lite Yellow
-        "arch": ("", "Arch Linux", "#89DCEB"),     # Lite Cyan
-        "nixos": ("", "NixOS", "#B4BEFE"),         # Lite Lavender
-        "ubuntu": ("", "Ubuntu", "#F8BD96"),       # Lite Orange
-        "fedora": ("", "Fedora", "#89B4FA"),       # Lite Blue
-        "debian": ("", "Debian", "#F28FAD"),       # Lite Rose
-        "gentoo": ("", "Gentoo", "#CBA6F7"),       # Lite Mauve
+        "tux": ("", "Kernel", "#F9E2AF"),
+        "arch": ("", "Arch Linux", "#89DCEB"),
+        "nixos": ("", "NixOS", "#B4BEFE"),
+        "ubuntu": ("", "Ubuntu", "#F8BD96"),
+        "fedora": ("", "Fedora", "#89B4FA"),
+        "debian": ("", "Debian", "#F28FAD"),
+        "gentoo": ("", "Gentoo", "#CBA6F7"),
         
         "org.gnome.nautilus": ("󰉋", "Files", "#89B4FA"),
         "org.gnome.console": ("󰞷", "Console", "#6E6C7E"),
@@ -117,6 +121,9 @@ def get_brand_info(title, app_class):
 
         # --- Omarchy & Modern Linux Stack ---
         "omarchy": ("󱓞", "Omarchy Menu", "#F8BD96"),
+        "org.omarchy.bash": ("󰇄","About-Desktop", "#F8BD96"),
+        "org.omarchy.btop": ("󰇄", "BTOP", "#ffffff"),
+        "org.omarchy.terminal": ("", "Omarchy", "#ffffff"),
         "hyprland": ("", "Hyprland", "#94E2D5"),
         "waybar": ("󰇄", "Waybar", "#D9E0EE"),
         "ghostty": ("󰊠", "Ghostty Terminal", "#FFFFFF"),
@@ -165,7 +172,6 @@ def get_brand_info(title, app_class):
         "google": ("", "Google", "#89B4FA"),
         "chrome": ("", "Chrome", "#89B4FA"),
         "gmail": ("󰊫", "Gmail", "#F38BA8"),
-        "drive": ("󰊭", "Google Drive", "#A6E3A1"),
         "calendar": ("󰸗", "Google Calendar", "#89B4FA"),
         "sheets": ("󰈛", "Google Sheets", "#A6E3A1"),
         "docs": ("󰈙", "Google Docs", "#89B4FA"),
@@ -185,7 +191,6 @@ def get_brand_info(title, app_class):
         "grok": ("󰚩", "Grok (xAI)", "#D9E0EE"),
         "mistral": ("󰚩", "Mistral AI", "#FAB387"),
         "ollama": ("󱓞", "Ollama (Local)", "#BAC2DE"),
-        "jan": ("󰚩", "Jan AI", "#94E2D5"),
         "lm-studio": ("󰚩", "LM Studio", "#D9E0EE"),
         "cursor": ("󰨞", "Cursor IDE", "#94E2D5"),
         "copilot": ("󰊤", "GitHub Copilot", "#CBA6F7"),
@@ -222,6 +227,51 @@ def get_brand_info(title, app_class):
         "tailscale": ("󰖂", "Tailscale", "#B4BEFE"),
         "dropbox": ("󰇖", "Dropbox", "#89B4FA"),
 
+        # --- Social ---
+        "ayugram-desktop": ("", "AyuGram", "#3399ff"),
+        "telegram-desktop": ("", "Telegram", "#24A1DE"),
+        "telegram": ("", "Telegram", "#24a1de"),
+        "discord": ("", "Discord", "#5865f2"),
+        "whatsapp": ("", "WhatsApp", "#25d366"),
+        "reddit": ("", "Reddit", "#ff4500"),
+        "twitter": ("", "Twitter", "#1da1f2"),
+        "x.com": ("", "X", "#000000"), 
+        "facebook": ("", "Facebook", "#1877f2"),
+        "instagram": ("", "Instagram", "#c13584"),
+        "linkedin": ("", "LinkedIn", "#0077b5"),
+        "pinterest": ("", "Pinterest", "#bd081c"),
+        "tumblr": ("", "Tumblr", "#35465c"),
+        "tiktok": ("", "TikTok", "#ff0050"),
+        "org.signal.Signal": ("󰭹", "Signal", "#3a76f0"),
+        "signal-desktop": ("󰭹", "Signal", "#3a76f0"),
+
+        # --- Graphics & Media ---
+        "flameshot": ("󰄀", "Flameshot", "#ff4081"),
+        "gimp": ("", "GIMP", "#5c5543"),
+        "inkscape": ("", "Inkscape", "#ffffff"),
+        "figma": ("", "Figma", "#f24e1e"),
+        "canva": ("", "Canva", "#00c4cc"),
+        "vlc": ("󰕼", "VLC", "#ff9900"),
+        "obs": ("", "OBS Studio", "#262626"),
+        "spotify": ("", "Spotify", "#1db954"),
+        "mpv": ("󰐊", "Mpv", "#ffffff"),
+
+        # --- System & Utilities ---
+        "bitwarden": ("󰞀", "Bitwarden", "#175DDC"),
+        "Bitwarden": ("󰞀", "Bitwarden", "#175DDC"),
+        "pavucontrol": ("󰓃", "Volume Control", "#67808d"),
+        "org.kde.dolphin": ("", "Dolphin", "#3daee9"),
+        "dolphin": ("", "Dolphin", "#3daee9"),
+        "calculator": ("", "Calculator", "#4193f4"),
+        "aether": ("󰑭", "Aether", "#a29bfe"),
+        "Stremio.stremio": ("󰐊", "Stremio", "#ff9900"),
+        "com.stremio.Stremio": ("󰐊", "Stremio", "#ff9900"),
+        "stremio": ("󰐊", "Stremio", "#ff9900"),
+        "com.stremio": ("󰐊", "Stremio", "#ff9900"),
+        "com.stremio.Service": ("󱑫", "Stremio Service", "#ff9900"),
+        "nwg-look": ("󰏘", "Nwg-look", "#0db9d7"),
+        "imv": ("", "Imv", "#06b6d4"),
+        "localsend": ("", "LocalSend", "#3db2ff"),
     }
 
     low_title = title.lower()
@@ -233,12 +283,49 @@ def get_brand_info(title, app_class):
 
     if is_browser:
         clean_title = re.sub(r' - (Chromium|Firefox|Brave|Google Chrome)$', '', title, flags=re.I)
+        
+        # YouTube Web
+        if "youtube" in low_title:
+            yt_icon, yt_name, yt_color = brands.get("youtube", ("󰗃", "YouTube", "#F38BA8"))
+            clean_title = re.sub(r'^\(\d+\)\s*', '', clean_title)
+            clean_title = re.sub(r' - YouTube$', '', clean_title, flags=re.I)
+            scrolling_title = marquee_text(clean_title, MARQUEE_WIDTH)
+            bar_text = f"{yt_name}: {scrolling_title}"
+            return yt_icon, bar_text, yt_color
+         
+        # Stremio Web
+        if "stremio" in low_title:
+            st_icon, st_name, st_color = brands.get("stremio", ("󰐊", "Stremio", "#ff9900"))
+            media_title = ""
+            try:
+                res = subprocess.run(
+                    ["playerctl", "metadata", "--format", "{{ artist }} - {{ title }}"],
+                    capture_output=True, text=True, timeout=0.2
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    media_title = res.stdout.strip()
+            except Exception:
+                pass
+
+            if not media_title or media_title == " - ":
+                media_title = "Streaming"
+
+            scrolling_title = marquee_text(media_title, MARQUEE_WIDTH)
+            bar_text = f"{st_name}: {scrolling_title}"
+            return st_icon, bar_text, st_color
+
         for key, (w_icon, w_name, w_color) in brands.items():
             if key in low_title and key not in browsers:
-                if key == "youtube":
-                    clean_title = re.sub(r' - YouTube$', '', clean_title, flags=re.I)
                 return w_icon, truncate(clean_title, TITLE_LIMIT), w_color
         return "󰖟", truncate(clean_title, TITLE_LIMIT), "#4285F4"
+
+    # Media Player Exception: Show static app name/icon + file/song name with marquee scrolling
+    media_players = ["mpv", "stremio"]
+    if any(m in low_class for m in media_players):
+        w_icon, w_name, w_color = brands.get(low_class, ("󰐊", "Mpv", "#ffffff"))
+        scrolling_title = marquee_text(title, MARQUEE_WIDTH)
+        bar_text = f"{w_name}: {scrolling_title}"
+        return w_icon, bar_text, w_color
 
     for key, (icon, name, color) in brands.items():
         if key in low_class or key in low_title:
@@ -257,10 +344,8 @@ def main():
     icon, display_text, brand_color = get_brand_info(title, app_class)
     animation = get_music_animation()
 
-    # Bar Text: [Animation] [Colored Icon] [Truncated Title]
     bar_output = f"{animation}<span color='{brand_color}'>{icon} {display_text}</span>"
 
-    # Hover Details (Tooltip)
     tooltip_content = (
         f"<span size='large' weight='bold'>{icon} {display_text}</span>\n"
         f"<span color='#585B70'>──────────────────────────</span>\n"
@@ -268,7 +353,6 @@ def main():
         f"<span color='#FAB387'>󰖟 Full Title:</span> <span color='#CDD6F4'>{title}</span>"
     )
 
-    # JSON for Waybar
     print(json.dumps({
         "text": bar_output,
         "tooltip": tooltip_content,
