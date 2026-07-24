@@ -165,7 +165,6 @@ def get_brand_info(title, app_class):
         "google": ("", "Google", "#89B4FA"),
         "chrome": ("", "Chrome", "#89B4FA"),
         "gmail": ("󰊫", "Gmail", "#F38BA8"),
-        "drive": ("󰊭", "Google Drive", "#A6E3A1"),
         "calendar": ("󰸗", "Google Calendar", "#89B4FA"),
         "sheets": ("󰈛", "Google Sheets", "#A6E3A1"),
         "docs": ("󰈙", "Google Docs", "#89B4FA"),
@@ -221,6 +220,52 @@ def get_brand_info(title, app_class):
         "ivpn": ("󰖂", "IVPN", "#74C7EC"),
         "tailscale": ("󰖂", "Tailscale", "#B4BEFE"),
         "dropbox": ("󰇖", "Dropbox", "#89B4FA"),
+
+     # --- Social ----
+        "ayugram-desktop": ("", "AyuGram", "#3399ff"),
+        "telegram-desktop": ("", "Telegram","#24A1DE"),
+        "telegram": ("", "Telegram", "#24a1de"),
+        "discord":  ("", "Discord", "#5865f2"),
+        "whatsapp": ("", "WhatsApp", "#25d366"),
+        "reddit": ("", "Reddit", "#ff4500"),
+        "twitter": ("", "Twitter", "#1da1f2"),
+        "x.com": ("", "X", "#000000"), 
+        "facebook": ("", "Facebook", "#1877f2"),
+        "instagram": ("", "Instagram", "#c13584"),
+        "linkedin": ("", "LinkedIn", "#0077b5"),
+        "pinterest": ("", "Pinterest", "#bd081c"),
+        "tumblr": ("", "Tumblr", "#35465c"),
+        "tiktok": ("", "TikTok", "#ff0050"),
+        "org.signal.Signal": ("󰭹", "Signal", "#3a76f0"),
+        "signal-desktop": ("󰭹", "Signal", "#3a76f0"),
+
+     # --- GRAPHICS & MEDIA ---
+        "flameshot": ("󰄀", "Flameshot", "#ff4081"),
+        "gimp": ("", "GIMP", "#5c5543"),
+        "inkscape": ("", "Inkscape", "#ffffff"),
+        "figma": ("", "Figma", "#f24e1e"),
+        "canva": ("", "Canva", "#00c4cc"),
+        "vlc": ("󰕼", "VLC", "#ff9900"),
+        "obs": ("", "OBS Studio", "#262626"),
+        "spotify": ("", "Spotify", "#1db954"),
+        "mpv": ("󰐊", "Mpv", "#ffffff"),
+
+      # --- SYSTEM & UTILITIES ---
+        "bitwarden": ("󰞀", "Bitwarden", "#175DDC"),
+        "Bitwarden": ("󰞀", "Bitwarden", "#175DDC"),
+        "pavucontrol": ("󰓃", "Volume Control", "#67808d"),
+        "org.kde.dolphin": ("", "Dolphin", "#3daee9"),
+        "dolphin": ("", "Dolphin", "#3daee9"),
+        "calculator": ("", "Calculator", "#4193f4"),
+        "aether": ("󰑭", "Aether", "#a29bfe"),
+        "Stremio.stremio": ("󰐊", "Stremio", "#7b3fe4"),
+        "com.stremio.Stremio": ("󰐊", "Stremio", "#7b3fe4"),
+        "stremio": ("󰐊", "Stremio", "#7b3fe4"),
+        "com.stremio.Service": ("󱑫", "Stremio Service", "#7b3fe4"),
+        "Nwg-look": ("󰏘", "Nwg-look", "#0db9d7"),
+        "Imv": ("", "Imv", "#06b6d4"),
+        "Localsend": ("", "LocalSend", "#3db2ff"),
+
 
     }
 
