@@ -6,7 +6,7 @@ import time
 
 # --- CONFIGURATION ---
 TITLE_LIMIT = 25
-MARQUEE_WIDTH = 25
+MARQUEE_WIDTH = 35
 ANIMATION_FRAMES = ["󰎊", "󰎋", "󰎌"]
 
 def marquee_text(text, width):
@@ -33,7 +33,7 @@ def get_music_animation():
         status = subprocess.check_output(["playerctl", "status"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
         player = subprocess.check_output(["playerctl", "-f", "{{playerName}}", "metadata"], stderr=subprocess.DEVNULL).decode("utf-8").strip().lower()
         
-        music_apps = ["spotify", "applemusic", "youtubemusic", "gaana", "jiosaavn", "chromium", "firefox", "brave", "mpv", "stremio", "Stremio"]
+        music_apps = ["spotify", "applemusic", "youtubemusic", "gaana", "jiosaavn", "chromium", "firefox", "brave", "mpv"]
         
         if status == "Playing" and any(app in player for app in music_apps):
             frame_index = int(time.time()) % len(ANIMATION_FRAMES)
@@ -122,10 +122,9 @@ def get_brand_info(title, app_class):
         # --- Omarchy & Modern Linux Stack ---
         "omarchy": ("󱓞", "Omarchy Menu", "#F8BD96"),
         "org.omarchy.bash": ("󰇄","About-Desktop", "#F8BD96"),
-        "org.omarchy.btop": ("󰇄", "BTOP", "#ffffff"),
+        "org.omarchy.btop": ("󰇄", "Btop", "#ffffff"),
         "org.omarchy.terminal": ("", "Omarchy", "#ffffff"),
         "hyprland": ("", "Hyprland", "#94E2D5"),
-        "waybar": ("󰇄", "Waybar", "#D9E0EE"),
         "ghostty": ("󰊠", "Ghostty Terminal", "#FFFFFF"),
         "lazygit": ("󰊢", "LazyGit", "#F38BA8"),
         "lazydocker": ("", "LazyDocker", "#89B4FA"),
@@ -251,10 +250,15 @@ def get_brand_info(title, app_class):
         "inkscape": ("", "Inkscape", "#ffffff"),
         "figma": ("", "Figma", "#f24e1e"),
         "canva": ("", "Canva", "#00c4cc"),
+        "mpv": ("", "media-player", "#F38BA8"),
         "vlc": ("󰕼", "VLC", "#ff9900"),
         "obs": ("", "OBS Studio", "#262626"),
         "spotify": ("", "Spotify", "#1db954"),
-        "mpv": ("󰐊", "Mpv", "#ffffff"),
+        "Stremio.stremio": ("󱖏", "Stremio", "#F38BA8"),
+        "com.stremio.Stremio": ("󱖏", "Stremio", "#F38BA8"),
+        "stremio": ("󱖏", "Stremio", "#F38BA8"),
+        "com.stremio": ("󱖏", "Stremio", "#F38BA8"),
+        "com.stremio.Service": ("󱑫", "Stremio Service", "#F38BA8"),
 
         # --- System & Utilities ---
         "bitwarden": ("󰞀", "Bitwarden", "#175DDC"),
@@ -264,14 +268,10 @@ def get_brand_info(title, app_class):
         "dolphin": ("", "Dolphin", "#3daee9"),
         "calculator": ("", "Calculator", "#4193f4"),
         "aether": ("󰑭", "Aether", "#a29bfe"),
-        "Stremio.stremio": ("󰐊", "Stremio", "#ff9900"),
-        "com.stremio.Stremio": ("󰐊", "Stremio", "#ff9900"),
-        "stremio": ("󰐊", "Stremio", "#ff9900"),
-        "com.stremio": ("󰐊", "Stremio", "#ff9900"),
-        "com.stremio.Service": ("󱑫", "Stremio Service", "#ff9900"),
         "nwg-look": ("󰏘", "Nwg-look", "#0db9d7"),
         "imv": ("", "Imv", "#06b6d4"),
         "localsend": ("", "LocalSend", "#3db2ff"),
+        "xed": ("󰷈", "Text Editor", "#FAB387"),
     }
 
     low_title = title.lower()
@@ -308,7 +308,7 @@ def get_brand_info(title, app_class):
                 pass
 
             if not media_title or media_title == " - ":
-                media_title = "Streaming"
+                media_title = "freedem-to-stream"
 
             scrolling_title = marquee_text(media_title, MARQUEE_WIDTH)
             bar_text = f"{st_name}: {scrolling_title}"
@@ -319,13 +319,23 @@ def get_brand_info(title, app_class):
                 return w_icon, truncate(clean_title, TITLE_LIMIT), w_color
         return "󰖟", truncate(clean_title, TITLE_LIMIT), "#4285F4"
 
-    # Media Player Exception: Show static app name/icon + file/song name with marquee scrolling
+    # Media Player Exception: MPV and Stremio with custom icons, extra spacing, and marquee titles
     media_players = ["mpv", "stremio"]
     if any(m in low_class for m in media_players):
-        w_icon, w_name, w_color = brands.get(low_class, ("󰐊", "Mpv", "#ffffff"))
-        scrolling_title = marquee_text(title, MARQUEE_WIDTH)
-        bar_text = f"{w_name}: {scrolling_title}"
-        return w_icon, bar_text, w_color
+        if "mpv" in low_class:
+            w_icon = ""
+            w_name = "Media-Player"
+            w_color = "#F38BA8"
+            scrolling_title = marquee_text(title, MARQUEE_WIDTH)
+            bar_text = f" {w_name}: {scrolling_title}"
+            return w_icon, bar_text, w_color
+        else:
+            w_icon = "󱖏"
+            w_name, w_color = "Stremio", "#ff9900"
+            scrolling_title = marquee_text(title, MARQUEE_WIDTH)
+            bar_text = f" {w_name}: {scrolling_title}"
+            return w_icon, bar_text, w_color
+    
 
     for key, (icon, name, color) in brands.items():
         if key in low_class or key in low_title:
@@ -338,7 +348,7 @@ def main():
     title, app_class = get_active_window()
     
     if not title or title in ["null", "Desktop", ""]:
-        print(json.dumps({"text": "Omarchy OS", "tooltip": "Workspace"}))
+        print(json.dumps({"text": "Omarchy OS <span font='omarchy 7.5'>\ue900</span>", "tooltip": "Workspace"}))
         return
 
     icon, display_text, brand_color = get_brand_info(title, app_class)
