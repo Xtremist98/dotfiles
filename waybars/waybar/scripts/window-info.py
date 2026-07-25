@@ -10,8 +10,8 @@ import html
 MAX_TITLE_LEN = 20
 
 # --- MUSIC FILTER ---
-MUSIC_PLAYERS = ["spotify", "ncspot", "cider", "rhythmbox", "vlc", "mpv", "music"]
-MUSIC_WEB_KEYWORDS = ["spotify", "soundcloud", "music", "deezer", "bandcamp"]
+MUSIC_PLAYERS = ["spotify", "ncspot", "cider", "rhythmbox"]
+MUSIC_WEB_KEYWORDS = ["spotify", "soundcloud", "deezer", "bandcamp"]
 PATTERNS = [" ── ", " ─╼ ", " ╼╾ ", " ╾▩ ", " ▩▩ ", " ▩╼ ", " ╼─ "]
 PATTERN_LEN = len(PATTERNS)
 
@@ -265,8 +265,9 @@ APP_RULES = {
     "Nwg-look": ("󰏘", "#0db9d7", "nwg-look"),
     "Imv": ("", "#06b6d4", "Imv"),
     "Localsend": ("", "#3db2ff", "LocalSend"),
-    "Mpv": ("󰐊", "#bd93f9", "mpv"),
+    "mpv": ("", "#F38BA8", "media-player"),
     "Github.pintaproject.pinta": ("", "#0ea5e9", "Pinta"),
+    "xed": ("󰷈", "#9ece6a", "TextEditor"),
 
     # --- DOWNLOAD MANAGERS ---
     "com.abdownloadmanager.abdownloadmanager": ("󰇚", "#00aaff", "AB Download Manager"),
@@ -464,19 +465,23 @@ def get_active_window():
                 tooltip = app_name
             return display, tooltip
 
-        # 1. EXPLICIT APPS (Iterating over your exact flat dictionary)
+        # 1. Title match first (catches web apps in browsers: YouTube, Gmail, GitHub, etc.)
+        for key, (icon, color, name) in APP_RULES.items():
+            key_lower = key.lower()
+            if re.search(r'\b' + re.escape(key_lower) + r'\b', title_lower):
+                return format_output(icon, color, name, raw_title)
+
+        # 2. Class match second (native apps: Discord, Code, terminal, etc.)
         for key, (icon, color, name) in APP_RULES.items():
             key_lower = key.lower()
             if key_lower in raw_class:
                 return format_output(icon, color, name, raw_title)
-            if re.search(r'\b' + re.escape(key_lower) + r'\b', title_lower):
-                return format_output(icon, color, name, raw_title)
         
-        # 2. Desktop Check
+        # 3. Desktop Check
         if not raw_class:
             return "<span color='#dcd6d6'>󱂬</span> Desktop", "Workspace"
 
-        # 3. Fallback for unrecognized apps 
+        # 4. Fallback for unrecognized apps 
         clean_name = raw_class.replace("org.gnome.", "").replace("org.kde.", "").replace("com.", "").replace(".desktop", "")
         if "mitchellh." in clean_name: clean_name = clean_name.replace("mitchellh.", "")
         

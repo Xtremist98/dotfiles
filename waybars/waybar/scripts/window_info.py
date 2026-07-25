@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 -u
 import subprocess
 import json
 import re
@@ -273,19 +273,18 @@ def get_brand_info(title, app_class):
         "imv": ("", "Imv", "#06b6d4"),
         "localsend": ("", "LocalSend", "#3db2ff"),
         "xed": ("󰷈", "Text Editor", "#FAB387"),
+        "fdm": ("󰇚", "FDM", "#00aaff"),
     }
 
     low_title = title.lower() if title else ""
     low_class = app_class.lower() if app_class else ""
 
-    # Browser Detection: Highlight website, hide browser name
     browsers = ["chromium", "firefox", "brave", "chrome"]
     is_browser = any(b in low_class for b in browsers)
 
     if is_browser:
         clean_title = re.sub(r' - (Chromium|Firefox|Brave|Google Chrome)$', '', title, flags=re.I)
         
-        # YouTube Web
         if "youtube" in low_title:
             yt_icon, yt_name, yt_color = brands.get("youtube", ("󰗃", "YouTube", "#F38BA8"))
             clean_title = re.sub(r'^\(\d+\)\s*', '', clean_title)
@@ -294,7 +293,6 @@ def get_brand_info(title, app_class):
             bar_text = f"{yt_name}: {scrolling_title}"
             return yt_icon, bar_text, yt_color
          
-        # Stremio Web
         if "stremio" in low_title:
             st_icon, st_name, st_color = brands.get("stremio", ("󰐊", "Stremio", "#ff9900"))
             media_title = ""
@@ -320,7 +318,6 @@ def get_brand_info(title, app_class):
                 return w_icon, truncate(clean_title, TITLE_LIMIT), w_color
         return "󰖟", truncate(clean_title, TITLE_LIMIT), "#4285F4"
 
-    # Media Player Exception: MPV and Stremio with custom icons, extra spacing, and marquee titles
     media_players = ["mpv", "stremio"]
     if any(m in low_class for m in media_players):
         if "mpv" in low_class:
@@ -337,16 +334,12 @@ def get_brand_info(title, app_class):
             bar_text = f" {w_name}: {scrolling_title}"
             return w_icon, bar_text, w_color
     
-    # Sort keys by length descending so longer, specific keys (e.g. org.omarchy.btop) 
-    # are checked before shorter ones (e.g. omarchy)
     sorted_brands = sorted(brands.items(), key=lambda x: len(x[0]), reverse=True)
 
-    # 1. Check app_class for specific matches first
     for key, (icon, name, color) in sorted_brands:
         if key in low_class:
             return icon, name, color
 
-    # 2. Check window title matches
     for key, (icon, name, color) in sorted_brands:
         if key in low_title:
             return icon, name, color
@@ -358,14 +351,13 @@ def main():
     try:
         window_data = get_active_window()
         if not window_data:
-            raise ValueError("No window data returned")
-            
-        title, app_class = window_data
+            title, app_class = "Desktop", ""
+        else:
+            title, app_class = window_data
 
-        # Empty desktop state with custom Omarchy OS text color
         if not title or title in ["null", "Desktop", ""] or not app_class:
             print(json.dumps({
-                "text": "<span color='#9ece6a'>Omarchy OS <span font='omarchy 7.5'>\ue900</span></span>", 
+                "text": "<span color='#9ece6a'>󰣇  Arch-Linux</span>", 
                 "tooltip": "Workspace"
             }))
             sys.stdout.flush()
@@ -390,11 +382,10 @@ def main():
         }))
         sys.stdout.flush()
 
-    except Exception as e:
-        # Failsafe fallback so Waybar never logs "py vanished"
+    except Exception:
         print(json.dumps({
-            "text": "<span color='#9ece6a'>Omarchy OS <span font='omarchy 7.5'>\ue900</span></span>", 
-            "tooltip": f"Error/Vanished: {str(e)}"
+            "text": "<span color='#9ece6a'>󰣇  Arch Linux</span>", 
+            "tooltip": "Workspace"
         }))
         sys.stdout.flush()
 
