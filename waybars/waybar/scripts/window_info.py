@@ -3,6 +3,7 @@ import subprocess
 import json
 import re
 import time
+import sys
 
 # --- CONFIGURATION ---
 TITLE_LIMIT = 25
@@ -39,7 +40,7 @@ def get_music_animation():
             frame_index = int(time.time()) % len(ANIMATION_FRAMES)
             return f"{ANIMATION_FRAMES[frame_index]} "
         return ""
-    except:
+    except Exception:
         return ""
 
 def truncate(text, limit):
@@ -120,15 +121,15 @@ def get_brand_info(title, app_class):
         "fragments": ("󰇚", "Fragments", "#89B4FA"),
 
         # --- Omarchy & Modern Linux Stack ---
-        "omarchy": ("󱓞", "Omarchy Menu", "#F8BD96"),
-        "org.omarchy.bash": ("󰇄","About-Desktop", "#F8BD96"),
-        "org.omarchy.btop": ("󰇄", "Btop", "#ffffff"),
-        "org.omarchy.terminal": ("", "Omarchy", "#ffffff"),
+        "omarchy": ("󱓞", "Omarchy Menu", "#9ece6a"),
+        "org.omarchy.bash": ("󰣇", "System-info", "#F8BD96"),
+        "org.omarchy.btop": ("󰇄", "Btop-Monitor", "#74C7EC"),
+        "org.omarchy.terminal": ("<span font='omarchy 7.5'>\ue900</span>", "Omarchy", "#9ece6a"),
         "hyprland": ("", "Hyprland", "#94E2D5"),
         "ghostty": ("󰊠", "Ghostty Terminal", "#FFFFFF"),
         "lazygit": ("󰊢", "LazyGit", "#F38BA8"),
         "lazydocker": ("", "LazyDocker", "#89B4FA"),
-        "btop": ("󰓅", "Btop Monitor", "#74C7EC"),
+        "btop": ("󰓅", "Btop-Monitor", "#74C7EC"),
         "basecamp": ("󰭹", "Basecamp", "#A6E3A1"),
         "hey": ("󰇮", "HEY Mail", "#F9E2AF"),
         "aether": ("󰨚", "Aether", "#F28FAD"),
@@ -274,8 +275,8 @@ def get_brand_info(title, app_class):
         "xed": ("󰷈", "Text Editor", "#FAB387"),
     }
 
-    low_title = title.lower()
-    low_class = app_class.lower()
+    low_title = title.lower() if title else ""
+    low_class = app_class.lower() if app_class else ""
 
     # Browser Detection: Highlight website, hide browser name
     browsers = ["chromium", "firefox", "brave", "chrome"]
@@ -336,38 +337,66 @@ def get_brand_info(title, app_class):
             bar_text = f" {w_name}: {scrolling_title}"
             return w_icon, bar_text, w_color
     
+    # Sort keys by length descending so longer, specific keys (e.g. org.omarchy.btop) 
+    # are checked before shorter ones (e.g. omarchy)
+    sorted_brands = sorted(brands.items(), key=lambda x: len(x[0]), reverse=True)
 
-    for key, (icon, name, color) in brands.items():
-        if key in low_class or key in low_title:
+    # 1. Check app_class for specific matches first
+    for key, (icon, name, color) in sorted_brands:
+        if key in low_class:
+            return icon, name, color
+
+    # 2. Check window title matches
+    for key, (icon, name, color) in sorted_brands:
+        if key in low_title:
             return icon, name, color
 
     fallback_name = app_class.split('.')[-1].capitalize() if app_class else "Desktop"
     return "󰍹", truncate(fallback_name, TITLE_LIMIT), "#CBA6F7"
 
 def main():
-    title, app_class = get_active_window()
-    
-    if not title or title in ["null", "Desktop", ""]:
-        print(json.dumps({"text": "Omarchy OS <span font='omarchy 7.5'>\ue900</span>", "tooltip": "Workspace"}))
-        return
+    try:
+        window_data = get_active_window()
+        if not window_data:
+            raise ValueError("No window data returned")
+            
+        title, app_class = window_data
 
-    icon, display_text, brand_color = get_brand_info(title, app_class)
-    animation = get_music_animation()
+        # Empty desktop state with custom Omarchy OS text color
+        if not title or title in ["null", "Desktop", ""] or not app_class:
+            print(json.dumps({
+                "text": "<span color='#9ece6a'>Omarchy OS <span font='omarchy 7.5'>\ue900</span></span>", 
+                "tooltip": "Workspace"
+            }))
+            sys.stdout.flush()
+            return
 
-    bar_output = f"{animation}<span color='{brand_color}'>{icon} {display_text}</span>"
+        icon, display_text, brand_color = get_brand_info(title, app_class)
+        animation = get_music_animation()
 
-    tooltip_content = (
-        f"<span size='large' weight='bold'>{icon} {display_text}</span>\n"
-        f"<span color='#585B70'>──────────────────────────</span>\n"
-        f"<span color='#89B4FA'>󰣆 Class:</span> <span color='#CDD6F4'>{app_class}</span>\n"
-        f"<span color='#FAB387'>󰖟 Full Title:</span> <span color='#CDD6F4'>{title}</span>"
-    )
+        bar_output = f"{animation}<span color='{brand_color}'>{icon} {display_text}</span>"
 
-    print(json.dumps({
-        "text": bar_output,
-        "tooltip": tooltip_content,
-        "class": app_class
-    }))
+        tooltip_content = (
+            f"<span size='large' weight='bold'>{icon} {display_text}</span>\n"
+            f"<span color='#585B70'>──────────────────────────</span>\n"
+            f"<span color='#89B4FA'>󰣆 Class:</span> <span color='#CDD6F4'>{app_class}</span>\n"
+            f"<span color='#FAB387'>󰖟 Full Title:</span> <span color='#CDD6F4'>{title}</span>"
+        )
+
+        print(json.dumps({
+            "text": bar_output,
+            "tooltip": tooltip_content,
+            "class": app_class
+        }))
+        sys.stdout.flush()
+
+    except Exception as e:
+        # Failsafe fallback so Waybar never logs "py vanished"
+        print(json.dumps({
+            "text": "<span color='#9ece6a'>Omarchy OS <span font='omarchy 7.5'>\ue900</span></span>", 
+            "tooltip": f"Error/Vanished: {str(e)}"
+        }))
+        sys.stdout.flush()
 
 if __name__ == "__main__":
     main()

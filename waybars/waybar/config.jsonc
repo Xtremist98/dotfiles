@@ -28,7 +28,8 @@
     "backlight",
     "bluetooth",
     "pulseaudio",
-    "battery"
+    "battery",
+    "custom/power"
   ],
     "hyprland/workspaces": {
     "on-click": "activate",
@@ -113,19 +114,21 @@
     "on-click": "omarchy-launch-wifi"
   },
 
-      "battery": {
-        "interval": 2, // Check every 2 seconds instead of every 60
-        "states": {
-            "warning": 30,
-            "critical": 15
-        },
+     "battery": {
+        "interval": 5,
+        "states": { "warning": 20, "critical": 10 },
         "format": "{icon} {capacity}%",
         "format-charging": "󱐋 {icon} {capacity}%",
         "format-plugged": " {icon} {capacity}%",
-        "format-icons": ["", "", "", "", ""],
-        "on-click": "omarchy-menu system",
-        "max-length": 25
+        "format-icons": ["󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+        "format-full": "󰂅",
+        "tooltip-format-discharging": "{power:>1.0f}W↓ {capacity}%",
+        "tooltip-format-charging": "{power:>1.0f}W↑ {capacity}%",
+        "on-click": "omarchy-menu power"
     },
+
+     "custom/power": { "format": "󰐥", "on-click": "omarchy-menu system" },
+
 
     "bluetooth": {
     "format": "",
@@ -186,10 +189,13 @@
     "format": "{}°",
     "tooltip": true,
     "interval": 600,
-    "exec": "~/.config/waybar/scripts/weather.py",
-    "on-click": "~/.config/waybar/scripts/weather-tooltip.sh",
+    "exec": "~/.config/waybar/scripts/weather.sh",
+    "on-click": "~/.config/waybar/scripts/weather.sh --menu",
+    "on-click-right": "~/.config/waybar/scripts/weather.sh --toggle-unit",
+    "signal": 11,
     "return-type": "json"
   },
+
   "mpris": {
     "format": "{player_icon} {position}",
     "format-paused": "{status_icon} {position}",
@@ -230,7 +236,7 @@
    },
 
      "custom/text-extraction": {
-        "format": "",
+        "format": "",
         "return-type": "json",
         "interval": "once",
         "exec": "echo '{\"tooltip\": \"󰊄 Screen Text Extraction\\n\\n1. Click to activate crosshair\\n2. Drag over text on your screen\\n3. Instantly copies to clipboard\"}'",

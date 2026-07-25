@@ -125,6 +125,16 @@ window#waybar {
     border-radius: 12px;
     border: 0.1px solid #f9e2af;
 }
+
+#custom-power {
+    color: #ffc3a0;
+    font-weight: bold;
+    font-size: 18;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    border: 0.1px solid #ffc3a0;
+}
+   
     
 /* -----------------------------------------------------
    Modules (Clock, Audio, Network, etc.) Spacing
@@ -143,6 +153,8 @@ window#waybar {
 #workspaces,
 #custom-screenrecording-indicator,
 #custom-text-extraction,
+#custom-power,
+#custom-system,
 #battery {
     padding: 0 10px;
     margin: 4px 2px; /* Adds space between modules */
