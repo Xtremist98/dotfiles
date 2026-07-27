@@ -275,6 +275,8 @@ def get_brand_info(title, app_class):
         "localsend": ("", "LocalSend", "#3db2ff"),
         "xed": ("󰷈", "Text Editor", "#FAB387"),
         "fdm": ("󰇚", "FDM", "#00aaff"),
+        "qbittorrent": ("", "Torrent", "#a29bfe"),
+      
     }
 
     low_title = title.lower() if title else ""
@@ -284,7 +286,7 @@ def get_brand_info(title, app_class):
     is_browser = any(b in low_class for b in browsers)
 
     if is_browser:
-        clean_title = re.sub(r' - (Chromium|Firefox|Brave|Google Chrome)$', '', title, flags=re.I)
+        clean_title = re.sub(r' - (Chromium|Firefox|Brave|Google Chrome|Helium)$', '', title, flags=re.I)
         
         if "youtube" in low_title:
             yt_icon, yt_name, yt_color = brands.get("youtube", ("󰗃", "YouTube", "#F38BA8"))
