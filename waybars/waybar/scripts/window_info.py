@@ -133,6 +133,7 @@ def get_brand_info(title, app_class):
         "basecamp": ("󰭹", "Basecamp", "#A6E3A1"),
         "hey": ("󰇮", "HEY Mail", "#F9E2AF"),
         "aether": ("󰨚", "Aether", "#F28FAD"),
+        "org.omarchy.nvtop": ("",  "Graphics-Engine", "#9ece6a"),
 
         # --- Productivity & Creative ---
         "notion": ("󰇈", "Notion", "#A6ADC8"),
@@ -357,7 +358,7 @@ def main():
 
         if not title or title in ["null", "Desktop", ""] or not app_class:
             print(json.dumps({
-                "text": "<span color='#9ece6a'>󰣇  Arch-Linux</span>", 
+                "text": "<span color='#dcd6d6'>󱂬</span> Desktop", 
                 "tooltip": "Workspace"
             }))
             sys.stdout.flush()
