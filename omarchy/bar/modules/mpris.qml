@@ -31,7 +31,7 @@ BarWidget {
 
     readonly property var p: root.player
     readonly property string icon: p && p.isPlaying ? "󰐊" : "󰏤"
-    readonly property string name: p ? p.trackTitle || p.identity : ""
+    readonly property string name: p ? p.identity : ""
     readonly property string sep: p ? " " : ""
 
     text: p ? icon + sep + name : ""
