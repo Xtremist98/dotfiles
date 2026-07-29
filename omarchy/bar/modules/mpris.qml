@@ -14,7 +14,7 @@ BarWidget {
     for (let p of Mpris.players.values)
       if (p.isPlaying) return p
     for (let p of Mpris.players.values)
-      if (p.canPlay) return p
+      if (p.trackTitle || p.trackArtist) return p
     return null
   }
 
