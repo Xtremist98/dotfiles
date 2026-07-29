@@ -13,7 +13,9 @@ BarWidget {
   function activePlayer() {
     for (let p of Mpris.players.values)
       if (p.isPlaying) return p
-    return Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
+    for (let p of Mpris.players.values)
+      if (p.canPlay) return p
+    return null
   }
 
   function togglePlayPause() {
