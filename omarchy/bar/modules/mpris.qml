@@ -8,7 +8,13 @@ BarWidget {
   id: root
   moduleName: "mpris"
 
-  readonly property var player: Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
+  readonly property var player: activePlayer()
+
+  function activePlayer() {
+    for (let p of Mpris.players.values)
+      if (p.isPlaying) return p
+    return Mpris.players.values.length > 0 ? Mpris.players.values[0] : null
+  }
 
   function togglePlayPause() {
     if (player && player.canTogglePlaying)
