@@ -25,6 +25,14 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "omarchy.spacer",
+          "size": 6
+        },
+        {
+          "type": "qml",
+          "id": "netspeed"
+        },
+        {
           "id": "omarchy.system-update"
         }
       ],
