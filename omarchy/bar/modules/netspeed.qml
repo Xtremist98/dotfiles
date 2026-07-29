@@ -86,7 +86,7 @@ BarWidget {
   Text {
     id: label
     anchors.verticalCenter: parent.verticalCenter
-    text: "↓" + root.formatRate(root.downRate) + " ↑" + root.formatRate(root.upRate)
+    text: "󰇚 " + root.formatRate(root.downRate) + "  󰕒 " + root.formatRate(root.upRate)
     color: root.bar ? root.bar.barForeground : Color.foreground
     font.family: root.bar ? root.bar.fontFamily : Style.font.family
     font.pixelSize: Style.font.caption
