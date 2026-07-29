@@ -49,6 +49,14 @@
         },
         {
           "type": "qml",
+          "id": "window-info"
+        },
+        {
+          "id": "omarchy.spacer",
+          "size": 10
+        },
+        {
+          "type": "qml",
           "id": "mpris"
         }
       ],
