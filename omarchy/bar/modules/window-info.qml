@@ -376,7 +376,7 @@ BarWidget {
 
   visible: true
 
-  implicitWidth: Math.min(label.implicitWidth, 220) + Style.space(2)
+  implicitWidth: Math.min(label.implicitWidth, 350) + Style.space(2)
   implicitHeight: barSize
 
 
