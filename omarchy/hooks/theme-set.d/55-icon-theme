@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Force Papirus-Dark icon theme for GTK apps regardless of theme
+gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark 2>/dev/null
