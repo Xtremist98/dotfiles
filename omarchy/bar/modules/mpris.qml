@@ -23,20 +23,21 @@ BarWidget {
       player.togglePlaying()
   }
 
-  visible: player !== null
-  implicitWidth: player ? label.implicitWidth + Style.space(2) : 0
+  implicitWidth: Math.min(label.implicitWidth + Style.space(2), 180)
   implicitHeight: barSize
 
   Text {
     id: label
     anchors.verticalCenter: parent.verticalCenter
+    width: parent.width
+    clip: true
+    elide: Text.ElideRight
 
     readonly property var p: root.player
-    readonly property string icon: p && p.isPlaying ? "󰐊" : "󰏤"
+    readonly property string icon: p && p.isPlaying ? "󰐊 " : "󰏤 "
     readonly property string name: p ? p.identity : ""
-    readonly property string sep: p ? " " : ""
 
-    text: p ? icon + sep + name : ""
+    text: p ? icon + name : ""
     color: root.bar ? root.bar.barForeground : Color.foreground
     font.family: root.bar ? root.bar.fontFamily : Style.font.family
     font.pixelSize: Style.font.body

@@ -65,6 +65,13 @@
           "id": "omarchy.tray"
         },
         {
+          "id": "sysinfo",
+          "type": "qml"
+        },
+        {
+          "id": "omarchy.model-usage"
+        },
+        {
           "id": "omarchy.bluetooth"
         },
         {

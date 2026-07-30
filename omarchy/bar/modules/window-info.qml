@@ -16,7 +16,6 @@ BarWidget {
     "code": ["󰨞", "VS Code"],
     "neovim": ["", "Neovim"],
     "nvim": ["", "Neovim"],
-    "terminal": ["", "Terminal"],
     "github": ["󰊤", "GitHub"],
     "git": ["󰊢", "Git"],
     "docker": ["", "Docker"],
@@ -29,13 +28,10 @@ BarWidget {
     "foot": ["󰞷", "Foot"],
     "wezterm": ["󰞷", "WezTerm"],
     "konsole": ["󰞷", "Konsole"],
-    "gnome-terminal": ["", "GNOME Terminal"],
-    "xfce4-terminal": ["󰞷", "XFCE Terminal"],
     "st": ["", "Simple Terminal"],
 
     // Linux Distributions
     "tux": ["", "Kernel"],
-    "arch": ["", "Arch Linux"],
     "nixos": ["", "NixOS"],
     "ubuntu": ["", "Ubuntu"],
     "fedora": ["", "Fedora"],
@@ -83,9 +79,8 @@ BarWidget {
     "fragments": ["󰇚", "Fragments"],
 
     // Omarchy & Modern Linux
-    "omarchy": ["󱓞", "Omarchy Menu"],
     "org.omarchy.bash": ["󰣇", "System-info"],
-    "org.omarchy.btop": ["󰇄", "Btop-Monitor"],
+    "org.omarchy.btop": ["󰓅", "Btop-Monitor"],
     "hyprland": ["", "Hyprland"],
     "ghostty": ["󰊠", "Ghostty Terminal"],
     "lazygit": ["󰊢", "LazyGit"],
@@ -95,7 +90,7 @@ BarWidget {
     "basecamp": ["󰭹", "Basecamp"],
     "hey": ["󰇮", "HEY Mail"],
     "aether": ["󰨚", "Aether"],
-    "org.omarchy.nvtop": ["", "Graphics-Engine"],
+    "org.omarchy.terminal": ["󰣇", "Omarchy"],
 
     // Productivity & Creative
     "notion": ["󰇈", "Notion"],
@@ -238,12 +233,135 @@ BarWidget {
   })
 
 
+  readonly property var siteMap: ({
+    "youtube":    ["󰗃", "YouTube"],
+    "stremio":    ["󱖏", "Stremio"],
+    "netflix":    ["󰝆", "Netflix"],
+    "prime video":["󰐋", "Prime Video"],
+    "disney+":    ["󰇵", "Disney+"],
+    "crunchyroll":["󰴌", "Crunchyroll"],
+    "twitch":     ["", "Twitch"],
+    "github":     ["󰊤", "GitHub"],
+    "gitlab":     ["󰊢", "GitLab"],
+    "reddit":     ["", "Reddit"],
+    "chatgpt":    ["󰭻", "ChatGPT"],
+    "claude":     ["󰚩", "Claude"],
+    "perplexity": ["󰖟", "Perplexity"],
+    "x.com":      ["", "X"],
+    "twitter":    ["", "X"],
+    "whatsapp":   ["", "WhatsApp"],
+    "telegram":   ["", "Telegram"],
+    "discord":    ["", "Discord"],
+    "spotify":    ["", "Spotify"],
+    "notion":     ["󰇈", "Notion"],
+    "figma":      ["", "Figma"],
+    "slack":      ["󰒱", "Slack"],
+    "gmail":      ["󰊫", "Gmail"],
+    "meet":       ["󰕧", "Google Meet"],
+    "maps":       ["󰉙", "Google Maps"],
+    "drive":      ["󰋊", "Google Drive"]
+  })
+
+  function getBrowserIcon(id) {
+    if (id.includes("firefox")) return ""
+    if (id.includes("brave")) return ""
+    if (id.includes("chromium")) return ""
+    if (id.includes("chrome")) return ""
+    if (id.includes("librewolf")) return "󰈹"
+    if (id.includes("vivaldi")) return "󰖟"
+    if (id.includes("thorium")) return "󰖟"
+    return null
+  }
+
+  function getBrowserName(id) {
+    if (id.includes("firefox")) return "Firefox"
+    if (id.includes("brave")) return "Brave"
+    if (id.includes("chromium")) return "Chromium"
+    if (id.includes("chrome")) return "Chrome"
+    if (id.includes("librewolf")) return "LibreWolf"
+    if (id.includes("vivaldi")) return "Vivaldi"
+    if (id.includes("thorium")) return "Thorium"
+    return null
+  }
+
+  function isBrowser(id) {
+    let browsers = ["firefox", "chrome", "chromium", "brave", "librewolf", "vivaldi", "thorium"]
+    for (let b of browsers) {
+      if (id.includes(b)) return true
+    }
+    return false
+  }
+
+  function matchSite(lowerTitle) {
+    for (let key in siteMap) {
+      if (lowerTitle.includes(key)) return siteMap[key]
+    }
+    return null
+  }
+
+  function cleanBrowserTitle(rawTitle, browserName) {
+    let suffixes = [" - Firefox", " - Brave", " - Google Chrome", " - Chromium", " - LibreWolf", " - Vivaldi", " - Thorium"]
+    let result = rawTitle
+    for (let s of suffixes) {
+      let idx = result.lastIndexOf(s)
+      if (idx > 0) { result = result.substring(0, idx).trim(); break }
+    }
+    result = result.replace(/^\(\d+\)\s*/, "")
+    return result
+  }
+
   function getInfo() {
     if (!toplevel || !toplevel.appId)
       return ["󰍹", "Desktop"]
 
     let id = toplevel.appId.toLowerCase()
+    let rawTitle = toplevel.title || ""
+    let lowerTitle = rawTitle.toLowerCase()
 
+    // Browser tab detection
+    if (isBrowser(id)) {
+      let brIcon = getBrowserIcon(id)
+      let brName = getBrowserName(id)
+      let site = matchSite(lowerTitle)
+      let cleaned = cleanBrowserTitle(rawTitle, brName)
+
+      if (site) {
+        let siteName = site[1]
+        let title = rawTitle
+        let browserSuffixes = [" - Firefox", " - Brave", " - Google Chrome", " - Chromium", " - LibreWolf", " - Vivaldi", " - Thorium"]
+        for (let s of browserSuffixes) {
+          let idx = title.lastIndexOf(s)
+          if (idx > 0) { title = title.substring(0, idx).trim(); break }
+        }
+        title = title.replace(/^\(\d+\)\s*/, "")
+
+        let siteSuffixes = [" - " + siteName, " · " + siteName, " | " + siteName, " — " + siteName]
+        for (let suffix of siteSuffixes) {
+          if (title.endsWith(suffix)) {
+            title = title.substring(0, title.length - suffix.length).trim()
+            break
+          }
+        }
+
+        if (!title || title.toLowerCase() === siteName.toLowerCase())
+          return [site[0], siteName]
+
+        return [site[0], siteName + " | " + title]
+      }
+
+      if (cleaned && cleaned.length > 0 && cleaned.length < 50) {
+        return [brIcon, brName + ": " + cleaned]
+      }
+
+      return [brIcon, brName]
+    }
+
+    // Stremio standalone (not in browser)
+    if (id.includes("stremio")) {
+      return ["󱖏", "Stremio"]
+    }
+
+    // App map lookup
     for (let key in appMap) {
       if (id.includes(key))
         return appMap[key]
@@ -258,18 +376,22 @@ BarWidget {
 
   visible: true
 
-  implicitWidth: label.implicitWidth + Style.space(2)
+  implicitWidth: Math.min(label.implicitWidth, 220) + Style.space(2)
   implicitHeight: barSize
 
 
   Text {
     id: label
 
-    anchors.verticalCenter: parent.verticalCenter
+    height: parent.height
+    verticalAlignment: Text.AlignVCenter
+    width: parent.width
+    clip: true
+    elide: Text.ElideRight
 
     property var info: root.getInfo()
 
-    text: info[0] + " " + info[1]
+    text: info[0] + "  " + info[1]
 
     color: root.bar
       ? root.bar.barForeground
