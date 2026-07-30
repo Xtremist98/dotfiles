@@ -1,0 +1,2 @@
+export XDG_MENU_PREFIX=arch-
+export QT_STYLE_OVERRIDE=kvantum

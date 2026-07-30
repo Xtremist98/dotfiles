@@ -1,15 +1,36 @@
+#!/usr/bin/env bash
 #
-#  KVANTUM THEME GENERATED FROM OMARCHY THEME: solitude
+# Hook: Update Kvantum theme when Omarchy theme changes
+# Called with the snake-cased theme name as $1
+
+THEME_NAME="$1"
+COLORS_FILE="$HOME/.local/state/omarchy/current/theme/colors.toml"
+KVANTUM_DIR="$HOME/.config/Kvantum/$THEME_NAME"
+KVANTUM_MAIN="$HOME/.config/Kvantum/kvantum.kvconfig"
+
+[[ -f $COLORS_FILE ]] || exit 0
+
+declare -A C
+
+while IFS=$'\t' read -r key value; do
+  C[$key]="$value"
+done < <(omarchy-theme-color --file "$COLORS_FILE" --all 2>/dev/null)
+
+mkdir -p "$KVANTUM_DIR"
+
+cat > "$KVANTUM_DIR/$THEME_NAME.kvconfig" << KVANTUM
 #
-#  ID     solitude
-#  NAME   solitude
-#  TYPE   dark
+#  KVANTUM THEME GENERATED FROM OMARCHY THEME: $THEME_NAME
+#
+#  ID     $THEME_NAME
+#  NAME   $THEME_NAME
+#  TYPE   ${C[mode]:-dark}
 #
 
 
 [%General]
 author=Omarchy theme system
-comment=Auto-generated from solitude Omarchy theme
+comment=Auto-generated from $THEME_NAME Omarchy theme
 combo_focus_rect=true
 spread_menuitems=true
 left_tabs=true
@@ -83,24 +104,24 @@ menu_blur_radius=0
 tooltip_blur_radius=0
 
 [GeneralColors]
-window.color=#101315
-base.color=#101315
-alt.base.color=#101315
-button.color=#101315
-light.color=#101315
-mid.light.color=#101315
-dark.color=#101315
-mid.color=#101315
-highlight.color=#798186
-inactive.highlight.color=#343d41
-text.color=#cacccc
-window.text.color=#cacccc
-button.text.color=#cacccc
-disabled.text.color=#4b4e55
-tooltip.text.color=#cacccc
-highlight.text.color=#101315
-link.color=#a5aeb4
-link.visited.color=#5d6367
+window.color=${C[background]:-#101315}
+base.color=${C[background]:-#101315}
+alt.base.color=${C[dark_background]:-#0c0e10}
+button.color=${C[background]:-#101315}
+light.color=${C[muted]:-#4b4e55}
+mid.light.color=${C[selection]:-#343d41}
+dark.color=${C[darker_background]:-#080a0b}
+mid.color=${C[dark_background]:-#0c0e10}
+highlight.color=${C[accent]:-#798186}
+inactive.highlight.color=${C[selection]:-#343d41}
+text.color=${C[foreground]:-#cacccc}
+window.text.color=${C[foreground]:-#cacccc}
+button.text.color=${C[foreground]:-#cacccc}
+disabled.text.color=${C[disabled_text]:-${C[muted]:-#4b4e55}}
+tooltip.text.color=${C[foreground]:-#cacccc}
+highlight.text.color=${C[dark_background]:-#0c0e10}
+link.color=${C[bright_foreground]:-#a5aeb4}
+link.visited.color=${C[bright_blue]:-#5d6367}
 
 [ItemView]
 inherits=PanelButtonCommand
@@ -109,7 +130,7 @@ interior.element=itemview
 frame=true
 interior=true
 text.iconspacing=3
-text.toggle.color=#080a0b
+text.toggle.color=${C[darker_background]:-#080a0b}
 
 [RadioButton]
 inherits=PanelButtonCommand
@@ -136,10 +157,10 @@ frame=true
 inherits=PanelButtonCommand
 interior.element=button
 frame.element=button
-text.normal.color=#cacccc
-text.focus.color=#cacccc
-text.press.color=#080a0b
-text.toggle.color=#080a0b
+text.normal.color=${C[foreground]:-#cacccc}
+text.focus.color=${C[foreground]:-#cacccc}
+text.press.color=${C[darker_background]:-#080a0b}
+text.toggle.color=${C[darker_background]:-#080a0b}
 
 [PanelButtonTool]
 inherits=PanelButtonCommand
@@ -241,10 +262,10 @@ frame.bottom=3
 frame.left=3
 frame.right=3
 indicator.size=10
-text.normal.color=#4b4e55
-text.focus.color=#cacccc
-text.press.color=#cacccc
-text.toggle.color=#cacccc
+text.normal.color=${C[muted]:-#4b4e55}
+text.focus.color=${C[foreground]:-#cacccc}
+text.press.color=${C[foreground]:-#cacccc}
+text.toggle.color=${C[foreground]:-#cacccc}
 focusFrame=true
 
 [TabBarFrame]
@@ -281,10 +302,10 @@ frame.bottom=1
 frame.left=1
 frame.right=1
 frame.expansion=0
-text.normal.color=#cacccc
-text.focus.color=#798186
-text.press.color=#cacccc
-text.toggle.color=#cacccc
+text.normal.color=${C[foreground]:-#cacccc}
+text.focus.color=${C[accent]:-#798186}
+text.press.color=${C[foreground]:-#cacccc}
+text.toggle.color=${C[foreground]:-#cacccc}
 indicator.element=harrow
 
 [SizeGrip]
@@ -302,10 +323,10 @@ frame=true
 frame.bottom=4
 frame.left=4
 frame.right=4
-text.normal.color=#cacccc
-text.focus.color=#cacccc
-text.press.color=#798186
-text.toggle.color=#798186
+text.normal.color=${C[foreground]:-#cacccc}
+text.focus.color=${C[foreground]:-#cacccc}
+text.press.color=${C[accent]:-#798186}
+text.toggle.color=${C[accent]:-#798186}
 text.bold=false
 
 [MenuBar]
@@ -313,7 +334,7 @@ inherits=PanelButtonCommand
 frame.element=menubar
 interior.element=menubar
 frame.bottom=0
-text.normal.color=#cacccc
+text.normal.color=${C[foreground]:-#cacccc}
 frame.expansion=0
 text.bold=false
 
@@ -321,10 +342,10 @@ text.bold=false
 frame.element=tbutton
 interior.element=tbutton
 indicator.element=arrow
-text.normal.color=#cacccc
-text.focus.color=#cacccc
-text.press.color=#080a0b
-text.toggle.color=#080a0b
+text.normal.color=${C[foreground]:-#cacccc}
+text.focus.color=${C[foreground]:-#cacccc}
+text.press.color=${C[darker_background]:-#080a0b}
+text.toggle.color=${C[darker_background]:-#080a0b}
 text.bold=false
 
 [Scrollbar]
@@ -366,10 +387,10 @@ frame.bottom=2
 frame.left=2
 frame.right=2
 text.margin=0
-text.normal.color=#cacccc
-text.focus.color=#cacccc
-text.press.color=#080a0b
-text.toggle.color=#080a0b
+text.normal.color=${C[foreground]:-#cacccc}
+text.focus.color=${C[foreground]:-#cacccc}
+text.press.color=${C[darker_background]:-#080a0b}
+text.toggle.color=${C[darker_background]:-#080a0b}
 text.bold=false
 frame.expansion=18
 
@@ -380,8 +401,8 @@ inherits=PanelButtonCommand
 frame.element=menu
 interior.element=menu
 inherits=PanelButtonCommand
-text.press.color=#080a0b
-text.toggle.color=#080a0b
+text.press.color=${C[darker_background]:-#080a0b}
+text.toggle.color=${C[darker_background]:-#080a0b}
 text.bold=false
 frame.top=3
 frame.bottom=3
@@ -392,8 +413,8 @@ frame.right=3
 inherits=PanelButtonCommand
 interior.element=menuitem
 indicator.size=8
-text.focus.color=#cacccc
-text.press.color=#cacccc
+text.focus.color=${C[foreground]:-#cacccc}
+text.press.color=${C[foreground]:-#cacccc}
 
 [MenuBarItem]
 inherits=PanelButtonCommand
@@ -408,7 +429,7 @@ text.margin.right=5
 inherits=Toolbar
 frame.element=toolbar
 font.bold=true
-text.normal.color=#cacccc
+text.normal.color=${C[foreground]:-#cacccc}
 frame=true
 frame.top=0
 frame.bottom=0
@@ -433,13 +454,13 @@ text.margin.top=1
 text.margin.bottom=1
 text.margin.left=3
 text.margin.right=3
-text.toggle.color=#cacccc
+text.toggle.color=${C[foreground]:-#cacccc}
 
 [ToolboxTab]
 inherits=PanelButtonCommand
-text.normal.color=#cacccc
-text.press.color=#cacccc
-text.focus.color=#cacccc
+text.normal.color=${C[foreground]:-#cacccc}
+text.press.color=${C[foreground]:-#cacccc}
+text.focus.color=${C[foreground]:-#cacccc}
 
 [Hacks]
 transparent_dolphin_view=false
@@ -474,3 +495,11 @@ frame.top=0
 frame.bottom=0
 frame.left=0
 frame.right=0
+KVANTUM
+
+# Update Kvantum main config to point to this theme
+if [[ ! -f $KVANTUM_MAIN ]] || ! grep -q "theme=$THEME_NAME" "$KVANTUM_MAIN" 2>/dev/null; then
+  mkdir -p "$(dirname "$KVANTUM_MAIN")"
+  echo "[General]" > "$KVANTUM_MAIN"
+  echo "theme=$THEME_NAME" >> "$KVANTUM_MAIN"
+fi

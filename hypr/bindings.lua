@@ -39,7 +39,7 @@ hl.bind("SUPER + D", hl.dsp.exec_cmd("uwsm app -- /usr/lib/vesktop/vesktop"), { 
 hl.bind("SUPER + SHIFT + T", hl.dsp.exec_cmd("AyuGram --"), { description = "AyuGram" })
 hl.bind("SUPER + Y", hl.dsp.exec_cmd("omarchy-launch-tui nvtop"), { description = "Nvtop" })
 hl.bind("SUPER + Q", hl.dsp.exec_cmd("uwsm app -- /usr/bin/qbittorrent"), { description = "Torrent" })
-hl.bind("SUPER + Z", hl.dsp.exec_cmd("uwsm app -- /usr/bin/dolphin"), { description = "Dolphin" })
+hl.bind("SUPER + Z", hl.dsp.exec_cmd("env QT_STYLE_OVERRIDE=kvantum dolphin"), { description = "Dolphin" })
 
 -- Brightness control with arrow keys
 hl.bind("SUPER + Up", hl.dsp.exec_cmd("brightnessctl set +1%"))
