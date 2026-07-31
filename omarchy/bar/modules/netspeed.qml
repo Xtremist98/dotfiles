@@ -18,14 +18,11 @@ BarWidget {
   visible: curIface !== ""
 
   function formatRate(bps) {
-    if (bps < 1024) return bps.toFixed(0) + " B"
+    if (bps < 1024) return bps.toFixed(0) + " bps"
     var isMb = bps >= 1048576
     var value = isMb ? bps / 1048576 : bps / 1024
-    var unit = isMb ? "m" : "k"
-    var num = parseFloat(value.toFixed(1))
-    var singular = num === 1
-    var numStr = singular ? "1" : String(num)
-    return numStr + " " + unit + (singular ? "b" : "bs")
+    var unit = isMb ? "mbps" : "kbps"
+    return parseFloat(value.toFixed(1)) + " " + unit
   }
 
   function refresh() {
