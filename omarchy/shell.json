@@ -14,12 +14,12 @@
           "type": "command"
         },
         {
-          "id": "omarchy.clock",
+          "birthYear": 1991,
           "format": "dddd hh:mm A",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "verticalFormat": "HH\n—\nmm",
-          "birthYear": 1991,
-          "lifeExpectancy": 90
+          "id": "omarchy.clock",
+          "lifeExpectancy": 90,
+          "verticalFormat": "HH\n—\nmm"
         },
         {
           "id": "omarchy.weather"
@@ -27,10 +27,6 @@
         {
           "id": "omarchy.spacer",
           "size": 6
-        },
-        {
-          "type": "qml",
-          "id": "netspeed"
         },
         {
           "id": "omarchy.system-update"
@@ -48,16 +44,16 @@
           "size": 10
         },
         {
-          "type": "qml",
-          "id": "window-info"
+          "id": "mpris",
+          "type": "qml"
         },
         {
           "id": "omarchy.spacer",
           "size": 10
         },
         {
-          "type": "qml",
-          "id": "mpris"
+          "id": "window-info",
+          "type": "qml"
         }
       ],
       "right": [
@@ -73,6 +69,14 @@
         },
         {
           "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.spacer",
+          "size": 10
+        },
+        {
+          "id": "netspeed",
+          "type": "qml"
         },
         {
           "id": "omarchy.network"
@@ -95,6 +99,10 @@
     "lock": 300,
     "screensaver": 150
   },
-  "plugins": [],
+  "plugins": [
+    {
+      "id": "io.github.oldjobobo.thpm"
+    }
+  ],
   "version": 1
 }

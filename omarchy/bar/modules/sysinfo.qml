@@ -38,7 +38,7 @@ Item {
     id: label
     anchors.centerIn: parent
     text: "󰻠 " + rootModule.cpuPct + "%  󰍛 " + rootModule.memPct + "%"
-    color: rootModule.fg
+    color: "#ffffff"
     font.family: rootModule.fontFam
     font.pixelSize: 12
   }
