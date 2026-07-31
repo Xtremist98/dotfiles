@@ -116,7 +116,7 @@ fi
 # error: ..."). Treat anything that isn't valid JSON as unavailable and never
 # cache it, so a bad reply can't linger and poison the next run.
 if ! echo "$RESPONSE" | jq -e '.current_condition[0]' >/dev/null 2>&1; then
-    jq -n -c '{"text": "🌫️", "desc": "Weather Unavailable"}'
+    jq -n -c '{"text": "", "desc": "Weather Unavailable"}'
     exit 1
 fi
 

@@ -50,6 +50,7 @@ BarWidget {
   }
 
   Timer {
+    id: refreshTimer
     interval: 900000
     running: true
     repeat: true
@@ -61,12 +62,27 @@ BarWidget {
     if (!weatherProc.running) weatherProc.running = true
   }
 
+  function setRefreshInterval(ms) {
+    if (refreshTimer.interval !== ms) {
+      refreshTimer.interval = ms
+      refreshTimer.restart()
+    }
+  }
+
   function parseData(raw) {
     try {
       var d = JSON.parse(String(raw || "").trim())
-      if (d && d.text) root.label = String(d.text)
+      if (d && d.hasOwnProperty("text")) {
+        root.label = String(d.text == null ? "" : d.text)
+        root.setRefreshInterval(root.label !== "" ? 900000 : 60000)
+      } else {
+        root.label = ""
+        root.setRefreshInterval(60000)
+      }
       root.wdata = d
     } catch (e) {
+      root.label = ""
+      root.setRefreshInterval(60000)
     }
   }
 

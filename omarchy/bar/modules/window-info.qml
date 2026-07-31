@@ -1,4 +1,5 @@
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons
@@ -374,9 +375,42 @@ BarWidget {
   }
 
 
-  visible: true
+  // ------------------------------------------------------------- visibility
 
-  implicitWidth: Math.min(label.implicitWidth, 500) + Style.space(2)
+  readonly property var focusedWs: Hyprland.focusedWorkspace
+
+  function mpvAppIdOf(t) {
+    if (!t) return ""
+    var appId = t.wayland ? String(t.wayland.appId || "") : ""
+    if (!appId && t.lastIpcObject) appId = String(t.lastIpcObject["class"] || "")
+    return appId.toLowerCase()
+  }
+
+  function isMpvToplevel(t) {
+    return root.mpvAppIdOf(t).indexOf("mpv") !== -1
+  }
+
+  function wsToplevels() {
+    return root.focusedWs && root.focusedWs.toplevels
+      ? root.focusedWs.toplevels.values
+      : []
+  }
+
+  function workspaceAllMpv() {
+    var vals = root.wsToplevels()
+    if (vals.length === 0) return false
+    for (var i = 0; i < vals.length; i++) {
+      if (!root.isMpvToplevel(vals[i])) return false
+    }
+    return true
+  }
+
+  readonly property bool workspaceEmpty: root.wsToplevels().length === 0
+  readonly property bool hideOnMpv: root.isMpvToplevel(Hyprland.activeToplevel) || root.workspaceAllMpv()
+
+  visible: !root.workspaceEmpty && !root.hideOnMpv
+
+  implicitWidth: Math.min(label.implicitWidth, 600) + Style.space(2)
   implicitHeight: barSize
 
 

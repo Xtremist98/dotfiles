@@ -27,7 +27,43 @@ BarWidget {
       player.togglePlaying()
   }
 
-  readonly property int maxWidth: 320
+  function centerLeftEdge() {
+    var bar = root.bar
+    if (!bar || !bar.moduleSlots) return -1
+    var slots = bar.moduleSlots
+    var left = -1
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i]
+      if (s && s.region === "center" && s.visible === true && s.width > 0) {
+        if (left < 0 || s.x < left) left = s.x
+      }
+    }
+    return left
+  }
+
+  function mySlotX() {
+    var bar = root.bar
+    if (!bar || !bar.moduleSlots) return 0
+    var slots = bar.moduleSlots
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i]
+      if (s && s.moduleName === "mpris" && s.region === "left") return s.x
+    }
+    return 0
+  }
+
+  readonly property int mpvMaxWidth: {
+    var left = root.centerLeftEdge()
+    var slotX = root.mySlotX()
+    if (left > 0) {
+      var avail = Math.floor(left - slotX) - Style.space(20)
+      return Math.max(240, Math.min(1500, avail))
+    }
+    return bar && bar.width > 0
+      ? Math.min(1500, Math.max(240, Math.floor(bar.width / 2) - Style.space(480)))
+      : 480
+  }
+  readonly property int maxWidth: root.isMpv ? root.mpvMaxWidth : 320
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var p: player
   readonly property bool isMpv: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("mpv") : false
