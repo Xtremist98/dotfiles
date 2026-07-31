@@ -29,6 +29,14 @@
           "size": 6
         },
         {
+          "id": "netspeed",
+          "type": "qml"
+        },
+        {
+          "id": "omarchy.spacer",
+          "size": 6
+        },
+        {
           "id": "omarchy.system-update"
         }
       ],
@@ -41,7 +49,7 @@
         },
         {
           "id": "omarchy.spacer",
-          "size": 10
+          "size": 6
         },
         {
           "id": "mpris",
@@ -49,7 +57,7 @@
         },
         {
           "id": "omarchy.spacer",
-          "size": 10
+          "size": 8
         },
         {
           "id": "window-info",
@@ -69,14 +77,6 @@
         },
         {
           "id": "omarchy.bluetooth"
-        },
-        {
-          "id": "omarchy.spacer",
-          "size": 10
-        },
-        {
-          "id": "netspeed",
-          "type": "qml"
         },
         {
           "id": "omarchy.network"

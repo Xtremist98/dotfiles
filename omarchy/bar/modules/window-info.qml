@@ -209,7 +209,7 @@ BarWidget {
     "flameshot": ["󰄀", "Flameshot"],
     "gimp": ["", "GIMP"],
     "canva": ["", "Canva"],
-    "mpv": ["", "Media Player"],
+    "mpv": ["", "Media-Player"],
     "vlc": ["󰕼", "VLC"],
     "Stremio.stremio": ["󱖏", "Stremio"],
     "com.stremio.Stremio": ["󱖏", "Stremio"],
@@ -391,7 +391,7 @@ BarWidget {
 
     property var info: root.getInfo()
 
-    text: info[0] + "  " + info[1]
+    text: info[0] + " " + info[1]
 
     color: root.bar
       ? root.bar.barForeground
