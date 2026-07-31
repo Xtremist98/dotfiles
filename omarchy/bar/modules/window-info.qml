@@ -312,7 +312,7 @@ BarWidget {
 
   function getInfo() {
     if (!toplevel || !toplevel.appId)
-      return ["󰍹", "Desktop"]
+      return ["󱂬", "Desktop"]
 
     let id = toplevel.appId.toLowerCase()
     let rawTitle = toplevel.title || ""
