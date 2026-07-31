@@ -27,6 +27,16 @@ BarWidget {
       player.togglePlaying()
   }
 
+  function sceneX(item) {
+    var x = item.x
+    var p = item.parent
+    while (p) {
+      x += p.x
+      p = p.parent
+    }
+    return x
+  }
+
   function centerLeftEdge() {
     var bar = root.bar
     if (!bar || !bar.moduleSlots) return -1
@@ -35,7 +45,8 @@ BarWidget {
     for (var i = 0; i < slots.length; i++) {
       var s = slots[i]
       if (s && s.region === "center" && s.visible === true && s.width > 0) {
-        if (left < 0 || s.x < left) left = s.x
+        var x = root.sceneX(s)
+        if (left < 0 || x < left) left = x
       }
     }
     return left
@@ -47,9 +58,26 @@ BarWidget {
     var slots = bar.moduleSlots
     for (var i = 0; i < slots.length; i++) {
       var s = slots[i]
-      if (s && s.moduleName === "mpris" && s.region === "left") return s.x
+      if (s && s.activeItem === root) return root.sceneX(s)
     }
     return 0
+  }
+
+  // The window-info widget sits right after this module in the left region, so
+  // whenever it will paint a focused-window title we must stay compact and
+  // leave it room instead of stretching all the way to the center section.
+  readonly property bool windowInfoVisible: root.windowInfoShown()
+
+  function windowInfoShown() {
+    var bar = root.bar
+    if (!bar || !bar.moduleSlots) return false
+    var slots = bar.moduleSlots
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i]
+      if (s && s.region === "left" && s.activeItem && s.activeItem.moduleName === "window-info")
+        return s.activeItem.visible === true
+    }
+    return false
   }
 
   readonly property int mpvMaxWidth: {
@@ -63,7 +91,9 @@ BarWidget {
       ? Math.min(1500, Math.max(240, Math.floor(bar.width / 2) - Style.space(480)))
       : 480
   }
-  readonly property int maxWidth: root.isMpv ? root.mpvMaxWidth : 320
+  readonly property int maxWidth: root.isMpv
+    ? (root.windowInfoVisible ? 320 : root.mpvMaxWidth)
+    : 320
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var p: player
   readonly property bool isMpv: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("mpv") : false

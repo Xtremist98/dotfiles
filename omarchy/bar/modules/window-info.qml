@@ -410,7 +410,53 @@ BarWidget {
 
   visible: !root.workspaceEmpty && !root.hideOnMpv
 
-  implicitWidth: Math.min(label.implicitWidth, 600) + Style.space(2)
+  function sceneX(item) {
+    var x = item.x
+    var p = item.parent
+    while (p) {
+      x += p.x
+      p = p.parent
+    }
+    return x
+  }
+
+  function centerLeftEdge() {
+    var bar = root.bar
+    if (!bar || !bar.moduleSlots) return -1
+    var slots = bar.moduleSlots
+    var left = -1
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i]
+      if (s && s.region === "center" && s.visible === true && s.width > 0) {
+        var x = root.sceneX(s)
+        if (left < 0 || x < left) left = x
+      }
+    }
+    return left
+  }
+
+  function mySlotX() {
+    var bar = root.bar
+    if (!bar || !bar.moduleSlots) return 0
+    var slots = bar.moduleSlots
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i]
+      if (s && s.activeItem === root) return root.sceneX(s)
+    }
+    return 0
+  }
+
+  readonly property int maxWidth: {
+    var left = root.centerLeftEdge()
+    var slotX = root.mySlotX()
+    if (left > 0) {
+      var avail = Math.floor(left - slotX) - Style.space(16)
+      return Math.max(160, Math.min(600, avail))
+    }
+    return 600
+  }
+
+  implicitWidth: Math.min(label.implicitWidth, maxWidth) + Style.space(2)
   implicitHeight: barSize
 
 
