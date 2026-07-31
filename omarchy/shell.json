@@ -22,11 +22,12 @@
           "verticalFormat": "HH\n—\nmm"
         },
         {
-          "id": "omarchy.weather"
+          "id": "weather",
+          "type": "qml"
         },
         {
           "id": "omarchy.spacer",
-          "size": 6
+          "size": 10
         },
         {
           "id": "netspeed",
