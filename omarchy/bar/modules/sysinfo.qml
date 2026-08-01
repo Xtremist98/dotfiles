@@ -38,9 +38,9 @@ Item {
     id: label
     anchors.centerIn: parent
     text: "󰻠 " + rootModule.cpuPct + "%  󰍛 " + rootModule.memPct + "%"
-    color: "#ffffff"
+    color: bar ? bar.barForeground : Color.foreground
     font.family: rootModule.fontFam
-    font.pixelSize: 12
+    font.pixelSize: Style.bar.iconFont - 1
   }
 
   Process {

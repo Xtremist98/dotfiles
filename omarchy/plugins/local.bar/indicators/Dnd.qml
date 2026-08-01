@@ -5,6 +5,8 @@ import qs.Ui
 BarIndicator {
   id: root
 
+  fontSize: Style.bar.iconFont - 1
+
   readonly property var notificationService: bar?.shell?.firstPartyServiceFor("omarchy.notifications")
   readonly property bool dnd: notificationService ? notificationService.doNotDisturb : false
 

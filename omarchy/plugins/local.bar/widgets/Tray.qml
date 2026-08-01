@@ -24,6 +24,10 @@ BarWidget {
   readonly property bool expandByDefault: settings.expandByDefault !== false
   readonly property var pinnedIds: settings.pinned instanceof Array ? settings.pinned : []
   readonly property var hiddenIds: settings.hidden instanceof Array ? settings.hidden : []
+  // Tray apps whose icon ships a baked-in near-white fill without the
+  // freedesktop "-symbolic" suffix (e.g. FDM, Stremio service). Their raw icon
+  // is invisible on a light bar, so force-tint them like symbolic icons.
+  readonly property var forceColorizeIds: settings.forceColorize instanceof Array ? settings.forceColorize : []
   readonly property var pinnedItems: bucket("pinned")
   readonly property var drawerItems: bucket("drawer")
   readonly property var allItems: bucket("all")
@@ -69,6 +73,20 @@ BarWidget {
   function iconIsSymbolic(icon) {
     var name = String(icon || "").split("?")[0]
     return name.slice(-9) === "-symbolic"
+  }
+
+  // Tray item should be tinted even though its icon isn't "-symbolic":
+  // matches any configured entry (settings.forceColorize) against the item's
+  // id, title, and tooltip title, case-insensitive.
+  function forceColorizeItem(item) {
+    if (forceColorizeIds.length === 0) return false
+    var hay = String(item.id || "") + " " + String(item.title || "") + " " + String(item.tooltipTitle || "")
+    hay = hay.toLowerCase()
+    for (var i = 0; i < forceColorizeIds.length; i++) {
+      var needle = String(forceColorizeIds[i] || "").toLowerCase()
+      if (needle !== "" && hay.indexOf(needle) !== -1) return true
+    }
+    return false
   }
 
   function trayTooltip(item) {
@@ -194,7 +212,7 @@ BarWidget {
           height: implicitHeight
           x: root.drawerExtent - root.revealExtent
           text: "\uf053"
-          fontSize: Style.bar.iconFont - 2
+          fontSize: Style.bar.iconFont - 1
           onPressed: function(button) {
             if (button === Qt.RightButton) root.managePopupOpen = !root.managePopupOpen
           }
@@ -278,7 +296,7 @@ BarWidget {
           y: root.drawerExtent - root.revealExtent
           text: "\uf053"
           textRotation: 90
-          fontSize: Style.bar.iconFont - 2
+          fontSize: Style.bar.iconFont - 1
           onPressed: function(button) {
             if (button === Qt.RightButton) root.managePopupOpen = !root.managePopupOpen
           }
@@ -390,6 +408,7 @@ BarWidget {
             width: 16
             height: 16
             icon: rowRoot.modelData.icon
+            forceSymbolic: root.forceColorizeItem(rowRoot.modelData)
           }
 
           Text {
@@ -591,7 +610,8 @@ BarWidget {
   component TrayIcon: Item {
     id: trayIconRoot
     required property var icon
-    readonly property bool symbolic: root.iconIsSymbolic(icon)
+    property bool forceSymbolic: false
+    readonly property bool symbolic: root.iconIsSymbolic(icon) || forceSymbolic
 
     Image {
       id: trayIconImage
@@ -631,9 +651,10 @@ BarWidget {
 
     TrayIcon {
       anchors.centerIn: parent
-      width: Style.space(11)
-      height: Style.space(11)
+      width: Style.space(12)
+      height: Style.space(12)
       icon: trayItemRoot.modelData.icon
+      forceSymbolic: root.forceColorizeItem(trayItemRoot.modelData)
     }
 
     MouseArea {

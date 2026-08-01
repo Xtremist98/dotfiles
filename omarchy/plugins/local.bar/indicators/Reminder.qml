@@ -1,10 +1,13 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.Commons
 import qs.Ui
 
 BarIndicator {
   id: root
+
+  fontSize: Style.bar.iconFont - 1
 
   property int reminderCount: 0
   property string tooltip: ""

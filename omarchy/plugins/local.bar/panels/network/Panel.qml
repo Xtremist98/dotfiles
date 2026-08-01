@@ -1044,9 +1044,9 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    slotSize: Style.bar.iconSlot - 8
-    opticalSize: Style.bar.iconCanvas - 2
-    fontSize: Style.bar.iconFont - 2
+    slotSize: Style.bar.iconSlot - 7
+    opticalSize: Style.bar.iconCanvas - 1
+    fontSize: Style.bar.iconFont - 1
     text: root.icon
 
     onPressed: function(b) {

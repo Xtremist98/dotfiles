@@ -82,7 +82,7 @@ BarWidget {
     onTriggered: root.refresh()
   }
 
-  implicitWidth: label.implicitWidth + Style.space(1)
+  implicitWidth: label.implicitWidth
   implicitHeight: barSize
 
   Text {
@@ -91,7 +91,7 @@ BarWidget {
     text: "󰇚 " + root.formatRate(root.downRate)
     color: root.bar ? root.bar.barForeground : Color.foreground
     font.family: root.bar ? root.bar.fontFamily : Style.font.family
-    font.pixelSize: Style.font.caption
+    font.pixelSize: Style.font.body
     renderType: Text.NativeRendering
   }
 }

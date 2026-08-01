@@ -21,7 +21,9 @@
           "type": "qml"
         },
         {
-          "id": "omarchy.system-update"
+          "id": "omarchy.system-update",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/SystemUpdate.qml",
+          "type": "qml"
         }
       ],
       "left": [
@@ -56,14 +58,20 @@
         {
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
-          "type": "qml"
+          "type": "qml",
+          "settings": {
+            "forceColorize": [
+              "Free Download",
+              "stremio-service"
+            ]
+          }
         },
         {
           "id": "sysinfo",
           "type": "qml"
         },
         {
-          "id": "omarchy.model-usage"
+          "id": "local.model-usage"
         },
         {
           "id": "netspeed",

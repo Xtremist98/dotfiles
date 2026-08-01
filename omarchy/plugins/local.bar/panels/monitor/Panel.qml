@@ -469,8 +469,8 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    opticalSize: Style.bar.iconCanvas - 2
-    fontSize: Style.bar.iconFont - 2
+    opticalSize: Style.bar.iconCanvas - 1
+    fontSize: Style.bar.iconFont - 1
     text: Quickshell.screens.length > 1 ? "󰍺" : "󰍹"
     onPressed: function(b) { root.toggle() }
     onWheelMoved: function(delta) {

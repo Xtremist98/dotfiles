@@ -34,7 +34,7 @@ BarWidget {
     text: root.label
     color: root.fg
     font.family: root.fontFam
-    font.pixelSize: Style.font.caption
+    font.pixelSize: Style.font.body
     renderType: Text.NativeRendering
   }
 

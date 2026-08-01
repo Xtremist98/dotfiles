@@ -1,8 +1,11 @@
 import QtQuick
+import qs.Commons
 import qs.Ui
 
 BarIndicator {
   id: root
+
+  fontSize: Style.bar.iconFont - 1
 
   readonly property var idleService: bar?.shell?.firstPartyServiceFor("omarchy.idle")
 

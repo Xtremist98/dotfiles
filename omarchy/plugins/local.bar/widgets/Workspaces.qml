@@ -71,10 +71,10 @@ BarWidget {
           bar: root.bar
           text: wsItem.focused ? root.activeIcon : (root.wsIcons[modelData] ? root.wsIcons[modelData] : root.defaultIcon)
           opacity: wsItem.occupied || wsItem.focused ? 1 : 0.5
-          foreground: "#c1c1ff"
-          activeColor: "#ffffff"
+          foreground: bar ? bar.barForeground : Color.foreground
+          activeColor: bar ? bar.barForeground : Color.foreground
           active: wsItem.focused
-          fontSize: Style.bar.iconFont - 2
+          fontSize: Style.bar.iconFont - 1
           horizontalMargin: 0
           verticalPadding: 0
           onPressed: function() { root.focusWorkspace(modelData) }

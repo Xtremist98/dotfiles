@@ -7,6 +7,7 @@ import qs.Ui
 BarWidget {
   id: root
   moduleName: "mpris"
+  visible: player !== null
 
   readonly property var player: activePlayer()
 
@@ -120,7 +121,7 @@ BarWidget {
       text: root.p ? (root.p.isPlaying ? "󰐊" : "󰏤") : ""
       color: bar ? bar.barForeground : Color.foreground
       font.family: root.fontFamily
-      font.pixelSize: Style.font.icon
+      font.pixelSize: Style.bar.iconFont - 1
       renderType: Text.NativeRendering
     }
 
