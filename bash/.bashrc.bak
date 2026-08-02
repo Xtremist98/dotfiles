@@ -48,7 +48,7 @@ export PATH="$HOME/.local/share/mise/installs/node/22.23.0/bin:$PATH"
 # Optimize Node V8 engine thread management and garbage collection for streaming hooks
 export NODE_OPTIONS="--max-semi-space-size=64 --v8-pool-size=4"
 
-alias backup-dots='cd "/mnt/media/Dot files" && git add . && git commit -m "Automated backup" && git pull origin main --rebase && git push origin main && cd - > /dev/null'
+alias backup-dots='cd "/mnt/media/Dots" && git add . && git commit -m "Automated backup" && git pull origin main --rebase && git push origin main && cd - > /dev/null'
 
 # Native Go TorrServer stream function (Dynamic Track Selector)
 function stream {
