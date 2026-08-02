@@ -120,10 +120,11 @@ BarWidget {
     Text {
       id: icon
       anchors.verticalCenter: parent.verticalCenter
+      anchors.verticalCenterOffset: 1
       text: root.p ? (root.p.isPlaying ? "󰐊" : "󰏤") : ""
       color: bar ? bar.barForeground : Color.foreground
       font.family: root.fontFamily
-      font.pixelSize: 14
+      font.pixelSize: 13
       renderType: Text.NativeRendering
     }
 
