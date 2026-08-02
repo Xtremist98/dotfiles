@@ -168,7 +168,6 @@ BarWidget {
     root.showMenu = false
     if (action === "location") {
       root.showLocation = true
-      Qt.callLater(function() { locationField.forceActiveFocus() })
     } else if (action === "unit") {
       toggleProc.command = ["bash", root.scriptPath, "--toggle-unit"]
       toggleProc.running = true
@@ -441,13 +440,17 @@ BarWidget {
 
   // ------------------------------------------------------------ location
 
-  PopupCard {
+  // KeyboardPanel (layer-shell, WlrKeyboardFocus.Exclusive prime) instead of
+  // PopupCard: xdg-popups only receive keys after a click routes focus through
+  // their parent surface, so a programmatically-opened search field would
+  // never get keystrokes. focusTarget hands Qt active focus to the TextField.
+  KeyboardPanel {
     id: locationPopup
     anchorItem: root
     bar: root.bar
     owner: root
     open: root.showLocation
-    triggerMode: "click"
+    focusTarget: locationField
     contentWidth: fittedContentWidth(Style.space(280))
     contentHeight: fittedContentHeight(locationColumn.implicitHeight)
 
