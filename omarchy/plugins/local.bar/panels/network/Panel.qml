@@ -13,6 +13,13 @@ Panel {
   moduleName: "omarchy.network"
   ipcTarget: "omarchy.network"
 
+  // Bar slot keeps the wifi icon flush against the netspeed widget's right
+  // edge (shared group pill, innerSpacing 0) with the uniform 7.5px margin
+  // only on the outside. The button itself is sized to the nerd-font glyph
+  // (~18px at 12px font, wider than the 15px optical canvas) so the ink
+  // starts at the widget's left edge; the +7.5 lands on the right side.
+  implicitWidth: button.implicitWidth + Style.spaceReal(7.5)
+
   // Centralized close so callers can't forget to drop the passphrase prompt.
   function close() {
     root.controller.hide()
@@ -822,7 +829,6 @@ Panel {
     runNetworkAction("forget", net ? net.network : null, function(network) { network.forget() })
   }
 
-  implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
   Component.onCompleted: refresh()
@@ -1042,9 +1048,12 @@ Panel {
 
   BarIconButton {
     id: button
-    anchors.fill: parent
+    width: Style.bar.iconCanvas + 2
+    height: parent.height
+    anchors.left: parent.left
+    anchors.verticalCenter: parent.verticalCenter
+    slotSize: Style.bar.iconCanvas + 2
     bar: root.bar
-    slotSize: Style.bar.iconSlot - 7
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
     text: root.icon

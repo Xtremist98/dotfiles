@@ -4,53 +4,44 @@
     "layout": {
       "center": [
         {
-          "id": "omarchy.indicators"
+          "id": "omarchy.indicators",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Indicators.qml",
+          "type": "qml"
         },
         {
-          "exec": "echo '{\"text\":\"󰴑\",\"tooltip\":\"Extract text from screen\"}'",
-          "id": "text-extraction",
-          "interval": 3600,
-          "onClick": "omarchy-capture-text",
-          "type": "command"
-        },
-        {
+          "id": "omarchy.clock",
           "birthYear": 1991,
           "format": "dddd hh:mm A",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "id": "omarchy.clock",
           "lifeExpectancy": 90,
-          "verticalFormat": "HH\n—\nmm"
+          "verticalFormat": "HH\n—\nmm",
+          "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
+          "type": "qml"
         },
         {
           "id": "weather",
           "type": "qml"
         },
         {
-          "id": "omarchy.spacer",
-          "size": 10
-        },
-        {
-          "id": "netspeed",
+          "id": "omarchy.system-update",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/SystemUpdate.qml",
           "type": "qml"
-        },
-        {
-          "id": "omarchy.spacer",
-          "size": 6
-        },
-        {
-          "id": "omarchy.system-update"
         }
       ],
       "left": [
         {
-          "id": "omarchy.menu"
+          "id": "omarchy.menu",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Menu.qml",
+          "type": "qml"
         },
         {
-          "id": "omarchy.workspaces"
+          "id": "omarchy.workspaces",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Workspaces.qml",
+          "type": "qml"
         },
         {
           "id": "omarchy.spacer",
-          "size": 6
+          "size": 0
         },
         {
           "id": "mpris",
@@ -58,7 +49,7 @@
         },
         {
           "id": "omarchy.spacer",
-          "size": 10
+          "size": 0
         },
         {
           "id": "window-info",
@@ -67,34 +58,84 @@
       ],
       "right": [
         {
-          "id": "omarchy.tray"
+          "id": "omarchy.tray",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
+          "type": "qml",
+          "settings": {
+            "forceColorize": [
+              "Free Download",
+              "stremio-service"
+            ]
+          }
+        },
+        {
+          "id": "omarchy.dropbox",
+          "source": "~/.config/omarchy/plugins/local.dropbox/Panel.qml",
+          "type": "qml"
         },
         {
           "id": "sysinfo",
           "type": "qml"
         },
         {
-          "id": "omarchy.model-usage"
+          "id": "local.model-usage"
         },
         {
-          "id": "omarchy.bluetooth"
+          "id": "netspeed",
+          "type": "qml"
         },
         {
-          "id": "omarchy.network"
+          "id": "omarchy.network",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/network/Panel.qml",
+          "type": "qml"
         },
         {
-          "id": "omarchy.audio"
+          "id": "omarchy.bluetooth",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/bluetooth/Panel.qml",
+          "type": "qml"
         },
         {
-          "id": "omarchy.monitor"
+          "id": "omarchy.audio",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/audio/Panel.qml",
+          "type": "qml"
         },
         {
-          "id": "omarchy.power"
+          "id": "omarchy.monitor",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/monitor/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "id": "omarchy.power",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/power/Panel.qml",
+          "type": "qml"
         }
       ]
     },
     "position": "top",
-    "transparent": false
+    "transparent": false,
+    "box": {
+      "borderColor": "#70503b",
+      "color": "#14ffffff",
+      "groups": [
+        [
+          "omarchy.menu",
+          "omarchy.workspaces"
+        ],
+        [
+          "netspeed",
+          "omarchy.network"
+        ]
+      ],
+      "innerPadding": 4,
+      "innerSpacing": 0,
+      "moduleSpacing": 6,
+      "outerMargin": 2,
+      "radius": 8,
+      "unboxed": [
+        "omarchy.spacer"
+      ]
+    },
+    "id": "local.bar"
   },
   "idle": {
     "lock": 300,

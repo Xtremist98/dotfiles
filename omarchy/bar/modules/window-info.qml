@@ -144,7 +144,7 @@ BarWidget {
 
     // AI & LLM
     "chatgpt": ["󰭻", "ChatGPT (OpenAI)"],
-    "claude": ["󰚩", "Claude (Anthropic)"],
+    "OpenCode": ["󰚩", "OpenCode"],
     "gemini": ["󰚩", "Google Gemini"],
     "perplexity": ["󰖟", "Perplexity AI"],
     "deepseek": ["󰚩", "DeepSeek"],
@@ -228,7 +228,7 @@ BarWidget {
     "nwg-look": ["󰏘", "Nwg-look"],
     "imv": ["", "Imv"],
     "localsend": ["", "LocalSend"],
-    "xed": ["󰷈", "Text Editor"],
+    "xed": ["󰷈", "Text-Editor"],
     "fdm": ["󰇚", "FDM"],
     "qbittorrent": ["", "Torrent"]
   })
@@ -246,7 +246,7 @@ BarWidget {
     "gitlab":     ["󰊢", "GitLab"],
     "reddit":     ["", "Reddit"],
     "chatgpt":    ["󰭻", "ChatGPT"],
-    "claude":     ["󰚩", "Claude"],
+    "OpenCode":   ["󰚩", "Opencode"],
     "perplexity": ["󰖟", "Perplexity"],
     "x.com":      ["", "X"],
     "twitter":    ["", "X"],
@@ -466,6 +466,8 @@ BarWidget {
     height: parent.height
     verticalAlignment: Text.AlignVCenter
     width: parent.width
+    leftPadding: Style.spaceReal(7.5)
+    rightPadding: Style.spaceReal(7.5)
     clip: true
     elide: Text.ElideRight
 

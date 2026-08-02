@@ -88,6 +88,7 @@ BarWidget {
   Text {
     id: label
     anchors.verticalCenter: parent.verticalCenter
+    leftPadding: Style.spaceReal(7.5)
     text: "󰇚 " + root.formatRate(root.downRate)
     color: root.bar ? root.bar.barForeground : Color.foreground
     font.family: root.bar ? root.bar.fontFamily : Style.font.family

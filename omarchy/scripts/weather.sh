@@ -5,7 +5,7 @@
 
 for cmd in curl jq notify-send; do
     command -v "$cmd" >/dev/null 2>&1 || {
-        jq -n -c '{"text": "⚠️", "desc": "Missing dependency: '"$cmd"'"}'
+        jq -n -c '{"text": "\uf071", "desc": "Missing dependency: '"$cmd"'"}'
         exit 1
     }
 done
@@ -20,7 +20,7 @@ CACHE_AGE=900
 mkdir -p "$CACHE_DIR"
 CURRENT_TIME=$(date +%s)
 
-WEATHER_CODES='{"113":"☀️","116":"⛅","119":"☁️","122":"☁️","143":"🌫","176":"🌦","179":"🌧","182":"🌧","185":"🌧","200":"🌩","227":"🌨","230":"❄️","248":"🌫","260":"🌫","263":"🌦","266":"🌦","281":"🌧","284":"🌧","293":"🌦","296":"🌧","299":"🌦","302":"🌧","305":"🌧","308":"🌧","311":"🌧","314":"🌧","317":"🌧","320":"🌨","323":"🌨","326":"🌨","329":"❄️","332":"❄️","335":"❄️","338":"❄️","350":"🌧","353":"🌦","356":"🌧","359":"🌧","362":"🌧","365":"🌧","368":"🌨","371":"❄️","374":"🌧","377":"🌧","386":"🌩","389":"🌩","392":"🌩","395":"❄️"}'
+WEATHER_CODES='{"113":"\ue30d","116":"\ue30c","119":"\ue312","122":"\ue312","143":"\ue313","176":"\ue306","179":"\ue3aa","182":"\ue31a","185":"\ue306","200":"\ue30f","227":"\ue31a","230":"\ue35e","248":"\ue313","260":"\ue313","263":"\ue30b","266":"\ue31b","281":"\ue306","284":"\ue316","293":"\ue308","296":"\ue318","299":"\ue308","302":"\ue318","305":"\ue309","308":"\ue319","311":"\ue3ad","314":"\ue3ad","317":"\ue3aa","320":"\ue31a","323":"\ue30a","326":"\ue31a","329":"\ue30a","332":"\ue31a","335":"\ue30a","338":"\ue31a","350":"\ue314","353":"\ue309","356":"\ue308","359":"\ue318","362":"\ue3aa","365":"\ue3aa","368":"\ue30a","371":"\ue31a","374":"\ue304","377":"\ue314","386":"\ue30f","389":"\ue31d","392":"\ue365","395":"\ue365"}'
 
 case "$1" in
     --toggle-unit)
@@ -153,7 +153,7 @@ else
     TMIN=$(echo "$RESPONSE" | jq -r '.weather[0].mintempC')
 fi
 
-ICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$CODE" '.[$code] // "☀️"')
+ICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$CODE" '.[$code] // "\ue30d"')
 
 get_uv() {
     local u=$(echo "${1%.*}" | tr -d '[:space:]')
@@ -193,7 +193,7 @@ while read -r h; do
 
     HCODE=$(echo "$h" | jq -r '.weatherCode')
     HRAIN=$(echo "$h" | jq -r '.chanceofrain')
-    HICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$HCODE" '.[$code] // "☀️"')
+    HICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$HCODE" '.[$code] // "\ue30d"')
 
     [ "$UNIT_SYM" == "F" ] && HTEMP=$(echo "$h" | jq -r '.tempF') || HTEMP=$(echo "$h" | jq -r '.tempC')
 
@@ -208,8 +208,8 @@ DAY2_NAME=$(date -d "$DAY2_DATE" "+%A" 2>/dev/null || echo "Next Day")
 
 DAY1_CODE=$(echo "$RESPONSE" | jq -r '.weather[1].hourly[4].weatherCode // .weather[1].hourly[0].weatherCode')
 DAY2_CODE=$(echo "$RESPONSE" | jq -r '.weather[2].hourly[4].weatherCode // .weather[2].hourly[0].weatherCode')
-DAY1_ICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$DAY1_CODE" '.[$code] // "☀️"')
-DAY2_ICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$DAY2_CODE" '.[$code] // "☀️"')
+DAY1_ICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$DAY1_CODE" '.[$code] // "\ue30d"')
+DAY2_ICON=$(echo "$WEATHER_CODES" | jq -r --arg code "$DAY2_CODE" '.[$code] // "\ue30d"')
 
 if [ "$UNIT_SYM" == "F" ]; then
     D1_MAX=$(echo "$RESPONSE" | jq -r '.weather[1].maxtempF'); D1_MIN=$(echo "$RESPONSE" | jq -r '.weather[1].mintempF')

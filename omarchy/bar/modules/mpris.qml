@@ -100,7 +100,7 @@ BarWidget {
   readonly property bool isMpv: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("mpv") : false
   readonly property string name: p ? (isMpv && p.trackTitle ? p.trackTitle : p.identity) : ""
 
-  implicitWidth: Math.min(content.implicitWidth + Style.space(2), maxWidth)
+  implicitWidth: Math.min(content.implicitWidth + Style.space(2) + Style.spaceReal(7.5) * 2, maxWidth)
   implicitHeight: barSize
 
   TextMetrics {
@@ -112,6 +112,8 @@ BarWidget {
 
   Row {
     id: content
+    anchors.left: parent.left
+    anchors.leftMargin: Style.spaceReal(7.5)
     anchors.verticalCenter: parent.verticalCenter
     spacing: Style.space(8)
 
@@ -121,7 +123,7 @@ BarWidget {
       text: root.p ? (root.p.isPlaying ? "󰐊" : "󰏤") : ""
       color: bar ? bar.barForeground : Color.foreground
       font.family: root.fontFamily
-      font.pixelSize: Style.bar.iconFont - 1
+      font.pixelSize: 14
       renderType: Text.NativeRendering
     }
 

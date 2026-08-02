@@ -57,7 +57,7 @@ BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: "\uf021"
-    slotSize: Style.bar.statusSlot
+    slotSize: Style.bar.iconCanvas + Style.spaceReal(7.5) * 2
     fontSize: Style.bar.iconFont - 1
     tooltipText: "Pending Omarchy Updates"
     onPressed: root.runUpdate()

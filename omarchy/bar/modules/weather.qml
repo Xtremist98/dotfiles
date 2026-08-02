@@ -31,6 +31,8 @@ BarWidget {
     id: labelText
     height: root.barSize
     verticalAlignment: Text.AlignVCenter
+    leftPadding: Style.spaceReal(7.5)
+    rightPadding: Style.spaceReal(7.5)
     text: root.label
     color: root.fg
     font.family: root.fontFam

@@ -31,7 +31,7 @@ Item {
   readonly property string fontFam: bar ? bar.fontFamily : Style.font.family
   readonly property string scriptPath: Quickshell.env("HOME") + "/.config/omarchy/scripts/sysinfo.sh"
 
-  implicitWidth: label.implicitWidth + 16
+  implicitWidth: label.implicitWidth + Style.spaceReal(7.5) * 2
   implicitHeight: bar ? bar.barSize : Style.bar.sizeHorizontal
 
   Text {
