@@ -41,6 +41,7 @@ Item {
     color: bar ? bar.barForeground : Color.foreground
     font.family: rootModule.fontFam
     font.pixelSize: Style.bar.iconFont - 1
+    renderType: Text.NativeRendering
   }
 
   Process {

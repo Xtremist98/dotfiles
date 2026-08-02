@@ -1,15 +1,15 @@
 # Model usage
 
-One bar icon and one panel for every AI coding subscription on the machine.
+One bar icon and one panel for AI coding providers used on the machine.
 `Panel.qml` owns the bar button and the popup; `Main.qml` owns provider
-fan-out and the optional cross-device aggregation; `providers/` holds one
-adapter per subscription.
+fan-out and the optional cross-device aggregation; `providers/` holds the
+provider adapters.
 
 ## Panel
 
 - **Hero** — the mark, the tool, and the plan it runs on ("Max 20x", "Pro").
   Auth and endpoint problems replace the plan line and repeat in a card.
-- **Subscription switch** — one chip per enabled provider (`h`/`l` or click).
+- **Provider switch** — one chip per enabled provider (`h`/`l` or click).
   It appears only when more than one provider is enabled.
 - **Limits** — the percentage of each allowance used, a matching meter, and
   the time until the session or weekly window resets.
@@ -20,15 +20,15 @@ adapter per subscription.
   the same way the weekly chart scales to its busiest day. Hover for the
   input / output / cache split.
 
-A subscription appears only when it is enabled in settings and has actually
+A provider appears only when it is enabled in settings and has actually
 recorded usage — on this machine or on a synced one. With one such provider
 there is no switch row at all; with none, the module leaves the bar entirely
 rather than sitting there with nothing to say. A CLI installed mid-session
-shows up at the next refresh, so nothing polls the disk waiting for it.
+shows up at the next scheduled refresh without a file watcher.
 
 That self-hiding is why the widget ships in the default bar layout: a machine
-that has never run Claude Code or Codex draws nothing, and the icon arrives on
-its own the first time a scan finds usage. Drop it with
+that has never run Claude Code, Codex, or OpenCode draws nothing, and the icon
+arrives on its own the first time a scan finds usage. Drop it with
 `omarchy plugin disable omarchy.model-usage`.
 
 ## Providers
@@ -37,14 +37,17 @@ its own the first time a scan finds usage. Drop it with
 |---|---|---|
 | `claude` | Anthropic's OAuth usage endpoint (5-hour session + 7-day weekly) | `~/.claude/projects` scanned by `scripts/claude_usage_scanner.py`, plus `stats-cache.json` and `history.jsonl` |
 | `codex` | `scripts/codex_usage_scanner.py` reading the Codex CLI state | the same scanner |
+| `opencode` | none (local stats only) | `scripts/opencode_usage_scanner.py` reading assistant-message metadata from the OpenCode database |
 
 Claude limits need a signed-in CLI; without credentials the panel says so and
-falls back to local stats only.
+falls back to local stats only. OpenCode has no subscription rate-limit
+endpoint in the local store, so the panel shows day/week/model token totals
+without meters.
 
 ## Interactions
 
-- Bar icon: left = panel, right = refresh, middle = next subscription.
-- Panel: `h`/`l` switch subscription, `j`/`k` scroll, `r` or Enter refresh,
+- Bar icon: left = panel, right = refresh, middle = next provider.
+- Panel: `h`/`l` switch provider, `j`/`k` scroll, `r` or Enter refresh,
   Tab moves to the neighboring bar panel, Esc closes.
 - IPC: `omarchy-shell omarchy.model-usage <open|close|toggle|refresh|next>`.
 
@@ -81,18 +84,23 @@ omarchy bar set omarchy.model-usage providers '{
     "credentialsPath": "~/.claude/.credentials.json",
     "projectsPath": "~/.claude/projects"
   },
-  "codex": { "enabled": false }
+  "codex": { "enabled": false },
+  "opencode": { "enabled": true }
 }' --json
 ```
 
-`enabled` defaults to `true` for both; set it to `false` to hide a
-subscription that is installed. The paths above are the defaults.
+`enabled` defaults to `true` for every built-in provider; set it to `false` to
+hide a provider that is installed. OpenCode follows `OPENCODE_DB` and
+`XDG_DATA_HOME`; set `dbPath` only when you need an explicit override.
 
 With `syncMode` on, every `*.json` snapshot in `syncDir` is merged, so today,
 the last 7 days, and the all-time totals cover every machine you code on —
 active days are unioned by date rather than summed. Rate limits stay
 per-account and are never merged.
 
-One caveat on "all-time": the Codex scanner only reads native session files
-touched in the last 30 days, so Codex totals and its day count cover that
-window. Claude's cover every transcript still on disk.
+Caveats on "all-time":
+
+- Codex only reads native session files touched in the last 30 days, so its
+  totals and day count cover that window.
+- Claude and OpenCode cover every transcript or assistant message still in
+  their local stores.

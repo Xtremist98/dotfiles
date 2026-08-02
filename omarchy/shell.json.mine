@@ -67,6 +67,9 @@
           }
         },
         {
+          "id": "omarchy.dropbox"
+        },
+        {
           "id": "sysinfo",
           "type": "qml"
         },
@@ -107,7 +110,7 @@
     "position": "top",
     "transparent": false,
     "box": {
-      "borderColor": "#855e3f",
+      "borderColor": "#70503b",
       "color": "#14ffffff",
       "groups": [
         [

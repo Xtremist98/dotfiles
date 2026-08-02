@@ -25,9 +25,17 @@ Item {
     onReadyChanged: root.scheduleSync()
   }
 
-  property var providers: [claudeProvider, codexProvider]
+  OpenCode {
+    id: opencodeProvider
+    enabled: root.providerEnabled("opencode")
+    providerSettings: root.settings && root.settings.providers && root.settings.providers.opencode ? root.settings.providers.opencode : ({})
+    onLastRefreshedAtMsChanged: root.scheduleSync()
+    onReadyChanged: root.scheduleSync()
+  }
 
-  // A subscription earns a place in the bar and the panel by being switched on
+  property var providers: [claudeProvider, codexProvider, opencodeProvider]
+
+  // A provider earns a place in the bar and the panel by being switched on
   // in settings and having actually produced numbers — locally or on a synced
   // device. Presence on disk is not enough: a box that installed Codex and
   // never ran it would get a tab full of zeroes. With nothing to show, the
@@ -44,6 +52,10 @@ Item {
       var codex = displayProvider(codexProvider)
       if (providerHasData(codex)) result.push(codex)
     }
+    if (opencodeProvider.enabled) {
+      var opencode = displayProvider(opencodeProvider)
+      if (providerHasData(opencode)) result.push(opencode)
+    }
     return result
   }
 
@@ -54,9 +66,9 @@ Item {
       || Number(p.secondaryRateLimitPercent) >= 0
   }
 
-  property bool refreshing: claudeProvider.refreshing || codexProvider.refreshing || syncRunning
+  property bool refreshing: claudeProvider.refreshing || codexProvider.refreshing || opencodeProvider.refreshing || syncRunning
   property double aggregateUpdatedAtMs: aggregateData && aggregateData.updatedAtMs ? Number(aggregateData.updatedAtMs) : 0
-  property double lastRefreshedAtMs: Math.max(aggregateUpdatedAtMs, claudeProvider.lastRefreshedAtMs || 0, codexProvider.lastRefreshedAtMs || 0)
+  property double lastRefreshedAtMs: Math.max(aggregateUpdatedAtMs, claudeProvider.lastRefreshedAtMs || 0, codexProvider.lastRefreshedAtMs || 0, opencodeProvider.lastRefreshedAtMs || 0)
   property int refreshIntervalSec: Math.max(30, Number(setting("refreshIntervalSec", 900)))
 
   property var syncModeSetting: setting("syncMode", setting("syncEnabled", false))
@@ -155,7 +167,7 @@ Item {
   }
 
   function providerEnabled(id) {
-    if (!settings || !settings.providers || !settings.providers[id]) return id === "claude" || id === "codex"
+    if (!settings || !settings.providers || !settings.providers[id]) return id === "claude" || id === "codex" || id === "opencode"
     return settings.providers[id].enabled !== false
   }
 

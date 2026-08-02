@@ -56,9 +56,9 @@ Panel {
 
   // ---------------------------------------------------------------- limits
   //
-  // Both providers report the same two shapes: a short rolling session window
-  // and a long weekly one. Everything below normalizes them into one record so
-  // the meters and the hero speak a single language.
+  // Providers with limits report a short rolling window and a longer one.
+  // Everything below normalizes them into one record so the meters and the
+  // hero speak a single language.
 
   // Claude spells its windows out ("Session (5-hour)"), Codex abbreviates
   // them ("5h window", "30m window"). Both have to land on the same record.
@@ -222,8 +222,8 @@ Panel {
     return ""
   }
 
-  // Codex ships as a white mark; swap to the dark one when the surface behind
-  // it is light. The Claude mark is brand-orange and works on both.
+  // Codex and OpenCode ship monochrome marks; use their dark variants when the
+  // surface behind them is light. Claude's brand-orange mark works on both.
   function colorChannelLuminance(value) {
     var channel = Number(value)
     if (!isFinite(channel)) return 0
@@ -243,12 +243,16 @@ Panel {
       return colorLuminance(surfaceColor || Color.background) >= 0.5
         ? Qt.resolvedUrl("assets/codex-light.svg")
         : Qt.resolvedUrl("assets/codex.svg")
+    if (p.providerId === "opencode")
+      return colorLuminance(surfaceColor || Color.background) >= 0.5
+        ? Qt.resolvedUrl("assets/opencode-light.svg")
+        : Qt.resolvedUrl("assets/opencode.svg")
     return ""
   }
 
   // Nothing to report, nothing in the bar: Bar.qml collapses a slot whose item
   // is invisible, so the icon appears the moment the first scan finds usage and
-  // stays away entirely on a machine that has never run either CLI.
+  // stays away entirely on a machine that has never run a supported CLI.
   visible: providers.length > 0
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
@@ -258,7 +262,6 @@ Panel {
     cursorActive = false
     nowMs = Date.now()
     if (panelFlick) panelFlick.contentY = 0
-    usage.refreshAll()
     usage.refreshLimits()
     Qt.callLater(function() { keyCatcher.forceActiveFocus() })
   }
@@ -293,8 +296,8 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: "󱚣"
-    active: root.alarming
     fontSize: Style.bar.iconFont - 1
+    active: root.alarming
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.RightButton) root.refreshNow()
       else if (buttonCode === Qt.MiddleButton) root.selectProvider(root.providerIndex + 1)
@@ -374,7 +377,7 @@ Panel {
             visible: root.providers.length === 0
             width: parent.width
             topPadding: Style.space(24)
-            text: "No AI coding subscriptions found.\nClaude Code and Codex show up here once you've used them."
+            text: "No AI coding provider usage found.\nClaude Code, Codex, and OpenCode appear after you've used them."
             color: root.dim
             font.family: root.fontFamily
             font.pixelSize: Style.font.body
