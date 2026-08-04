@@ -1950,7 +1950,7 @@ Item {
     tooltipText: outputTooltip || String(setting("tooltip", ""))
     active: outputActive
     keepSpace: setting("keepSpace", false) === true
-    horizontalMargin: Number(setting("horizontalMargin", 7.5))
+    horizontalMargin: Number(setting("horizontalMargin", 6))
     verticalPadding: Number(setting("verticalPadding", 6))
     fontSize: Number(setting("fontSize", 12))
 

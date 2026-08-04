@@ -31,17 +31,45 @@ Item {
   readonly property string fontFam: bar ? bar.fontFamily : Style.font.family
   readonly property string scriptPath: Quickshell.env("HOME") + "/.config/omarchy/scripts/sysinfo.sh"
 
-  implicitWidth: label.implicitWidth + Style.spaceReal(7.5) * 2
+  implicitWidth: label.implicitWidth + Style.spaceReal(6) * 2
   implicitHeight: bar ? bar.barSize : Style.bar.sizeHorizontal
 
-  Text {
+  Row {
     id: label
     anchors.centerIn: parent
-    text: "󰻠 " + rootModule.cpuPct + "%  󰍛 " + rootModule.memPct + "%"
-    color: bar ? bar.barForeground : Color.foreground
-    font.family: rootModule.fontFam
-    font.pixelSize: Style.bar.iconFont - 1
-    renderType: Text.NativeRendering
+    spacing: Style.space(6)
+
+    Text {
+      text: "󰻠"
+      color: bar ? bar.barForeground : Color.foreground
+      font.family: rootModule.fontFam
+      font.pixelSize: Style.bar.iconFont - 1
+      renderType: Text.NativeRendering
+    }
+
+    Text {
+      text: rootModule.cpuPct + "%"
+      color: bar ? bar.barForeground : Color.foreground
+      font.family: rootModule.fontFam
+      font.pixelSize: Style.bar.iconFont - 1
+      renderType: Text.NativeRendering
+    }
+
+    Text {
+      text: "󰍛"
+      color: bar ? bar.barForeground : Color.foreground
+      font.family: rootModule.fontFam
+      font.pixelSize: Style.bar.iconFont - 1
+      renderType: Text.NativeRendering
+    }
+
+    Text {
+      text: rootModule.memPct + "%"
+      color: bar ? bar.barForeground : Color.foreground
+      font.family: rootModule.fontFam
+      font.pixelSize: Style.bar.iconFont - 1
+      renderType: Text.NativeRendering
+    }
   }
 
   Process {

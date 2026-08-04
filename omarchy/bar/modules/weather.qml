@@ -27,17 +27,40 @@ BarWidget {
 
   visible: label !== ""
 
-  Text {
+  readonly property string labelIcon: {
+    var i = root.label.indexOf(" ")
+    return i > 0 ? root.label.substring(0, i) : root.label
+  }
+  readonly property string labelTextPart: {
+    var i = root.label.indexOf(" ")
+    return i > 0 ? root.label.substring(i + 1) : ""
+  }
+
+  Row {
     id: labelText
     height: root.barSize
-    verticalAlignment: Text.AlignVCenter
-    leftPadding: Style.spaceReal(7.5)
-    rightPadding: Style.spaceReal(7.5)
-    text: root.label
-    color: root.fg
-    font.family: root.fontFam
-    font.pixelSize: Style.font.body
-    renderType: Text.NativeRendering
+    leftPadding: Style.spaceReal(6)
+    rightPadding: Style.spaceReal(6)
+    spacing: Style.space(6)
+
+    Text {
+      anchors.verticalCenter: parent.verticalCenter
+      text: root.labelIcon
+      color: root.fg
+      font.family: root.fontFam
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
+
+    Text {
+      visible: root.labelTextPart !== ""
+      anchors.verticalCenter: parent.verticalCenter
+      text: root.labelTextPart
+      color: root.fg
+      font.family: root.fontFam
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
   }
 
   // ------------------------------------------------------------------ data

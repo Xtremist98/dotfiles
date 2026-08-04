@@ -100,7 +100,7 @@ BarWidget {
   readonly property bool isMpv: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("mpv") : false
   readonly property string name: p ? (isMpv && p.trackTitle ? p.trackTitle : p.identity) : ""
 
-  implicitWidth: Math.min(content.implicitWidth + Style.space(2) + Style.spaceReal(7.5) * 2, maxWidth)
+  implicitWidth: Math.min(content.implicitWidth + Style.space(2) + Style.spaceReal(6) * 2, maxWidth)
   implicitHeight: barSize
 
   TextMetrics {
@@ -113,25 +113,24 @@ BarWidget {
   Row {
     id: content
     anchors.left: parent.left
-    anchors.leftMargin: Style.spaceReal(7.5)
+    anchors.leftMargin: Style.spaceReal(6)
     anchors.verticalCenter: parent.verticalCenter
-    spacing: Style.space(8)
+    spacing: Style.space(6)
 
     Text {
       id: icon
       anchors.verticalCenter: parent.verticalCenter
-      anchors.verticalCenterOffset: 1
       text: root.p ? (root.p.isPlaying ? "󰐊" : "󰏤") : ""
       color: bar ? bar.barForeground : Color.foreground
       font.family: root.fontFamily
-      font.pixelSize: 13
+      font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
     }
 
     Text {
       id: label
       anchors.verticalCenter: parent.verticalCenter
-      width: Math.max(0, Math.min(root.maxWidth - icon.implicitWidth - content.spacing, implicitWidth))
+      width: Math.max(0, Math.min(root.maxWidth - icon.implicitWidth - content.spacing - Style.spaceReal(6) * 2, implicitWidth))
       clip: true
       elide: Text.ElideRight
       lineHeight: fontMetrics.height

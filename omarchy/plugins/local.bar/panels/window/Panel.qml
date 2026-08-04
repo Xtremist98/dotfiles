@@ -507,23 +507,40 @@ Panel {
     Item {
       id: button
       anchors.fill: parent
-      implicitWidth: Math.min(label.implicitWidth, root.maxWidth) + Style.spaceReal(7.5) * 2
+      implicitWidth: Math.min(label.implicitWidth, root.maxWidth) + Style.spaceReal(6) * 2
       implicitHeight: root.barSize
 
-      Text {
+      Row {
       id: label
       height: parent.height
-      verticalAlignment: Text.AlignVCenter
       width: parent.width
-      leftPadding: Style.spaceReal(7.5)
-      rightPadding: Style.spaceReal(7.5)
+      leftPadding: Style.spaceReal(6)
+      rightPadding: Style.spaceReal(6)
+      spacing: Style.space(6)
       clip: true
-      elide: Text.ElideRight
-      text: root.buttonInfo[0] + "  " + root.buttonInfo[1]
+
+      Text {
+      id: glyphLabel
+      anchors.verticalCenter: parent.verticalCenter
+      text: root.buttonInfo[0]
       color: root.bar ? root.bar.barForeground : Color.foreground
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
+    }
+
+      Text {
+      id: titleLabel
+      anchors.verticalCenter: parent.verticalCenter
+      width: Math.max(0, Math.min(root.maxWidth - glyphLabel.implicitWidth - label.leftPadding - label.rightPadding - label.spacing, implicitWidth))
+      clip: true
+      elide: Text.ElideRight
+      text: root.buttonInfo[1]
+      color: root.bar ? root.bar.barForeground : Color.foreground
+      font.family: root.bar ? root.bar.fontFamily : Style.font.family
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
     }
 
     MouseArea {

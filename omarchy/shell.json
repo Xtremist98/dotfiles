@@ -30,9 +30,7 @@
             ],
             "left": [
                 {
-                    "id": "omarchy.menu",
-                    "source": "~/.config/omarchy/plugins/local.bar/widgets/Menu.qml",
-                    "type": "qml"
+                    "id": "omarchy.menu"
                 },
                 {
                     "id": "omarchy.workspaces",
@@ -138,7 +136,8 @@
                     "omarchy.monitor",
                     "omarchy.power"
                 ],
-                [
+                [ 
+                    "omarchy.tray",
                     "omarchy.dropbox",
                     "local.model-usage"
                 ]

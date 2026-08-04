@@ -171,7 +171,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    slotSize: Style.bar.iconCanvas + Style.spaceReal(7.5) * 2
+    slotSize: Style.bar.iconCanvas + Style.spaceReal(6) * 2
     iconComponent: Component {
       Item {
         DropboxIcon {

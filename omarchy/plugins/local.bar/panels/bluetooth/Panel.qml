@@ -519,7 +519,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(7.5) * 2
+    slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
     text: root.icon

@@ -16,7 +16,7 @@ BarWidget {
     text: "\ue900"
     fontFamily: "omarchy"
     fontSize: Style.bar.iconFont - 1
-    horizontalMargin: 7.5
+    horizontalMargin: 6
     onPressed: function(button) {
       if (!root.bar) return
       if (button === Qt.RightButton) root.bar.run("xdg-terminal-exec")

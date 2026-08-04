@@ -460,31 +460,49 @@ BarWidget {
   implicitHeight: barSize
 
 
-  Text {
+  Row {
     id: label
 
     height: parent.height
-    verticalAlignment: Text.AlignVCenter
     width: parent.width
-    leftPadding: Style.spaceReal(7.5)
-    rightPadding: Style.spaceReal(7.5)
+    leftPadding: Style.spaceReal(6)
+    rightPadding: Style.spaceReal(6)
+    spacing: Style.space(6)
     clip: true
-    elide: Text.ElideRight
 
-    property var info: root.getInfo()
+    readonly property var info: root.getInfo()
+    readonly property string glyphText: info && info.length > 0 ? info[0] : ""
+    readonly property string titleText: info && info.length > 1 ? info[1] : ""
 
-    text: info[0] + "  " + info[1]
+    Text {
+      id: glyphLabel
+      anchors.verticalCenter: parent.verticalCenter
+      text: parent.glyphText
+      color: root.bar
+        ? root.bar.barForeground
+        : Color.foreground
+      font.family: root.bar
+        ? root.bar.fontFamily
+        : Style.font.family
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
 
-    color: root.bar
-      ? root.bar.barForeground
-      : Color.foreground
-
-    font.family: root.bar
-      ? root.bar.fontFamily
-      : Style.font.family
-
-    font.pixelSize: Style.font.body
-
-    renderType: Text.NativeRendering
+    Text {
+      id: titleLabel
+      anchors.verticalCenter: parent.verticalCenter
+      width: Math.max(0, Math.min(root.maxWidth - glyphLabel.implicitWidth - label.leftPadding - label.rightPadding - label.spacing, implicitWidth))
+      clip: true
+      elide: Text.ElideRight
+      text: parent.titleText
+      color: root.bar
+        ? root.bar.barForeground
+        : Color.foreground
+      font.family: root.bar
+        ? root.bar.fontFamily
+        : Style.font.family
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
   }
 }

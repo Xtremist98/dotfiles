@@ -13,13 +13,13 @@ Panel {
   moduleName: "omarchy.network"
   ipcTarget: "omarchy.network"
 
-  // Bar slot splits the pill's 7.5px margin evenly (4.25/4.25) around the
-  // wifi button so the icon centers on the slot -- and therefore on the
-  // open-panel indicator line -- while leaving a one-space gap to the
-  // netspeed widget's right edge (shared group pill, innerSpacing 0).
+  // Bar slot splits the pill's 6px margin evenly (6/6) around the wifi
+  // button so the icon centers on the slot -- and therefore on the
+  // open-panel indicator line -- while leaving a 6px gap to the netspeed
+  // widget's right edge (shared group pill, innerSpacing 0).
   // The button itself is sized to the nerd-font glyph (~18px at 12px font,
   // wider than the 15px optical canvas).
-  implicitWidth: button.implicitWidth + Style.spaceReal(8.5)
+  implicitWidth: button.implicitWidth + Style.spaceReal(12)
 
   // Centralized close so callers can't forget to drop the passphrase prompt.
   function close() {
@@ -1052,7 +1052,7 @@ Panel {
     width: Style.bar.iconCanvas + 2
     height: parent.height
     anchors.left: parent.left
-    anchors.leftMargin: Style.spaceReal(4.25)
+    anchors.leftMargin: Style.spaceReal(6)
     anchors.verticalCenter: parent.verticalCenter
     slotSize: Style.bar.iconCanvas + 2
     bar: root.bar

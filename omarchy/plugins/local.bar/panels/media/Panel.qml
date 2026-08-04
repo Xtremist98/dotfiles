@@ -110,13 +110,13 @@ Panel {
       ? Math.min(1500, Math.max(240, Math.floor(bar.width / 2) - Style.space(480)))
       : 480
   }
-  readonly property int maxWidth: root.isMpv
-    ? (root.windowInfoVisible ? 320 : root.mpvMaxWidth)
-    : 320
+  readonly property int maxWidth: 320
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var p: player
   readonly property bool isMpv: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("mpv") : false
-  readonly property string name: p ? (isMpv && p.trackTitle ? p.trackTitle : p.identity) : ""
+  readonly property string name: p
+    ? (isMpv && p.trackTitle ? String(p.trackTitle).replace(/\n/g, " ").trim() : p.identity)
+    : ""
 
   readonly property string playerName: p ? (p.identity || p.desktopEntry || "Media Player").replace(/^org\.mpris\.MediaPlayer2\./, "") : ""
   readonly property bool playing: p ? p.isPlaying : false
@@ -168,7 +168,14 @@ Panel {
 
   readonly property string playIcon: p ? (p.isPlaying ? "󰐊" : "󰏤") : "󰐊"
 
-  implicitWidth: Math.min(content.implicitWidth + Style.space(2) + Style.spaceReal(7.5) * 2, maxWidth)
+  TextMetrics {
+    id: fontMetrics
+    font.family: root.fontFamily
+    font.pixelSize: Style.font.body
+    text: "Ag"
+  }
+
+  implicitWidth: Math.min(content.implicitWidth + Style.space(2) + Style.spaceReal(6) * 2, maxWidth)
   implicitHeight: barSize
 
   visible: player !== null
@@ -176,27 +183,30 @@ Panel {
   Row {
     id: content
     anchors.left: parent.left
-    anchors.leftMargin: Style.spaceReal(7.5)
+    anchors.leftMargin: Style.spaceReal(6)
     anchors.verticalCenter: parent.verticalCenter
-    spacing: Style.space(8)
+    spacing: Style.space(6)
 
     Text {
       id: icon
       anchors.verticalCenter: parent.verticalCenter
-      anchors.verticalCenterOffset: 1
+      anchors.verticalCenterOffset: 0
       text: root.playIcon
       color: root.ink
       font.family: root.fontFamily
-      font.pixelSize: 13
+      font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
     }
 
     Text {
       id: label
       anchors.verticalCenter: parent.verticalCenter
-      width: Math.max(0, Math.min(root.maxWidth - icon.implicitWidth - content.spacing, implicitWidth))
+      width: Math.max(0, Math.min(root.maxWidth - icon.implicitWidth - content.spacing - Style.spaceReal(6) * 2, implicitWidth))
       clip: true
       elide: Text.ElideRight
+      lineHeight: fontMetrics.height
+      lineHeightMode: Text.FixedHeight
+      verticalAlignment: Text.AlignVCenter
       text: root.name
       color: root.ink
       font.family: root.fontFamily
@@ -206,16 +216,35 @@ Panel {
   }
 
   MouseArea {
-    anchors.fill: parent
+    id: iconArea
+    anchors.left: content.left
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    width: icon.implicitWidth + content.spacing
     enabled: root.player !== null
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    acceptedButtons: Qt.LeftButton
 
-    onClicked: function(mouse) {
-      if (mouse.button === Qt.LeftButton) root.togglePlayPause()
-      else if (mouse.button === Qt.RightButton) root.toggle()
+    onClicked: root.togglePlayPause()
+    onWheel: function(wheel) {
+      if (wheel.angleDelta.y > 0) root.playPrevious()
+      else if (wheel.angleDelta.y < 0) root.playNext()
     }
+  }
+
+  MouseArea {
+    id: labelArea
+    anchors.left: iconArea.right
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
+    enabled: root.player !== null
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton
+
+    onClicked: root.toggle()
     onWheel: function(wheel) {
       if (wheel.angleDelta.y > 0) root.playPrevious()
       else if (wheel.angleDelta.y < 0) root.playNext()

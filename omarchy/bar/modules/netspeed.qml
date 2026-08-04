@@ -85,14 +85,26 @@ BarWidget {
   implicitWidth: label.implicitWidth
   implicitHeight: barSize
 
-  Text {
+  Row {
     id: label
     anchors.verticalCenter: parent.verticalCenter
-    leftPadding: Style.spaceReal(7.5)
-    text: "󰇚 " + root.formatRate(root.downRate)
-    color: root.bar ? root.bar.barForeground : Color.foreground
-    font.family: root.bar ? root.bar.fontFamily : Style.font.family
-    font.pixelSize: Style.font.body
-    renderType: Text.NativeRendering
+    leftPadding: Style.spaceReal(6)
+    spacing: Style.space(6)
+
+    Text {
+      text: "󰇚"
+      color: root.bar ? root.bar.barForeground : Color.foreground
+      font.family: root.bar ? root.bar.fontFamily : Style.font.family
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
+
+    Text {
+      text: root.formatRate(root.downRate)
+      color: root.bar ? root.bar.barForeground : Color.foreground
+      font.family: root.bar ? root.bar.fontFamily : Style.font.family
+      font.pixelSize: Style.font.body
+      renderType: Text.NativeRendering
+    }
   }
 }
