@@ -507,7 +507,7 @@ Panel {
     Item {
       id: button
       anchors.fill: parent
-      implicitWidth: Math.min(label.implicitWidth, root.maxWidth) + Style.spaceReal(6) * 2
+      implicitWidth: Math.min(label.implicitWidth, root.maxWidth)
       implicitHeight: root.barSize
 
       Row {

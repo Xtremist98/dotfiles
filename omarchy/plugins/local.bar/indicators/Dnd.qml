@@ -6,6 +6,7 @@ BarIndicator {
   id: root
 
   fontSize: Style.bar.iconFont - 1
+  fixedWidth: Style.bar.statusSlot + Style.spaceReal(3)
 
   readonly property var notificationService: bar?.shell?.firstPartyServiceFor("omarchy.notifications")
   readonly property bool dnd: notificationService ? notificationService.doNotDisturb : false

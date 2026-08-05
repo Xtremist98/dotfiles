@@ -7,6 +7,7 @@ BarIndicator {
   id: root
 
   fontSize: Style.bar.iconFont - 1
+  fixedWidth: Style.bar.statusSlot + Style.spaceReal(3)
 
   property string state: "idle"
   property string icon: ""
