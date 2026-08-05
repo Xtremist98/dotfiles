@@ -136,6 +136,9 @@ hl.config({
 -- Make mpv always tile (overrides default floating-window tag).
 o.window("mpv", { tag = "-floating-window", tile = true })
 
+-- Make Windscribe always floating and centered.
+o.window("^Windscribe$", { float = true, center = true })
+
 -- GTK Theme Settings
 hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")
 hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'")
