@@ -7,7 +7,7 @@ hl.config({
   general = {
     gaps_in = 3,
     gaps_out = 6,
-    border_size = 1,
+    border_size = 2,
 
     col = {
       active_border = active_border_color,
@@ -127,7 +127,7 @@ hl.config({
 o.window("mpv", { tag = "-floating-window", tile = true })
 
 -- Make Windscribe always floating and centered.
-o.window("^Windscribe$", { float = true, center = true, {size = 400, 100} })
+o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
 
 -- GTK Theme Settings
 hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")

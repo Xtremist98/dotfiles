@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
 import qs.Ui
@@ -13,9 +14,125 @@ Panel {
   moduleName: "window-info"
   ipcTarget: "window-info"
 
-  readonly property var toplevel: ToplevelManager.activeToplevel
+  readonly property var toplevel: Hyprland.activeToplevel
 
   readonly property int barSize: root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
+
+  // Reactive snapshot of the active toplevel's IPC data (class/title/pid/...).
+  // lastIpcObject is only populated by refreshToplevels(), so we re-query it on
+  // every focus change — otherwise windows opened after shell start show Desktop.
+  // Fallback: quickshell's Hyprland module only fires the activewindow event on
+  // a focus *change*, so after a shell restart activeToplevel stays null until
+  // the user switches windows. fallbackInfo is seeded from `hyprctl activewindow`
+  // at startup (see seedProc) so the pill resolves correctly right away.
+  property var fallbackInfo: null
+  readonly property var activeInfo: (root.toplevel && root.toplevel.lastIpcObject)
+    ? root.toplevel.lastIpcObject
+    : root.fallbackInfo
+
+  // Foreground process running inside a terminal window (foot, alacritty, ...),
+  // resolved asynchronously by winProc.sh from the window's pid.
+  property string termForeground: ""
+  property int termSeq: 0
+  property int lastWinProcSeq: 0
+  readonly property string procScript: Quickshell.env("HOME") + "/.config/omarchy/scripts/winproc.sh"
+
+  function isTerminalApp(id) {
+    var terms = ["foot", "alacritty", "kitty", "ghostty", "wezterm", "konsole",
+                 "gnome-terminal", "gnome-console", "org.gnome.terminal",
+                 "org.gnome.console", "org.omarchy.terminal", "org.omarchy.bash"]
+    for (var t of terms) {
+      if (id.includes(t)) return true
+    }
+    return false
+  }
+
+  function toplevelPid() {
+    var info = root.activeInfo || {}
+    var pid = (info && info.pid) ? Number(info.pid) : 0
+    return pid
+  }
+
+  function matchProcess(proc) {
+    var lower = proc.toLowerCase()
+    if (!lower) return null
+    for (var key in appMap) {
+      if (key.toLowerCase() === lower) return appMap[key]
+    }
+    return null
+  }
+
+  function refreshToplevelData() {
+    if (root.toplevel) Hyprland.refreshToplevels()
+  }
+
+  function resolveTermForeground() {
+    root.termSeq++
+    var seq = root.termSeq
+    var info = root.activeInfo || {}
+    var id = info["class"] ? String(info["class"]).toLowerCase() : ""
+    if (!root.isTerminalApp(id)) {
+      root.termForeground = ""
+      return
+    }
+    var pid = root.toplevelPid()
+    if (!pid) {
+      root.termForeground = ""
+      return
+    }
+    root.lastWinProcSeq = seq
+    winProc.command = ["bash", root.procScript, String(pid)]
+    winProc.running = true
+  }
+
+  onToplevelChanged: {
+    root.refreshToplevelData()
+    root.resolveTermForeground()
+  }
+  onActiveInfoChanged: root.resolveTermForeground()
+  Component.onCompleted: {
+    root.refreshToplevelData()
+    root.resolveTermForeground()
+    seedProc.running = true
+  }
+
+  Process {
+    id: winProc
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var out = text.trim()
+        if (root.lastWinProcSeq !== root.termSeq) return
+        root.termForeground = out === "" ? "" : out.toLowerCase()
+      }
+    }
+  }
+
+  // Seeds fallbackInfo with the currently active window so the pill resolves
+  // right after a shell restart (see activeInfo above).
+  Process {
+    id: seedProc
+    command: ["hyprctl", "-j", "activewindow"]
+    running: false
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var out = text.trim()
+        if (!out || out === "[]") {
+          root.fallbackInfo = null
+          return
+        }
+        try {
+          var obj = JSON.parse(out)
+          root.fallbackInfo = (obj && obj.class) ? obj : null
+        } catch (e) {
+          root.fallbackInfo = null
+        }
+      }
+    }
+  }
+
+
 
   // ---------------------------------------------------------------- app map
 
@@ -237,8 +354,10 @@ Panel {
     "imv": ["", "Imv"],
     "localsend": ["", "LocalSend"],
     "xed": ["󰷈", "Text-Editor"],
-    "fdm": ["󰇚", "FDM"],
-    "qbittorrent": ["", "Torrent"]
+    "fdm": ["", "FDM"],
+    "qbittorrent": ["", "Torrent"],
+    "windscribe": ["", "Windscribe"],
+    "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"]
   })
 
   readonly property var siteMap: ({
@@ -318,12 +437,14 @@ Panel {
     return result
   }
 
-  function getInfo() {
-    if (!toplevel || !toplevel.appId)
-      return ["󱂬", "Desktop"]
+  function getInfo(info, termProc, rawTitle) {
+    if (!info) return ["󱂬", "Desktop"]
 
-    let id = toplevel.appId.toLowerCase()
-    let rawTitle = toplevel.title || ""
+    let appId = info["class"] ? String(info["class"]) : ""
+    if (!appId) return ["󱂬", "Desktop"]
+
+    let id = appId.toLowerCase()
+    rawTitle = rawTitle || ""
     let lowerTitle = rawTitle.toLowerCase()
 
     // Browser tab detection
@@ -369,6 +490,12 @@ Panel {
       return ["󱖏", "Stremio"]
     }
 
+    // Terminal: show the app running inside (opencode, nvim, btop, ...)
+    if (root.isTerminalApp(id)) {
+      let inner = root.matchProcess(termProc)
+      if (inner) return inner
+    }
+
     // App map lookup
     for (let key in appMap) {
       if (id.includes(key))
@@ -384,25 +511,23 @@ Panel {
   // ------------------------------------------------------- window readout
 
   readonly property var win: {
-    var tl = root.toplevel
-    if (!tl) return null
-    var ipc = tl.lastIpcObject || {}
-    var htl = tl.HyprlandToplevel
-    var ws = htl ? htl.workspace : null
-    var size = (ipc.size && ipc.size.w && ipc.size.h)
-      ? String(ipc.size.w) + " × " + String(ipc.size.h) : ""
+    var info = root.activeInfo
+    if (!info) return null
+    var ws = root.toplevel ? root.toplevel.workspace
+      : (info.workspace ? { name: info.workspace.name, id: info.workspace.id } : null)
+    var size = (info.size && info.size.w && info.size.h)
+      ? String(info.size.w) + " × " + String(info.size.h) : ""
     var states = []
-    if (tl.fullscreen) states.push("Fullscreen")
-    else if (tl.maximized) states.push("Maximized")
-    if (ipc.floating !== undefined) states.push(ipc.floating ? "Floating" : "Tiled")
+    if (info.fullscreen) states.push("Fullscreen")
+    if (info.floating !== undefined) states.push(info.floating ? "Floating" : "Tiled")
     if (states.length === 0) states.push("Normal")
     return {
-      appId: String(tl.appId || ipc["class"] || "—"),
-      title: String(tl.title || ""),
+      appId: String(info["class"] || "—"),
+      title: String(root.toplevel ? root.toplevel.title : (info["title"] || "")),
       workspace: ws ? (String(ws.name) || ("Workspace " + ws.id)) : "",
       size: size,
       state: states.join(" · "),
-      pid: ipc.pid ? String(ipc.pid) : ""
+      pid: info.pid ? String(info.pid) : ""
     }
   }
 
@@ -497,7 +622,10 @@ Panel {
     return 600
   }
 
-  readonly property var buttonInfo: root.getInfo()
+  readonly property var buttonInfo: root.getInfo(
+    root.activeInfo, root.termForeground,
+    root.toplevel ? root.toplevel.title
+      : (root.activeInfo ? (root.activeInfo["title"] || "") : ""))
 
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
