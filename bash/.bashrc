@@ -38,7 +38,7 @@ yt () {
       yt-dlp --config-location "$HOME/.config/yt-dlp/audio-opus.conf" "$@"
       ;;
     mp3)
-      yt-dlp --config-location "$HOME/.config/yt-dlp/audio-mp3.conf" "$@"
+      yt-dlp --config-location "$HOME/.config/yt-dlp/mp3.conf" "$@"
       ;;
     *)
       echo "Usage:"
