@@ -38,6 +38,17 @@ Panel {
   readonly property string procScript: Quickshell.env("HOME") + "/.config/omarchy/scripts/winproc.sh"
 
   function isTerminalApp(id) {
+    // Primary: the Hyprland `terminal` tag — single source of truth from
+    // default/hypr/apps/terminals.lua, which also covers Omarchy's own TUI
+    // classes (org.omarchy.btop, TUI.*, ...) that our class list can't.
+    // Dynamic tags carry a trailing "*".
+    var tags = (root.activeInfo && root.activeInfo.tags) ? root.activeInfo.tags : []
+    for (var i = 0; i < tags.length; i++) {
+      var tag = String(tags[i])
+      if (tag.replace(/\*$/, "") === "terminal") return true
+    }
+    // Fallback: keep the local class list for windows whose tags aren't
+    // reported (e.g. stale IPC objects or classes the tag rule misses).
     var terms = ["foot", "alacritty", "kitty", "ghostty", "wezterm", "konsole",
                  "gnome-terminal", "gnome-console", "org.gnome.terminal",
                  "org.gnome.console", "org.omarchy.terminal", "org.omarchy.bash"]
