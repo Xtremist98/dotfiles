@@ -64,6 +64,10 @@ Item {
   property bool foregroundAnimationEnabled: true
   property color background: Color.bar.background
   property color urgent: Color.bar.active
+  // Shibumi visual tokens for the ported Shibumi weather panel. Loaded from
+  // local.bar/styles/VisualTokens.qml (bar-scoped so widgets can read
+  // bar.visualTokens). Absent on the stock omarchy bar; guarded in ShibumiPanel.
+  readonly property var visualTokens: visualTokensLoader.item
 
   // ---- waybar-style module boxes (local.bar customization) ----------------
   // Visual-only. Defaults can be overridden with a `bar.box` object in
@@ -592,6 +596,13 @@ Item {
   }
 
   Component.onCompleted: applyBarConfig()
+
+  Loader {
+    id: visualTokensLoader
+    active: false
+    Component.onCompleted: setSource(Qt.resolvedUrl("styles/VisualTokens.qml"),
+      { bar: root })
+  }
 
   function setCenterSectionHovered(hovered) {
     centerSectionHovered = hovered

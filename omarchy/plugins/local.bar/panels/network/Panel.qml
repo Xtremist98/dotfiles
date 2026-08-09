@@ -12,14 +12,9 @@ Panel {
   id: root
   moduleName: "omarchy.network"
   ipcTarget: "omarchy.network"
-
-  // Bar slot splits the pill's 6px margin evenly (6/6) around the wifi
-  // button so the icon centers on the slot -- and therefore on the
-  // open-panel indicator line -- while leaving a 6px gap to the netspeed
-  // widget's right edge (shared group pill, innerSpacing 0).
-  // The button itself is sized to the nerd-font glyph (~18px at 12px font,
-  // wider than the 15px optical canvas).
-  implicitWidth: button.implicitWidth + Style.spaceReal(12)
+  // manageIpc: false so this panel can own the single IpcHandler the target
+  // permits — needed for the toggleNetwork method below.
+  manageIpc: false
 
   // Centralized close so callers can't forget to drop the passphrase prompt.
   function close() {
@@ -87,14 +82,6 @@ Panel {
   property string bandSelected: "auto"
   property var bandAvailable: []
   property string pendingBand: ""
-  property bool speedTestRunning: false
-  property bool speedTestHasRun: false
-  property bool speedTestExpectedStop: false
-  property string speedTestPhase: ""
-  property string speedTestStderr: ""
-  property string speedTestDownloadMbps: ""
-  property string speedTestUploadMbps: ""
-  property string speedTestError: ""
 
   // Per-row in-flight state. `actionSsid` flips on for the row whose action
   // is currently running so it can render "Connecting…" / "Disconnecting…" /
@@ -111,15 +98,15 @@ Panel {
   property string passwordText: ""
   property string identityText: ""
 
-  property var qrRows: []
-  property int qrSize: 0
-  property string qrError: ""
-  property bool qrLoading: false
-  property bool qrExpectedStop: false
-  property string qrPassword: ""
-  property bool qrPasswordVisible: false
-  property string qrPasswordError: ""
-  readonly property bool qrVisible: qrLoading || qrSize > 0 || qrError !== ""
+  // ConnectionFailReason values as a plain object, so Model.js helpers stay
+  // pure JS and Node-testable.
+  readonly property var connectionFailReasons: ({
+    NoSecrets: ConnectionFailReason.NoSecrets,
+    WifiAuthTimeout: ConnectionFailReason.WifiAuthTimeout,
+    WifiNetworkLost: ConnectionFailReason.WifiNetworkLost,
+    WifiClientDisconnected: ConnectionFailReason.WifiClientDisconnected,
+    WifiClientFailed: ConnectionFailReason.WifiClientFailed
+  })
 
   // True while any wifi action is mid-flight. Rows
   // disable themselves on this so clicks on the other rows don't silently
@@ -132,9 +119,9 @@ Panel {
   property bool cursorActive: false
 
   // Keyboard focus zone for the panel. j/k crosses row boundaries:
-  // header actions ⇄ band ⇄ DNS row ⇄ speed test ⇄ Wi-Fi networks. h/l move
+  // header actions ⇄ band ⇄ DNS row ⇄ Wi-Fi networks. h/l move
   // within header actions, band pills, or DNS providers.
-  property string focusSection: "dns"  // "header" | "band" | "dns" | "speed" | "wifi"
+  property string focusSection: "dns"  // "header" | "band" | "dns" | "wifi"
   property int headerIndex: 0
   readonly property bool canDisconnect: !!connectedWifiNetwork
   readonly property bool headerHasDisconnect: false
@@ -144,9 +131,11 @@ Panel {
   // "off" beside a perfectly live Ethernet connection.
   readonly property bool canToggleWifi: networkManagerAvailable && wifiStationAvailable
   readonly property int qrHeaderIndex: canShareWifi ? 0 : -1
-  readonly property int toggleHeaderIndex: canToggleWifi ? (canShareWifi ? 1 : 0) : -1
-  readonly property int headerActionCount: (canShareWifi ? 1 : 0) + (canToggleWifi ? 1 : 0)
+  readonly property int speedHeaderIndex: canRunSpeedTest ? (canShareWifi ? 1 : 0) : -1
+  readonly property int toggleHeaderIndex: canToggleWifi ? (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) : -1
+  readonly property int headerActionCount: (canShareWifi ? 1 : 0) + (canRunSpeedTest ? 1 : 0) + (canToggleWifi ? 1 : 0)
   readonly property bool qrHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === qrHeaderIndex
+  readonly property bool speedHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === speedHeaderIndex
   readonly property bool toggleHeaderHasCursor: cursorActive && focusSection === "header" && headerIndex === toggleHeaderIndex
   readonly property string toggleHint: Networking.wifiEnabled ? "Turn Wi-Fi off" : "Turn Wi-Fi on"
   readonly property var dnsProviders: ["DHCP", "Cloudflare", "Google", "Custom"]
@@ -172,8 +161,8 @@ Panel {
   readonly property bool bandPillsVisible: canSelectBand && bandPinned
   readonly property string bandSectionTitle: Model.bandSectionTitle(bandEffective, bandCurrent)
   readonly property bool bandBusy: pendingBand !== ""
-  // The speed test section only exists once there's an interface to test, so
-  // the Run button only joins the cursor chain then.
+  // The speed test needs an interface to test, so its hero action only
+  // appears once there is one.
   readonly property bool canRunSpeedTest: !!info.iface
   property int bandIndex: 0
   // The band section has up to two cursor rows: the Automatic switch on the
@@ -194,10 +183,6 @@ Panel {
       focusSection = "dns"
       bandAutoFocused = true
     }
-  }
-
-  onCanRunSpeedTestChanged: {
-    if (!canRunSpeedTest && focusSection === "speed") focusSection = "dns"
   }
 
   // Collapsing the pills out from under the cursor would leave it pointing at
@@ -222,8 +207,24 @@ Panel {
     Qt.callLater(function() { root.refresh(true) })
   }
 
+  IpcHandler {
+    target: "omarchy.network"
+
+    function open() { root.open() }
+    function close() { root.close() }
+    function show() { root.open() }
+    function hide() { root.close() }
+    function toggle() { root.toggle() }
+    function toggleNetwork() { root.toggleNetwork() }
+    // Compat routes for configs that summon the centered cards through the
+    // network target; both cards are their own plugins now.
+    function showQr() { root.summonWifiQr(true) }
+    function speedTest() { root.summonSpeedTest() }
+  }
+
   function activateHeader() {
-    if (headerIndex === qrHeaderIndex) showWifiQr()
+    if (headerIndex === qrHeaderIndex) summonWifiQr()
+    else if (headerIndex === speedHeaderIndex) summonSpeedTest()
     else if (headerIndex === toggleHeaderIndex) toggleNetwork()
   }
 
@@ -291,10 +292,8 @@ Panel {
   readonly property color hoverFill: bar ? Style.hoverFillFor(bar.foreground, Color.accent) : "transparent"
   readonly property color selectedFill: bar ? Style.selectedFillFor(bar.foreground, Color.accent) : "transparent"
 
-  // The panel below is its own layer-shell with Exclusive keyboard focus,
-  // so Hyprland grants focus when the surface is mapped (opened flips
-  // to true). That's what makes the SUPER+CTRL+W keybind actually work
-  // — OnDemand only grants focus on click/hover.
+  // KeyboardPanel primes layer-shell focus whenever the panel opens. That's
+  // what makes the SUPER+CTRL+W keybind land here with navigation ready.
   onOpenedChanged: {
     if (opened) {
       refresh(true)
@@ -398,7 +397,10 @@ Panel {
     var net = wifiNetworks[selectedIndex]
     if (!net) return
     if (wifiActionFocused && canForgetNetwork(net)) { forget(net); return }
-    if (net.connected) { disconnect(net.network); return }
+    // Only act on a row that still resolves. disconnect() falls back to
+    // connectedWifiNetwork when handed null, so a row left stale by scan churn
+    // would otherwise tear down whatever is connected now instead.
+    if (net.connected) { disconnectRow(net.ssid); return }
     if (isProtected(net.security) && !net.known) { openPasswordPrompt(net.ssid); return }
     connectKnown(net.ssid)
   }
@@ -423,49 +425,20 @@ Panel {
 
   readonly property string icon: Model.connectionIcon(kind, signalStrength)
 
-  function showWifiQr() {
-    if (qrProc.running || !info.iface || info.type !== "wifi") return
-    qrSize = 0
-    qrRows = []
-    qrError = ""
-    qrLoading = true
-    qrExpectedStop = false
-    qrProc.command = ["omarchy-network-qr", info.iface]
-    qrProc.running = true
-
-    // Leave the compact network panel behind while the centered share card is open.
+  // The share card is its own panel plugin (omarchy.wifiqr) so a replacement
+  // design can take it over; summon() routes to whichever implementation is
+  // enabled. The panel's own button pins the interface it is showing. The
+  // IPC route forces self-detection instead: details polling stops while the
+  // panel is closed, so its cached interface can be stale.
+  function summonWifiQr(forceDetect) {
     controller.hide()
     cancelPasswordPrompt()
-  }
-
-  function hideWifiQr() {
-    if (qrProc.running) {
-      qrExpectedStop = true
-      qrProc.running = false
+    var payload = {}
+    if (!forceDetect && info.type === "wifi" && info.iface) {
+      payload.iface = info.iface
+      if (info.ssid) payload.ssid = info.ssid
     }
-    if (pwProc.running) pwProc.running = false
-    qrSize = 0
-    qrRows = []
-    qrError = ""
-    qrLoading = false
-    qrPassword = ""
-    qrPasswordVisible = false
-    qrPasswordError = ""
-  }
-
-  function updateQr(raw) {
-    var matrix = Model.parseQrMatrix(raw)
-    qrRows = matrix.rows
-    qrSize = matrix.size
-  }
-
-  function toggleQrPassword() {
-    if (qrPasswordVisible) { qrPasswordVisible = false; return }
-    if (qrPassword !== "") { qrPasswordVisible = true; return }
-    if (pwProc.running || !info.iface) return
-    qrPasswordError = ""
-    pwProc.command = ["omarchy-network-password", info.iface]
-    pwProc.running = true
+    bar.shell.summon("omarchy.wifiqr", JSON.stringify(payload))
   }
 
   function refresh(scanWifi) {
@@ -559,10 +532,6 @@ Panel {
     return Model.formatRate(bytesPerSec)
   }
 
-  function formatSpeedMbps(mbps) {
-    return Model.formatSpeedMbps(mbps)
-  }
-
   function formatPingLatency(ms) {
     return Model.formatPingLatency(ms, hasInternetPing)
   }
@@ -647,51 +616,17 @@ Panel {
     actionProc.running = true
   }
 
-  function updateSpeedTestLine(line) {
-    var value = parseFloat(line)
-    if (!isFinite(value) || value < 0) return
-
-    if (speedTestPhase === "down") speedTestDownloadMbps = String(value)
-    else if (speedTestPhase === "up") speedTestUploadMbps = String(value)
-    speedTestError = ""
-  }
-
-  function runSpeedTest() {
-    if (speedTestProc.running) return
-    speedTestError = ""
-    speedTestHasRun = true
-    speedTestRunning = true
-    startSpeedTestPhase("down")
-  }
-
-  function startSpeedTestPhase(phase) {
-    speedTestExpectedStop = false
-    speedTestPhase = phase
-    speedTestStderr = ""
-    speedTestProc.command = ["omarchy-network-speedtest", phase]
-    speedTestProc.running = true
-    speedTestPhaseTimer.restart()
-  }
-
-  function stopSpeedTestPhase() {
-    speedTestPhaseTimer.stop()
-    if (speedTestProc.running) {
-      speedTestExpectedStop = true
-      speedTestProc.running = false
-      return
-    }
-    finishSpeedTestPhase()
-  }
-
-  function finishSpeedTestPhase() {
-    if (speedTestPhase === "down") {
-      startSpeedTestPhase("up")
-      return
-    }
-
-    speedTestPhase = ""
-    speedTestRunning = false
-    speedTestExpectedStop = false
+  // The speed test is its own panel plugin (omarchy.speedtest) so a
+  // replacement design can take it over; summon() routes to whichever
+  // implementation is enabled. The payload names the connection when this
+  // panel knows it; the plugin looks it up itself otherwise.
+  function summonSpeedTest() {
+    controller.hide()
+    cancelPasswordPrompt()
+    var connection = ""
+    if (info.type === "wifi") connection = info.ssid || "Wi-Fi"
+    else if (info.type === "ethernet") connection = "Ethernet"
+    bar.shell.summon("omarchy.speedtest", connection ? JSON.stringify({ connection: connection }) : "{}")
   }
 
   function dnsCommand(provider) {
@@ -778,13 +713,11 @@ Panel {
   }
 
   function networkFailureReason(reason) {
-    return Model.networkFailureReason(reason, {
-      NoSecrets: ConnectionFailReason.NoSecrets,
-      WifiAuthTimeout: ConnectionFailReason.WifiAuthTimeout,
-      WifiNetworkLost: ConnectionFailReason.WifiNetworkLost,
-      WifiClientDisconnected: ConnectionFailReason.WifiClientDisconnected,
-      WifiClientFailed: ConnectionFailReason.WifiClientFailed
-    })
+    return Model.networkFailureReason(reason, connectionFailReasons)
+  }
+
+  function shouldRepromptPassphrase(reason, isProtected) {
+    return Model.shouldRepromptPassphrase(reason, isProtected, connectionFailReasons)
   }
 
   function checkActionCompletion(network) {
@@ -826,10 +759,20 @@ Panel {
     runNetworkAction("disconnect", network || connectedWifiNetwork, function(net) { net.disconnect() })
   }
 
-  function forget(net) {
-    runNetworkAction("forget", net ? net.network : null, function(network) { network.forget() })
+  // Disconnect from a row's SSID. Rows are primitive snapshots that can outlive
+  // their WifiNetwork, and disconnect()'s null fallback targets whatever is
+  // connected now, so a stale row must do nothing rather than hit an unrelated
+  // network. Callers that mean "drop the current connection" call disconnect().
+  function disconnectRow(ssid) {
+    var network = networkForSsid(ssid)
+    if (network) disconnect(network)
   }
 
+  function forget(net) {
+    runNetworkAction("forget", net ? networkForSsid(net.ssid) : null, function(network) { network.forget() })
+  }
+
+  implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
   Component.onCompleted: refresh()
@@ -862,49 +805,6 @@ Panel {
   }
 
   Process {
-    id: qrProc
-    // Both collectors check qrExpectedStop: a dismissal mid-generation kills
-    // the process, but buffered output still arrives afterwards and would
-    // repopulate qrSize -- reopening the card the user just closed. The flag
-    // stays set through onExited (showWifiQr resets it) because the exit and
-    // stream-finished signals have no guaranteed order.
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: if (!root.qrExpectedStop) root.updateQr(text)
-    }
-    stderr: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: if (!root.qrExpectedStop) root.qrError = String(text || "").trim()
-    }
-    onExited: function(exitCode) {
-      root.qrLoading = false
-      if (root.qrExpectedStop) return
-      if (exitCode !== 0 || root.qrSize === 0) {
-        root.qrSize = 0
-        root.qrRows = []
-        if (root.qrError === "") root.qrError = "Could not generate the Wi-Fi QR code"
-      }
-    }
-  }
-
-  // The Wi-Fi password only enters shell memory when the user clicks to
-  // reveal it, and hideWifiQr drops it again when the share card closes.
-  // Both handlers bail when the card is gone so a fetch that was in flight
-  // during dismissal can't stash the secret into a closed panel's state.
-  Process {
-    id: pwProc
-    stdout: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: if (root.qrVisible) root.qrPassword = String(text || "").trim()
-    }
-    onExited: function(exitCode) {
-      if (!root.qrVisible) return
-      if (exitCode === 0 && root.qrPassword !== "") root.qrPasswordVisible = true
-      else root.qrPasswordError = "Could not read the Wi-Fi password"
-    }
-  }
-
-  Process {
     id: dnsProc
     stdout: StdioCollector {
       waitForEnd: true
@@ -932,35 +832,6 @@ Panel {
       bandProc.command = ["omarchy-network-band"]
       bandProc.running = true
     }
-  }
-
-  Process {
-    id: speedTestProc
-    stdout: SplitParser { onRead: function(line) { root.updateSpeedTestLine(line) } }
-    stderr: StdioCollector {
-      waitForEnd: true
-      onStreamFinished: root.speedTestStderr = String(text || "").trim()
-    }
-    onExited: function(exitCode) {
-      speedTestPhaseTimer.stop()
-
-      if (!root.speedTestExpectedStop && exitCode !== 0) {
-        root.speedTestError = root.speedTestStderr || "Speed test failed"
-        root.speedTestPhase = ""
-        root.speedTestRunning = false
-        return
-      }
-
-      root.speedTestExpectedStop = false
-      root.finishSpeedTestPhase()
-    }
-  }
-
-  Timer {
-    id: speedTestPhaseTimer
-    interval: 5000
-    repeat: false
-    onTriggered: root.stopSpeedTestPhase()
   }
 
   // Action runner for DNS provider changes. Wi-Fi actions use the
@@ -1031,7 +902,11 @@ Panel {
 
   Timer {
     id: actionTimeout
-    interval: 15000
+    // Must outlast NetworkManager's 25s supplicant timeout: a wrong saved
+    // PSK fails with WifiAuthTimeout at ~25s, and that failure has to land
+    // while the action is still tracked to show "Wrong password" and reopen
+    // the passphrase prompt.
+    interval: 30000
     repeat: false
     onTriggered: {
       if (!root.actionKind) return
@@ -1049,26 +924,23 @@ Panel {
 
   BarIconButton {
     id: button
-    width: Style.bar.iconCanvas + 2
-    height: parent.height
-    anchors.left: parent.left
-    anchors.leftMargin: Style.spaceReal(6)
-    anchors.verticalCenter: parent.verticalCenter
-    slotSize: Style.bar.iconCanvas + 2
+    anchors.fill: parent
     bar: root.bar
-    opticalSize: Style.bar.iconCanvas - 1
-    fontSize: Style.bar.iconFont - 1
     text: root.icon
 
     onPressed: function(b) {
       if (root.opened) root.close()
-      else { root.open(); root.refresh() }
+      // open() is enough: onOpenedChanged runs refresh(true), which defers the
+      // PHY scan past the first frame. The bare refresh() that used to follow
+      // took the no-scan branch and set scannerEnabled synchronously, undoing
+      // that deferral and stalling the open on NetworkManager's AP flood.
+      else root.open()
     }
   }
 
   // Keyboard-driven popup anchored to the bar widget icon. The shared
   // KeyboardPanel handles the layer-shell PanelWindow scaffolding
-  // (Exclusive focus on map, screen binding, anchored-to-icon positioning,
+  // (focus priming on open, screen binding, anchored-to-icon positioning,
   // outside-click via an overlay MouseArea + Region mask that lets the bar
   // remain clickable, fade animation, popout coordination). What stays
   // here is the wifi-specific UI inside.
@@ -1136,25 +1008,15 @@ Panel {
                 root.focusSection = "header"
                 root.headerIndex = 0
               }
-            } else if (root.canRunSpeedTest) {
-              root.focusSection = "speed"
-            } else if (root.wifiNetworks.length > 0) {
-              root.focusSection = "wifi"
-              if (root.selectedIndex < 0) root.selectedIndex = 0
-            }
-          } else if (root.focusSection === "speed") {
-            if (dy < 0) {
-              root.focusSection = "dns"
             } else if (root.wifiNetworks.length > 0) {
               root.focusSection = "wifi"
               if (root.selectedIndex < 0) root.selectedIndex = 0
             }
           } else {  // wifi
-            // k from the top row escapes back up into the speed test's Run
-            // button, or DNS when there is no speed test, rather than wrapping
-            // around to the bottom of the list.
+            // k from the top row escapes back up to the DNS row rather than
+            // wrapping around to the bottom of the list.
             if (dy < 0 && root.selectedIndex <= 0) {
-              root.focusSection = root.canRunSpeedTest ? "speed" : "dns"
+              root.focusSection = "dns"
               root.wifiActionFocused = false
             }
             else root.selectByDelta(dy)
@@ -1172,7 +1034,6 @@ Panel {
           if (root.focusSection === "header") root.activateHeader()
           else if (root.focusSection === "band") root.activateBand()
           else if (root.focusSection === "dns") root.activateDns()
-          else if (root.focusSection === "speed") root.runSpeedTest()
           else root.activateSelected()
         }
       }
@@ -1228,7 +1089,23 @@ Panel {
             hasCursor: root.qrHeaderHasCursor
             Layout.alignment: Qt.AlignVCenter
             onHovered: function(on) { if (on) root.setHeaderCursor(root.qrHeaderIndex) }
-            onClicked: root.showWifiQr()
+            onClicked: root.summonWifiQr()
+          }
+
+          Button {
+            id: speedAction
+            visible: root.canRunSpeedTest
+            iconText: "󰓅"
+            tooltipText: "Run a speed test"
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            iconSize: Style.font.subtitle * 1.5
+            horizontalPadding: Style.space(5)
+            verticalPadding: Style.space(2)
+            hasCursor: root.speedHeaderHasCursor
+            Layout.alignment: Qt.AlignVCenter
+            onHovered: function(on) { if (on) root.setHeaderCursor(root.speedHeaderIndex) }
+            onClicked: root.summonSpeedTest()
           }
 
           ToggleSwitch {
@@ -1545,84 +1422,6 @@ Panel {
       }
 
 
-      PanelSeparator {
-        visible: !!root.info.iface
-        foreground: root.bar.foreground
-      }
-
-      Column {
-        visible: !!root.info.iface
-        width: parent.width
-        spacing: Style.space(12)
-
-        Column {
-          width: parent.width
-          spacing: Style.space(8)
-
-          Item {
-            width: parent.width
-            implicitHeight: Math.max(speedTestHeader.implicitHeight, speedRunButton.implicitHeight)
-
-            PanelSectionHeader {
-              id: speedTestHeader
-              text: "SPEED TEST"
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
-              anchors.left: parent.left
-              anchors.verticalCenter: parent.verticalCenter
-            }
-
-            // Scaled to the band section's AUTOMATIC row -- caption type and
-            // trimmed padding -- so both header lines carry a control of the
-            // same visual weight instead of this one dominating.
-            Button {
-              id: speedRunButton
-              text: root.speedTestRunning ? "Running..." : "Run"
-              tooltipText: "Run using fast.com"
-              enabled: !root.speedTestRunning
-              foreground: root.bar.foreground
-              fontFamily: root.bar.fontFamily
-              fontSize: Style.font.caption
-              horizontalPadding: Style.space(8)
-              verticalPadding: Style.space(2)
-              bordered: true
-              anchors.right: parent.right
-              anchors.verticalCenter: parent.verticalCenter
-              hasCursor: root.cursorActive && root.focusSection === "speed"
-              onClicked: root.runSpeedTest()
-
-              onHovered: function(isHovered) {
-                if (!isHovered) return
-                root.cursorActive = true
-                root.focusSection = "speed"
-              }
-            }
-          }
-
-          Row {
-            id: speedTestValues
-            visible: root.speedTestHasRun
-            width: parent.width
-            spacing: Style.space(20)
-
-            readonly property real cellWidth: Math.max(0, (width - spacing * 3) / 4)
-
-            InfoLabel { width: speedTestValues.cellWidth; text: "Download" }
-            DetailValue { width: speedTestValues.cellWidth; text: root.formatSpeedMbps(root.speedTestDownloadMbps) }
-            InfoLabel { width: speedTestValues.cellWidth; text: "Upload" }
-            DetailValue { width: speedTestValues.cellWidth; text: root.formatSpeedMbps(root.speedTestUploadMbps) }
-          }
-
-          InfoValue {
-            visible: root.speedTestError !== ""
-            text: root.speedTestError
-            color: root.bar.urgent
-            width: parent.width
-            elide: Text.ElideRight
-          }
-        }
-      }
-
       // Wi-Fi networks (only if a Wi-Fi station is available).
       PanelSeparator {
         visible: root.wifiStationAvailable
@@ -1691,23 +1490,6 @@ Panel {
       }
     }
     }
-  }
-
-  WifiQrPanel {
-    anchorItem: button
-    bar: root.bar
-    qrRows: root.qrRows
-    qrSize: root.qrSize
-    loading: root.qrLoading
-    error: root.qrError
-    ssid: root.info.ssid || ""
-    secured: root.connectedWifiNetwork ? root.isProtected(root.connectedWifiNetwork.security) : false
-    password: root.qrPassword
-    passwordVisible: root.qrPasswordVisible
-    passwordError: root.qrPasswordError
-    open: root.qrVisible
-    onCloseRequested: root.hideWifiQr()
-    onPasswordToggleRequested: root.toggleQrPassword()
   }
 
   // One Wi-Fi band pill. `active` (fill) is the band actually in use and
@@ -1811,19 +1593,23 @@ Panel {
     }
 
     Connections {
-      target: row.net ? row.net.network : null
+      target: row.net ? root.networkForSsid(row.net.ssid) : null
       function onConnectionFailed(reason) {
-        root.failNetworkAction(row.net.network, reason)
-        if (reason === ConnectionFailReason.NoSecrets) root.openPasswordPrompt(row.net.ssid)
+        // Background auto-connect retries fire this too; only reprompt for
+        // the connect started from this panel. Checked before
+        // failNetworkAction, which clears the action state.
+        var ours = root.actionKind === "connect" && root.actionSsid === (row.net.ssid || "")
+        root.failNetworkAction(root.networkForSsid(row.net.ssid), reason)
+        if (ours && root.shouldRepromptPassphrase(reason, row.isProtected)) root.openPasswordPrompt(row.net.ssid)
       }
       function onConnectedChanged() {
-        if (row.net) root.checkActionCompletion(row.net.network)
+        if (row.net) root.checkActionCompletion(root.networkForSsid(row.net.ssid))
       }
       function onKnownChanged() {
-        if (row.net) root.checkActionCompletion(row.net.network)
+        if (row.net) root.checkActionCompletion(root.networkForSsid(row.net.ssid))
       }
       function onStateChangingChanged() {
-        if (row.net) root.checkActionCompletion(row.net.network)
+        if (row.net) root.checkActionCompletion(root.networkForSsid(row.net.ssid))
       }
     }
 
@@ -1872,7 +1658,7 @@ Panel {
         root.selectedIndex = row.index
         root.wifiActionFocused = false
         if (row.isConnected) {
-          root.disconnect(row.net.network)
+          root.disconnectRow(row.net.ssid)
           return
         }
         if (row.isProtected && !row.isKnown) {
@@ -1996,9 +1782,10 @@ Panel {
       }
     }
 
-    // Inline passphrase prompt — only shown when we hit a protected network
-    // we don't have saved credentials for. Submitting (Enter or the check
-    // button) fires connect; Esc cancels back to the row.
+    // Inline passphrase prompt — shown when we hit a protected network we
+    // don't have saved credentials for, or when a connect fails because the
+    // saved passphrase is wrong. Submitting (Enter or the check button) fires
+    // connect; Esc cancels back to the row.
     Item {
       id: passwordPanel
       visible: row.isPasswordOpen

@@ -634,7 +634,20 @@ Panel {
     slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
-    text: root.outputIcon()
+    text: ""
+    dimmed: root.outputMuted
+    iconComponent: Component {
+      Text {
+        anchors.centerIn: parent
+        text: "graphic_eq"
+        color: button.active && button.useActiveColor
+          ? button.activeColor : button.foreground
+        font.family: "Material Symbols Rounded"
+        font.pixelSize: Math.round(parent.height * 0.9)
+        font.variableAxes: ({ "FILL": 1 })
+        renderType: Text.QtRendering
+      }
+    }
     onPressed: function(b) {
       if (b === Qt.RightButton) root.toggleOutputMute()
       else root.toggle()
