@@ -107,14 +107,15 @@
           "forceColorize": [
             "Free Download",
             "stremio-service",
-            "Windscribe"
+            "Windscribe",
+            "localsend",
+            "qbittorrent",
+            "discord",
+            "vesktop"
           ],
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
           "type": "qml"
-        },
-        {
-          "id": "dev.deoxizn.devicebattstats"
         },
         {
           "color": "color04",

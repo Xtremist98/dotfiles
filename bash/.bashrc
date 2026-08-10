@@ -92,3 +92,6 @@ function stream {
         /usr/bin/mpv "http://localhost:8090/stream?play&index=0&link=${encoded_magnet}"
     fi
 }
+
+# Bar toggle Switch between Custom bar & Omarchy default bar 
+alias switch-bar='$HOME/.config/omarchy/scripts/toggle-bar.sh'
