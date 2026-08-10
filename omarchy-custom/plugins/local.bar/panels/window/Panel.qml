@@ -372,7 +372,8 @@ Panel {
     "fdm": ["", "FDM"],
     "qbittorrent": ["", "Torrent"],
     "windscribe": ["", "Windscribe"],
-    "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"]
+    "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"],
+    "org.quickshell": ["", "Files"]
   })
 
   readonly property var siteMap: ({

@@ -21,7 +21,7 @@
           "omarchy.power"
         ],
         [
-          "theme-picker",
+          "omarchy.tray",
           "omarchy.dropbox",
           "local.model-usage"
         ]
@@ -114,8 +114,7 @@
           "type": "qml"
         },
         {
-          "color": "color04",
-          "id": "theme-picker"
+          "id": "dev.deoxizn.devicebattstats"
         },
         {
           "color": "color04",
@@ -188,9 +187,6 @@
   "plugins": [
     {
       "id": "io.github.oldjobobo.thpm"
-    },
-    {
-      "id": "io.github.percius04.omafiles"
     }
   ],
   "version": 1
