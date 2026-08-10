@@ -9,12 +9,11 @@ Ui.Panel {
 
   moduleName: "local.cpu"
   manageIpc: false
-  HostTokens { id: hostTokens; bar: root.bar }
 
   readonly property var telemetry: localTelemetry
   LocalTelemetry { id: localTelemetry }
   readonly property var tokens: bar && "visualTokens" in bar
-    && bar.visualTokens ? bar.visualTokens : hostTokens
+    ? bar.visualTokens : null
   readonly property color widgetInk: tokens
     && typeof tokens.widgetContentColor === "function"
     ? tokens.widgetGlyphColor(settings,
@@ -23,13 +22,12 @@ Ui.Panel {
   readonly property var gpuTelemetry: gpuState
   GpuTelemetry {
     id: gpuState
-    helperPath: String(Qt.resolvedUrl("scripts/shibumi-gpu-probe")).replace("file://", "")
+    helperPath: String(Qt.resolvedUrl("scripts/gpu-probe")).replace("file://", "")
   }
   readonly property string displayMode: String(
     setting("displayMode", setting("compact", false) ? "icon" : "full"))
   readonly property bool compact: displayMode === "icon"
   readonly property int percent: telemetry ? telemetry.cpuPercent : 0
-  readonly property var history: telemetry ? telemetry.cpuHistory : []
   property url panelSource: Qt.resolvedUrl("CpuPanel.qml")
   property var acquiredTelemetry: null
 
@@ -81,15 +79,6 @@ Ui.Panel {
     width: implicitWidth
     height: implicitHeight
 
-  PillSurface {
-    tokenSource: root.tokens
-    bar: root.bar
-    settings: root.settings
-    anchors.fill: parent
-      anchors.topMargin: Math.round((parent.height - root.tokens.pillHeight) / 2)
-      anchors.bottomMargin: Math.round((parent.height - root.tokens.pillHeight) / 2)
-    }
-
     Loader {
       id: content
       anchors.centerIn: parent
@@ -118,31 +107,10 @@ Ui.Panel {
     id: horizontalContent
 
     Row {
-      spacing: root.displayMode === "full" && root.tokens.v2Shell !== true
-        ? root.tokens.contentGap : root.tokens.compactGap
-
-      Text {
-        visible: root.displayMode === "full" && root.tokens.v2Shell !== true
-        anchors.verticalCenter: parent.verticalCenter
-        text: "CPU"
-        color: Qt.rgba(root.widgetInk.r, root.widgetInk.g,
-          root.widgetInk.b, 0.68)
-        font.family: root.bar ? root.bar.fontFamily : Commons.Style.font.family
-        font.pixelSize: root.tokens.labelSize
-        font.letterSpacing: 0.5
-        renderType: Text.NativeRendering
-      }
-
-      CpuWave {
-        visible: root.displayMode === "full" && root.tokens.v2Shell !== true
-        anchors.verticalCenter: parent.verticalCenter
-        history: root.history
-        accent: root.widgetInk
-      }
+      spacing: root.tokens.compactGap
 
       IconText {
-        visible: root.displayMode === "icon"
-          || (root.tokens.v2Shell === true && root.displayMode === "full")
+        visible: root.displayMode === "icon" || root.displayMode === "full"
         anchors.verticalCenter: parent.verticalCenter
         text: "planner_review"
         color: root.widgetInk

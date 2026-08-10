@@ -2,9 +2,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 
-// Local CPU/memory sampling straight from /proc. No shibumi services.
-// Replaces the hancore.shibumi.telemetry dependency with a self-contained
-// reader that the local.cpu / local.memory widgets own.
+// Local CPU/memory sampling straight from /proc. No service dependency.
+// Self-contained reader that the local.cpu / local.memory widgets own.
 Scope {
   id: root
 

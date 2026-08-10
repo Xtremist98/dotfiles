@@ -4,7 +4,7 @@ import QtQuick
 import qs.Commons as Commons
 import qs.Ui as Ui
 
-ShibumiPanel {
+Panel {
   id: panel
 
   required property var ownerWidget

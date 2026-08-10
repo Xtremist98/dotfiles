@@ -84,9 +84,9 @@ Item {
   readonly property color pillColor: Qt.rgba(
     Color.background.r, Color.background.g, Color.background.b, 0.18)
   readonly property color pillBorderColor: "#20ffffff"
-  // Shibumi visual tokens for the ported Shibumi weather panel. Loaded from
+  // Visual tokens for the weather panel. Loaded from
   // local.bar/styles/VisualTokens.qml (bar-scoped so widgets can read
-  // bar.visualTokens). Absent on the stock omarchy bar; guarded in ShibumiPanel.
+  // bar.visualTokens). Absent on the stock omarchy bar; guarded in Panel.
   readonly property var visualTokens: visualTokensLoader.item
 
   function widgetGlyphColor(settings, fallback) {
@@ -567,14 +567,13 @@ Item {
     return BarModel.entryId(entry)
   }
 
-  // ---- Shibumi widget integration (local.bar host contract) ----------------
-  // The Shibumi center and control-center widgets read per-module settings and
-  // resolve sibling widgets through the bar. local.bar exposes the same
-  // surface as the canonical Shibumi host bar so those widgets keep working
-  // without a native Shibumi bar.
+  // ---- Widget integration (local.bar host contract) ----------------
+  // Widgets read per-module settings and resolve sibling widgets through the
+  // bar. local.bar exposes the standard host-bar surface so widgets keep
+  // working without a native suite bar.
 
   // Per-module settings resolved from the widget's own layout entry. The
-  // shibumi state service that used to own these keys no longer exists, so
+  // state service that used to own these keys no longer exists, so
   // widgets fall back to their layout entry keys (e.g. "unit") via Ui.BarWidget
   // setting() instead.
   function widgetSettings(groupId, moduleId) {
@@ -623,9 +622,9 @@ Item {
       ? registry.entryPointUrl(manifest, "barWidget") : ""
   }
 
-  // The Shibumi host bar owns a widget-restore mechanism that local.bar does
-  // not implement; the control-center calls this on close. No-op stub keeps
-  // the contract without inventing restore behavior.
+  // The original suite host bar owned a widget-restore mechanism that
+  // local.bar does not implement; the control-center calls this on close.
+  // No-op stub keeps the contract without inventing restore behavior.
   function cancelWidgetRestore(pluginId) {
     // local.bar has no widget restore queue.
   }

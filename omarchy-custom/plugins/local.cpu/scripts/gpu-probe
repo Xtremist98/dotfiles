@@ -3,7 +3,7 @@
 set -uo pipefail
 shopt -s extglob nullglob
 
-sys_root=${SHIBUMI_GPU_SYS_ROOT:-/sys}
+sys_root=${GPU_SYS_ROOT:-/sys}
 
 clean_field() {
   local value=${1:-}
@@ -25,7 +25,7 @@ integer_field() {
 }
 
 probe_nvidia() {
-  [[ ${SHIBUMI_GPU_DISABLE_NVIDIA:-0} != 1 ]] || return 1
+  [[ ${GPU_DISABLE_NVIDIA:-0} != 1 ]] || return 1
 
   local nvidia_bin
   nvidia_bin=$(command -v nvidia-smi 2>/dev/null) || return 1

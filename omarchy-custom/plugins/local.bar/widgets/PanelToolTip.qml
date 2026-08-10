@@ -8,7 +8,7 @@ ToolTip {
   id: root
 
   required property var panel
-  readonly property var tokens: panel ? panel.shibumiTokens : null
+  readonly property var tokens: panel ? panel.tokens : null
   readonly property color resolvedBackground: panel && panel.bar
     && panel.bar.background !== undefined
     ? panel.bar.background

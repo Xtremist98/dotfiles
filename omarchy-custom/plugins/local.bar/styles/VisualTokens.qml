@@ -9,20 +9,14 @@ Item {
   required property var bar
 
   // Local palette: read from the user's current theme (colors.toml) with no
-  // shibumi services involved.
+  // service dependency involved.
   readonly property var presentation: ({
-    shellStyle: "full",
     radius: "default",
     border: true,
     v2Border: true,
     panelBorder: true,
     shadow: false
   })
-  readonly property string shellStyle:
-    ["shibumi", "full", "fit", "dock", "notch"]
-      .indexOf(String(presentation.shellStyle || "")) >= 0
-      ? String(presentation.shellStyle) : "shibumi"
-  readonly property bool v2Shell: shellStyle !== "shibumi"
 
   ThemePalette {
     id: palette
@@ -30,10 +24,9 @@ Item {
   }
 
   readonly property string fontFamily: Commons.Style.font.family
-  // Preserve the approved 35/38px V1 geometry. The original V2 contract uses
-  // a 33px visible strip and reserves three additional pixels.
-  readonly property int barHeight: Commons.Style.space(v2Shell ? 33 : 35)
-  readonly property int exclusiveHeight: Commons.Style.space(v2Shell ? 36 : 38)
+  // Preserve the approved 33px V2 visible strip.
+  readonly property int barHeight: Commons.Style.space(33)
+  readonly property int exclusiveHeight: Commons.Style.space(36)
   readonly property int islandHeight: Commons.Style.space(32)
   readonly property int islandInsetX: Commons.Style.space(5)
   readonly property int islandContentInsetX: Commons.Style.space(4)
@@ -44,9 +37,7 @@ Item {
     presentation.radius === "small" ? 6 : 12)
   readonly property int islandRadius: Commons.Style.space(
     presentation.radius === "small" ? 8 : 16)
-  readonly property int tileRadius: v2Shell
-    ? Commons.Style.space(10)
-    : Math.max(1, pillRadius - Commons.Style.space(2))
+  readonly property int tileRadius: Commons.Style.space(10)
   readonly property int pillPaddingX: Commons.Style.space(9)
   readonly property int labelSize: Commons.Style.font.body
   readonly property int captionSize: Commons.Style.font.caption
@@ -68,15 +59,10 @@ Item {
   readonly property int shellFitRadius: Commons.Style.space(6)
   readonly property int shellDockRadius: Commons.Style.space(8)
 
-  readonly property bool borderEnabled: v2Shell
-    ? (presentation.v2Border === undefined
-      ? presentation.border !== false : presentation.v2Border !== false)
-    : (presentation.v1Border === undefined
-      ? presentation.border !== false : presentation.v1Border !== false)
-  readonly property bool panelBorderEnabled: v2Shell
-    ? presentation.panelBorder !== false : borderEnabled
+  readonly property bool borderEnabled: presentation.v2Border === undefined
+    ? presentation.border !== false : presentation.v2Border !== false
+  readonly property bool panelBorderEnabled: presentation.panelBorder !== false
   readonly property bool shadowEnabled: presentation.shadow === true
-  readonly property bool frostEnabled: !v2Shell && presentation.frost === true
   readonly property color paper: Commons.Color.background
   readonly property color ink: Commons.Color.foreground
   readonly property color sumi: Commons.Color.muted
@@ -85,8 +71,7 @@ Item {
     : Commons.Color.bar.active
   readonly property color mutedInk: sumi
   readonly property color pill: Qt.rgba(paper.r, paper.g, paper.b, 0.18)
-  readonly property color barBackground: Qt.rgba(paper.r, paper.g, paper.b,
-    frostEnabled ? 0.68 : 0.94)
+  readonly property color barBackground: Qt.rgba(paper.r, paper.g, paper.b, 0.94)
   readonly property color panelBackground: Qt.rgba(paper.r, paper.g, paper.b, 0.94)
   readonly property color pillBorder: "#22ffffff"
   readonly property color islandBorder: mix(paper, ink, 0.16)
@@ -95,8 +80,7 @@ Item {
   readonly property int pillBorderWidth: borderEnabled ? 1 : 0
   readonly property color panelBorder: pillBorder
   readonly property int panelBorderWidth: panelBorderEnabled ? 1 : 0
-  readonly property int panelRadius: v2Shell
-    ? Commons.Style.space(6) : pillRadius
+  readonly property int panelRadius: Commons.Style.space(6)
   readonly property color shellShadow: Qt.rgba(0, 0, 0, 0.46)
   readonly property color separator: Qt.rgba(ink.r, ink.g, ink.b, 0.18)
   readonly property color fillActive: Qt.rgba(seal.r, seal.g, seal.b, 0.18)
@@ -106,9 +90,8 @@ Item {
 
   function workspacePillPadding(style) {
     if (style !== "numbers") return Commons.Style.space(4)
-    const outerRadius = v2Shell ? Commons.Style.space(12) : pillRadius
-    const badgeRadius = v2Shell ? Commons.Style.space(10)
-      : Commons.Style.space(presentation.radius === "small" ? 5 : 10)
+    const outerRadius = Commons.Style.space(12)
+    const badgeRadius = Commons.Style.space(10)
     return Math.max(1, outerRadius - badgeRadius)
   }
 

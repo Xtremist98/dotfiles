@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "author": "local",
   "license": "MIT",
-  "description": "Local CPU widget, GPU sampler, and detailed usage panel (no shibumi services).",
+  "description": "Local CPU widget, GPU sampler, and detailed usage panel.",
   "kinds": [
     "bar-widget"
   ],

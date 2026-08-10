@@ -8,7 +8,7 @@ import Quickshell.Wayland
 import qs.Commons as Commons
 import qs.Ui as Ui
 
-// Quattro-compatible keyboard panel with one Shibumi-owned visible surface.
+// Quattro-compatible keyboard panel with one host-owned visible surface.
 // Keep this lifecycle aligned with Ui.KeyboardPanel when its contract changes.
 PanelWindow {
   id: root
@@ -23,9 +23,8 @@ PanelWindow {
   property bool centerOnBar: false
   property real centerOnBarOffset: 0
   property bool open: false
-  // Preserve the reference panel offset across both shell variants:
-  // V1 panels sit 8 px beyond the 35 px bar; V2 connected panels use 6 px.
-  property int gap: shellStyle === "shibumi" ? 8 : 6
+  // Preserve the reference panel offset: V2 connected panels use 6 px.
+  property int gap: 6
   property bool popoutSwitching: false
   property bool popoutSwitchClosing: false
   property Item focusTarget: null
@@ -42,7 +41,7 @@ PanelWindow {
   property color controlBorderOverride: "transparent"
   property color controlHoverBorderOverride: "transparent"
 
-  default property alias panelContent: shibumiContent.children
+  default property alias content: panelContent.children
 
   readonly property var coordinatorKey: owner || root
   readonly property var anchorWindow: anchorItem
@@ -50,23 +49,20 @@ PanelWindow {
   readonly property string barPos: bar ? bar.position : "top"
   readonly property string popoutScreenName: screen
     ? String(screen.name || "") : ""
-  readonly property var shibumiTokens: bar && "visualTokens" in bar
+  readonly property var tokens: bar && "visualTokens" in bar
     ? bar.visualTokens : null
-  readonly property string shellStyle: shibumiTokens
-    ? String(shibumiTokens.shellStyle || "shibumi") : "shibumi"
   readonly property bool connectedSurfaceEnabled:
-    shellStyle !== "shibumi"
-    && (barPos === "top" || barPos === "bottom")
+    barPos === "top" || barPos === "bottom"
   property real connectionReveal: connectedSurfaceEnabled
     && (open || popoutSwitching) ? 1 : 0
-  readonly property int shibumiBorderWidth: surfaceOverrideEnabled
+  readonly property int panelBorderWidth: surfaceOverrideEnabled
     && surfaceBorderWidthOverride >= 0
-    ? surfaceBorderWidthOverride : shibumiTokens
-      ? shibumiTokens.panelBorderWidth : 0
+    ? surfaceBorderWidthOverride : tokens
+      ? tokens.panelBorderWidth : 0
   property var borderSpec: surfaceOverrideEnabled
-    ? Commons.Border.flat(surfaceBorderColorOverride, shibumiBorderWidth)
-    : shibumiTokens
-    ? Commons.Border.flat(shibumiTokens.panelBorder, shibumiBorderWidth)
+    ? Commons.Border.flat(surfaceBorderColorOverride, panelBorderWidth)
+    : tokens
+    ? Commons.Border.flat(tokens.panelBorder, panelBorderWidth)
     : Commons.Border.surfaceSpec("popups", "border",
         Commons.Color.popups.border, Math.max(1, Commons.Style.space(2)))
 
@@ -74,11 +70,11 @@ PanelWindow {
   readonly property real renderedSurfaceRadius: card.radius
   readonly property real renderedBorderWidth: Commons.Border.top(card.borderSpec)
   readonly property real renderedContentInset: card.contentTopInset
-  readonly property int renderedContentCount: shibumiContent.children.length
+  readonly property int renderedContentCount: panelContent.children.length
   readonly property int renderedSurfaceCount: 1
   readonly property real controlRadius: controlRadiusOverride >= 0
-    ? controlRadiusOverride : shibumiTokens
-    ? root.shibumiTokens.tileRadius
+    ? controlRadiusOverride : tokens
+    ? root.tokens.tileRadius
     : Math.min(Commons.Style.space(6), Commons.Style.cornerRadius)
   readonly property color controlForeground: surfaceOverrideEnabled
     ? controlForegroundOverride : bar
@@ -86,33 +82,33 @@ PanelWindow {
   readonly property color controlAccent: surfaceOverrideEnabled
     ? controlAccentOverride : bar
     ? bar.urgent : Commons.Color.accent
-  readonly property color controlMuted: shibumiTokens
-    && shibumiTokens.sumi !== undefined
-    ? shibumiTokens.sumi : Commons.Color.muted
-  readonly property color controlMutedHigh: shibumiTokens
-    && shibumiTokens.sumiHi !== undefined
-    ? shibumiTokens.sumiHi : Commons.Util.alpha(controlForeground, 0.72)
+  readonly property color controlMuted: tokens
+    && tokens.sumi !== undefined
+    ? tokens.sumi : Commons.Color.muted
+  readonly property color controlMutedHigh: tokens
+    && tokens.sumiHi !== undefined
+    ? tokens.sumiHi : Commons.Util.alpha(controlForeground, 0.72)
   readonly property color controlBorderColor: surfaceOverrideEnabled
-    ? controlBorderOverride : shibumiTokens
-    && shibumiTokens.separator !== undefined
-    ? shibumiTokens.separator : Commons.Util.alpha(controlForeground, 0.18)
+    ? controlBorderOverride : tokens
+    && tokens.separator !== undefined
+    ? tokens.separator : Commons.Util.alpha(controlForeground, 0.18)
   readonly property color controlHoverBorderColor: surfaceOverrideEnabled
     ? controlHoverBorderOverride : controlAccent
   readonly property real controlBorderWidth: 1
   readonly property color controlFillColor: surfaceOverrideEnabled
-    ? controlFillOverride : shibumiTokens
-    && shibumiTokens.fillIdle !== undefined
-    ? shibumiTokens.fillIdle : Qt.rgba(0, 0, 0, 0.12)
+    ? controlFillOverride : tokens
+    && tokens.fillIdle !== undefined
+    ? tokens.fillIdle : Qt.rgba(0, 0, 0, 0.12)
   readonly property color controlHoverFillColor: surfaceOverrideEnabled
-    ? controlHoverFillOverride : shibumiTokens
-    && shibumiTokens.fillHover !== undefined
-    ? shibumiTokens.fillHover : Commons.Util.alpha(controlAccent, 0.10)
-  readonly property color controlActiveFillColor: shibumiTokens
-    && shibumiTokens.fillActive !== undefined
-    ? shibumiTokens.fillActive : Commons.Util.alpha(controlAccent, 0.18)
-  readonly property color controlPrimaryHoverColor: shibumiTokens
-    && shibumiTokens.fillPrimaryHover !== undefined
-    ? shibumiTokens.fillPrimaryHover : Qt.lighter(controlAccent, 1.15)
+    ? controlHoverFillOverride : tokens
+    && tokens.fillHover !== undefined
+    ? tokens.fillHover : Commons.Util.alpha(controlAccent, 0.10)
+  readonly property color controlActiveFillColor: tokens
+    && tokens.fillActive !== undefined
+    ? tokens.fillActive : Commons.Util.alpha(controlAccent, 0.18)
+  readonly property color controlPrimaryHoverColor: tokens
+    && tokens.fillPrimaryHover !== undefined
+    ? tokens.fillPrimaryHover : Qt.lighter(controlAccent, 1.15)
   readonly property color dividerColor: controlBorderColor
 
   Behavior on connectionReveal {
@@ -371,17 +367,16 @@ PanelWindow {
     width: card.width
     height: card.height
     // Original V2 panels and their connected bar notch are shadowless.
-    // Only the Shibumi/V1 presentation owns the optional panel shadow.
-    visible: root.shibumiTokens && root.shibumiTokens.shadowEnabled
-      && root.shellStyle === "shibumi"
+    // The optional panel shadow is only shown when the tokens enable it.
+    visible: root.tokens && root.tokens.shadowEnabled
     opacity: card.opacity
     radius: card.radius
     blur: 8
     spread: 0
     offset: Qt.vector2d(0,
       root.bar && root.bar.position === "bottom" ? -1 : 1)
-    color: root.shibumiTokens
-      ? root.shibumiTokens.pillShadow : "transparent"
+    color: root.tokens
+      ? root.tokens.pillShadow : "transparent"
   }
 
   // Original V2 connected silhouette: the card edge and its caret are one
@@ -404,8 +399,8 @@ PanelWindow {
     readonly property real resolvedScreenX: x + centerX
     readonly property real radius: root.surfaceOverrideEnabled
       && root.surfaceRadiusOverride >= 0 ? root.surfaceRadiusOverride
-      : root.shibumiTokens
-      ? root.shibumiTokens.panelRadius : Commons.Style.cornerRadius
+      : root.tokens
+      ? root.tokens.panelRadius : Commons.Style.cornerRadius
     readonly property real progress:
       Math.max(0, Math.min(1, root.connectionReveal))
     readonly property real maxCaretDepth: 5
@@ -418,11 +413,11 @@ PanelWindow {
     readonly property real bottomBaseY: height - 0.5
     readonly property real bottomTipY: bottomBaseY + caretDepth
     readonly property color surfaceColor: root.surfaceOverrideEnabled
-      ? root.surfaceColorOverride : root.shibumiTokens
-      ? root.shibumiTokens.panelBackground : Commons.Color.popups.background
-    readonly property color strokeColor: root.shibumiBorderWidth > 0
+      ? root.surfaceColorOverride : root.tokens
+      ? root.tokens.panelBackground : Commons.Color.popups.background
+    readonly property color strokeColor: root.panelBorderWidth > 0
       ? root.surfaceOverrideEnabled ? root.surfaceBorderColorOverride
-        : root.shibumiTokens ? root.shibumiTokens.panelBorder : "transparent"
+        : root.tokens ? root.tokens.panelBorder : "transparent"
       : "transparent"
 
     onResolvedScreenXChanged:
@@ -448,7 +443,7 @@ PanelWindow {
 
       ShapePath {
         strokeColor: connectedSurface.strokeColor
-        strokeWidth: root.shibumiBorderWidth
+        strokeWidth: root.panelBorderWidth
         fillColor: connectedSurface.surfaceColor
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.MiterJoin
@@ -539,7 +534,7 @@ PanelWindow {
 
       ShapePath {
         strokeColor: connectedSurface.strokeColor
-        strokeWidth: root.shibumiBorderWidth
+        strokeWidth: root.panelBorderWidth
         fillColor: connectedSurface.surfaceColor
         capStyle: ShapePath.FlatCap
         joinStyle: ShapePath.MiterJoin
@@ -621,7 +616,7 @@ PanelWindow {
     height: root.contentHeight
     color: root.connectedSurfaceEnabled ? "transparent"
       : root.surfaceOverrideEnabled ? root.surfaceColorOverride
-      : root.shibumiTokens ? root.shibumiTokens.panelBackground
+      : root.tokens ? root.tokens.panelBackground
       : Commons.Color.popups.background
     borderSpec: root.connectedSurfaceEnabled
       ? Commons.Border.flat("transparent", 0) : root.borderSpec
@@ -631,8 +626,8 @@ PanelWindow {
     bottomPadding: Math.max(0, root.padding - borderBottom)
     leftPadding: Math.max(0, root.padding - borderLeft)
     radius: root.surfaceOverrideEnabled && root.surfaceRadiusOverride >= 0
-      ? root.surfaceRadiusOverride : root.shibumiTokens
-      ? root.shibumiTokens.panelRadius : Commons.Style.cornerRadius
+      ? root.surfaceRadiusOverride : root.tokens
+      ? root.tokens.panelRadius : Commons.Style.cornerRadius
     opacity: root.open || root.popoutSwitching ? 1 : 0
 
     Behavior on opacity {
@@ -643,7 +638,7 @@ PanelWindow {
     MouseArea { anchors.fill: parent }
 
     Item {
-      id: shibumiContent
+      id: panelContent
       anchors.fill: parent
       anchors.topMargin: card.contentTopInset
       anchors.rightMargin: card.contentRightInset

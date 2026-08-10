@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "author": "local",
   "license": "MIT",
-  "description": "Local memory widget and detailed memory panel (no shibumi services).",
+  "description": "Local memory widget and detailed memory panel.",
   "kinds": [
     "bar-widget"
   ],
