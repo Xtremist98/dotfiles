@@ -22,6 +22,7 @@
         ],
         [
           "omarchy.tray",
+          "theme-picker",
           "omarchy.dropbox",
           "local.model-usage"
         ]
@@ -119,6 +120,10 @@
         },
         {
           "color": "color04",
+          "id": "theme-picker"
+        },
+        {
+          "color": "color04",
           "id": "omarchy.dropbox",
           "source": "~/.config/omarchy/plugins/local.dropbox/Panel.qml",
           "type": "qml"
@@ -188,6 +193,9 @@
   "plugins": [
     {
       "id": "io.github.oldjobobo.thpm"
+    },
+    {
+      "id": "mirador"
     }
   ],
   "version": 1

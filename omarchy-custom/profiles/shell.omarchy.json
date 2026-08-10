@@ -7,6 +7,9 @@
   "plugins": [
     {
       "id": "io.github.oldjobobo.thpm"
+    },
+    {
+      "id": "mirador"
     }
   ],
   "bar": {
