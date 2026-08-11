@@ -81,6 +81,9 @@ Item {
     Color.background.r * 0.78 + Color.foreground.r * 0.22,
     Color.background.g * 0.78 + Color.foreground.g * 0.22,
     Color.background.b * 0.78 + Color.foreground.b * 0.22, 1)
+  // Single flag for the 1px bar edge line; lives in VisualTokens presentation.
+  readonly property bool edgeLineEnabled: visualTokens
+    ? visualTokens.edgeLineEnabled !== false : true
   readonly property color pillColor: Qt.rgba(
     Color.background.r, Color.background.g, Color.background.b, 0.18)
   readonly property color pillBorderColor: "#20ffffff"
@@ -1137,6 +1140,7 @@ Item {
     Rectangle {
       id: edgeLine
       z: 6
+      visible: root.edgeLineEnabled
       color: root.shellBorderColor
       x: root.vertical ? (root.position === "left" ? parent.width - 1 : 0) : 0
       y: root.vertical ? 0 : (root.position === "top" ? parent.height - 1 : 0)

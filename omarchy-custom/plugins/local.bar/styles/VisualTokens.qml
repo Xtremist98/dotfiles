@@ -15,6 +15,7 @@ Item {
     border: true,
     v2Border: true,
     panelBorder: true,
+    edgeLine: true,
     shadow: false
   })
 
@@ -62,6 +63,12 @@ Item {
   readonly property bool borderEnabled: presentation.v2Border === undefined
     ? presentation.border !== false : presentation.v2Border !== false
   readonly property bool panelBorderEnabled: presentation.panelBorder !== false
+  // Bar edge line: profile override (shell.json bar.edgeLine) wins, else the
+  // hardcoded presentation default.
+  readonly property bool edgeLineEnabled: bar && bar.barConfig
+    && bar.barConfig.edgeLine !== undefined
+    ? bar.barConfig.edgeLine === true
+    : presentation.edgeLine !== false
   readonly property bool shadowEnabled: presentation.shadow === true
   readonly property color paper: Commons.Color.background
   readonly property color ink: Commons.Color.foreground
