@@ -289,8 +289,11 @@ Panel {
   // `selectedIndex`). Mouse hover and keyboard nav both mutate this state
   // at the root; items never read containsMouse for visuals. See
   // CursorSurface for the shared chrome shared by rows and pills.
-  readonly property color hoverFill: bar ? Style.hoverFillFor(bar.foreground, Color.accent) : "transparent"
-  readonly property color selectedFill: bar ? Style.selectedFillFor(bar.foreground, Color.accent) : "transparent"
+  readonly property color hoverFill: bar ? Style.hoverFillFor(bar.panelForeground, Color.accent) : "transparent"
+  readonly property color selectedFill: bar ? Style.selectedFillFor(bar.panelForeground, Color.accent) : "transparent"
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.panelForeground)
+    : (bar ? bar.panelForeground : Color.foreground)
 
   // KeyboardPanel primes layer-shell focus whenever the panel opens. That's
   // what makes the SUPER+CTRL+W keybind land here with navigation ready.
@@ -926,6 +929,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
+    foreground: root.glyphColor
     text: root.icon
 
     onPressed: function(b) {
@@ -1060,7 +1064,7 @@ Panel {
         Text {
           id: heroIcon
           text: root.icon
-          color: root.bar.foreground
+          color: root.bar.panelForeground
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.display
           opacity: root.networkManagerAvailable ? 1.0 : 0.5
@@ -1081,7 +1085,7 @@ Panel {
             visible: root.canShareWifi
             iconText: "󰐲"
             tooltipText: "Show QR code"
-            foreground: root.bar.foreground
+            foreground: root.bar.panelForeground
             fontFamily: root.bar.fontFamily
             iconSize: Style.font.subtitle * 1.5
             horizontalPadding: Style.space(5)
@@ -1097,7 +1101,7 @@ Panel {
             visible: root.canRunSpeedTest
             iconText: "󰓅"
             tooltipText: "Run a speed test"
-            foreground: root.bar.foreground
+            foreground: root.bar.panelForeground
             fontFamily: root.bar.fontFamily
             iconSize: Style.font.subtitle * 1.5
             horizontalPadding: Style.space(5)
@@ -1113,7 +1117,7 @@ Panel {
             visible: root.canToggleWifi
             checked: Networking.wifiEnabled
             hasCursor: root.toggleHeaderHasCursor
-            foreground: root.bar.foreground
+            foreground: root.bar.panelForeground
             Layout.alignment: Qt.AlignVCenter
             onHovered: function(on) { if (on) root.setHeaderCursor(root.toggleHeaderIndex) }
             onToggled: root.toggleNetwork()
@@ -1149,7 +1153,7 @@ Panel {
             readonly property string detail: root.headerDetail()
 
             text: heroSsid.detail !== "" ? heroSsid.title + " (" + heroSsid.detail + ")" : heroSsid.title
-            color: root.bar.foreground
+            color: root.bar.panelForeground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.title
             font.bold: true
@@ -1170,7 +1174,7 @@ Panel {
               return ""
             }
             visible: text !== ""
-            color: Qt.darker(root.bar.foreground, 1.4)
+            color: Qt.darker(root.bar.panelForeground, 1.4)
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.caption
             font.bold: true
@@ -1200,12 +1204,12 @@ Panel {
           InfoLabel { text: "Ping" }
           DetailValue {
             text: root.formatPingLatency(root.internetPingLatency)
-            color: root.internetPingPacketLoss > 0 ? root.bar.urgent : root.bar.foreground
+            color: root.internetPingPacketLoss > 0 ? root.bar.urgent : root.bar.panelForeground
           }
           InfoLabel { text: "Packet Loss" }
           DetailValue {
             text: root.formatPacketLoss(root.internetPingPacketLoss)
-            color: root.internetPingPacketLoss > 0 ? root.bar.urgent : root.bar.foreground
+            color: root.internetPingPacketLoss > 0 ? root.bar.urgent : root.bar.panelForeground
           }
 
           InfoLabel { text: "Receiving" }
@@ -1237,7 +1241,7 @@ Panel {
       // on more than one band -- a single-band AP has nothing to toggle.
       PanelSeparator {
         visible: root.canSelectBand
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
       }
 
       Column {
@@ -1255,7 +1259,7 @@ Panel {
           PanelSectionHeader {
             id: bandHeader
             text: root.bandSectionTitle
-            foreground: root.bar.foreground
+            foreground: root.bar.panelForeground
             fontFamily: root.bar.fontFamily
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
@@ -1270,7 +1274,7 @@ Panel {
             PanelSectionHeader {
               id: bandAutoLabel
               text: "AUTOMATIC"
-              foreground: root.bar.foreground
+              foreground: root.bar.panelForeground
               fontFamily: root.bar.fontFamily
               anchors.verticalCenter: parent.verticalCenter
             }
@@ -1289,7 +1293,7 @@ Panel {
               checked: !root.bandPinned
               busy: root.bandBusy
               hasCursor: root.cursorActive && root.focusSection === "band" && root.bandAutoFocused
-              foreground: root.bar.foreground
+              foreground: root.bar.panelForeground
               onToggled: root.toggleBandAuto()
 
               onHovered: function(isHovered) {
@@ -1366,7 +1370,7 @@ Panel {
 
       // DNS provider selection.
       PanelSeparator {
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
       }
 
       Column {
@@ -1375,7 +1379,7 @@ Panel {
 
         PanelSectionHeader {
           text: "DNS PROVIDER"
-          foreground: root.bar.foreground
+          foreground: root.bar.panelForeground
           fontFamily: root.bar.fontFamily
         }
 
@@ -1425,13 +1429,13 @@ Panel {
       // Wi-Fi networks (only if a Wi-Fi station is available).
       PanelSeparator {
         visible: root.wifiStationAvailable
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
       }
 
       PanelSectionHeader {
         visible: root.wifiStationAvailable && root.scanning
         text: "SCANNING WI-FI…"
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
         fontFamily: root.bar.fontFamily
       }
 
@@ -1474,7 +1478,7 @@ Panel {
             PanelSectionHeader {
               visible: sectionTitle !== ""
               text: sectionTitle
-              foreground: root.bar.foreground
+              foreground: root.bar.panelForeground
               fontFamily: root.bar.fontFamily
               height: visible ? implicitHeight : 0
             }
@@ -1504,7 +1508,7 @@ Panel {
     text: root.bandLabel(band)
     tooltipText: root.bandTooltip(band)
     fontSize: Style.font.bodySmall
-    foreground: root.bar.foreground
+    foreground: root.bar.panelForeground
     fontFamily: root.bar.fontFamily
     horizontalPadding: Style.spacing.controlPaddingX
     verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
@@ -1535,7 +1539,7 @@ Panel {
 
     text: provider
     fontSize: Style.font.bodySmall
-    foreground: root.bar.foreground
+    foreground: root.bar.panelForeground
     fontFamily: root.bar.fontFamily
     horizontalPadding: Style.spacing.controlPaddingX
     verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
@@ -1577,7 +1581,7 @@ Panel {
 
     hasCursor: root.cursorActive && isSelected && !root.wifiActionFocused
     current: isConnected
-    foreground: root.bar.foreground
+    foreground: root.bar.panelForeground
     fill: root.hoverFill
     currentFill: root.selectedFill
     // Gate on the matching *Kind/*Reason being non-empty so a hidden-SSID
@@ -1626,9 +1630,9 @@ Panel {
 
     readonly property color statusColor: {
       if (isFailed) return root.bar.urgent
-      if (isBusy) return root.bar.foreground
-      if (isConnected) return root.bar.foreground
-      return Qt.darker(root.bar.foreground, 1.5)
+      if (isBusy) return root.bar.panelForeground
+      if (isConnected) return root.bar.panelForeground
+      return Qt.darker(root.bar.panelForeground, 1.5)
     }
 
     implicitHeight: rowBody.implicitHeight + (isPasswordOpen ? passwordPanel.implicitHeight + Style.spacing.md : 0)
@@ -1704,7 +1708,7 @@ Panel {
           anchors.verticalCenter: parent.verticalCenter
           horizontalAlignment: Text.AlignHCenter
           text: row.forgetVisible ? "󰅙" : "󰌾"
-          color: row.forgetVisible ? root.bar.urgent : Qt.darker(root.bar.foreground, 1.4)
+          color: row.forgetVisible ? root.bar.urgent : Qt.darker(root.bar.panelForeground, 1.4)
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.subtitle
         }
@@ -1747,7 +1751,7 @@ Panel {
 
         Text {
           text: row.net ? (row.net.ssid || "Hidden") : ""
-          color: root.bar.foreground
+          color: root.bar.panelForeground
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
           elide: Text.ElideRight
@@ -1808,7 +1812,7 @@ Panel {
         placeholderText: "Identity (user@domain)"
         font.family: Style.font.family
         font.pixelSize: Style.font.body
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
         horizontalPadding: Style.spacing.controlGap
         verticalPadding: Style.spacing.controlPaddingY
         enabled: !row.isBusy
@@ -1834,7 +1838,7 @@ Panel {
         placeholderText: "Passphrase"
         font.family: Style.font.family
         font.pixelSize: Style.font.body
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
         horizontalPadding: Style.spacing.controlGap
         verticalPadding: Style.spacing.controlPaddingY
         enabled: !row.isBusy
@@ -1855,8 +1859,8 @@ Panel {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         height: Style.spacing.controlHeight
-        color: Style.normalFillFor(root.bar.foreground)
-        borderSpec: Border.controlSpec("normal", root.bar.foreground, Color.accent)
+        color: Style.normalFillFor(root.bar.panelForeground)
+        borderSpec: Border.controlSpec("normal", root.bar.panelForeground, Color.accent)
         radius: Style.cornerRadius
 
         Text {
@@ -1864,7 +1868,7 @@ Panel {
           horizontalAlignment: Text.AlignHCenter
           verticalAlignment: Text.AlignVCenter
           text: row.isFailed ? "Wrong password" : "Connecting..."
-          color: row.isFailed ? root.bar.urgent : root.bar.foreground
+          color: row.isFailed ? root.bar.urgent : root.bar.panelForeground
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.bodySmall
         }
@@ -1881,7 +1885,7 @@ Panel {
         enabled: row.net && pwField.text.length > 0 && (!row.isEnterprise || idField.text.length > 0)
         iconText: "󰄬"
         tooltipText: "Connect"
-        foreground: root.bar.foreground
+        foreground: root.bar.panelForeground
         fontFamily: root.bar.fontFamily
         onClicked: row.submitCredentials()
       }
@@ -1913,14 +1917,14 @@ Panel {
   }
 
   component InfoLabel: Text {
-    color: root.bar.foreground
+    color: root.bar.panelForeground
     opacity: 0.6
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall
   }
 
   component InfoValue: Text {
-    color: root.bar.foreground
+    color: root.bar.panelForeground
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall
   }

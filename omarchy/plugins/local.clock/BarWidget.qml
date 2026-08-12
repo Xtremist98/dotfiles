@@ -14,6 +14,10 @@ BarWidget {
   id: root
   moduleName: "omarchy.clock"
 
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.panelForeground)
+    : (bar ? bar.panelForeground : Color.foreground)
+
   property date displayDate: clock.date
 
   readonly property string configuredFormat: vertical
@@ -143,6 +147,7 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
+    foreground: root.glyphColor
     text: root.vertical ? "" : root.displayText
     labelVisible: !root.vertical
     hasVisualContent: root.vertical ? root.verticalLines.length > 0 : text !== ""

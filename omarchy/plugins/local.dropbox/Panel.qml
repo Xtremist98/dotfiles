@@ -36,9 +36,12 @@ Panel {
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, barForeground)
+    : barForeground
   readonly property color iconColor: dropbox.authenticated && dropbox.active ? foreground : dim
   readonly property string toggleHint: dropbox.active ? "Pause syncing" : "Resume syncing"
-  readonly property color barIconColor: dropbox.authenticated && dropbox.active ? barForeground : Qt.darker(barForeground, 1.55)
+  readonly property color barIconColor: dropbox.authenticated && dropbox.active ? glyphColor : Qt.darker(glyphColor, 1.55)
   // Only claim the header cursor when the switch is actually on screen —
   // "header" stays navigable, but an absent CLI leaves nothing to highlight.
   readonly property bool headerHasCursor: cursorActive && focusSection === "header" && dropbox.installed

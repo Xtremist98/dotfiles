@@ -123,7 +123,9 @@ Panel {
 
   // --------------------------------------------------------- panel palette
 
-  readonly property color ink: bar ? bar.barForeground : Color.foreground
+  readonly property color ink: bar ? bar.panelForeground : Color.foreground
+  readonly property color barInk: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, ink) : ink
   readonly property string mono: bar ? bar.fontFamily : Style.font.family
   readonly property color seal: Color.accent
   readonly property color sumi: Qt.darker(ink, 1.55)
@@ -192,7 +194,7 @@ Panel {
       anchors.verticalCenter: parent.verticalCenter
       anchors.verticalCenterOffset: 0
       text: root.playIcon
-      color: root.ink
+      color: root.barInk
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
@@ -208,7 +210,7 @@ Panel {
       lineHeightMode: Text.FixedHeight
       verticalAlignment: Text.AlignVCenter
       text: root.name
-      color: root.ink
+      color: root.barInk
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering

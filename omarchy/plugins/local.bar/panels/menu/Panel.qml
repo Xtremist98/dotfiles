@@ -25,7 +25,7 @@ Panel {
 
   // ---------------------------------------------------------- palette
 
-  readonly property color ink: root.bar ? root.bar.barForeground : Color.foreground
+  readonly property color ink: root.bar ? root.bar.panelForeground : Color.foreground
   readonly property color dim: Qt.darker(ink, 1.45)
   readonly property color sumi: Qt.darker(ink, 1.55)
   readonly property color accent: Color.accent

@@ -13,8 +13,9 @@ Item {
   // The omarchy-shell host injects omarchyPath from OMARCHY_PATH. Non-required
   // so a custom bar can also be constructed via Loader.source, where the host
   // injects these in onLoaded rather than inline.
-  property string omarchyPath: "/usr/share/omarchy"
   // Injected by the host shell so bar slots can resolve enabled widgets.
+  property string omarchyPath: "/usr/share/omarchy"
+
   property var barWidgetRegistry: null
   // Injected by the host shell every time shell.json is reloaded. Holds the
   // `bar:` subtree: position, centerAnchor, layout. The host owns file IO;
@@ -61,13 +62,63 @@ Item {
   property color transparentForeground: Color.bar.text
   property color foreground: themeForeground
   property color barForeground: useTransparentForeground ? transparentForeground : themeForeground
+  // Panel text/icons resolve to the color04 swatch via the bar's visual
+  // tokens, so popup content matches the widget glyphs instead of white.
+  // Starts as themeForeground and re-resolves once the async token loader
+  // arrives, so panels bound during startup never see an undefined color.
+  property color panelForeground: themeForeground
+  onVisualTokensChanged: updatePanelForeground()
+  function updatePanelForeground() {
+    const tokens = visualTokens
+    panelForeground = tokens && typeof tokens.widgetGlyphColor === "function"
+      ? tokens.widgetGlyphColor({ color: "color04" }, themeForeground)
+      : themeForeground
+  }
   property bool foregroundAnimationEnabled: true
-  property color background: Color.bar.background
+  property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.94)
   property color urgent: Color.bar.active
-  // Shibumi visual tokens for the ported Shibumi weather panel. Loaded from
+  readonly property color shellBorderColor: Qt.rgba(
+    Color.background.r * 0.78 + Color.foreground.r * 0.22,
+    Color.background.g * 0.78 + Color.foreground.g * 0.22,
+    Color.background.b * 0.78 + Color.foreground.b * 0.22, 1)
+  // Single flag for the 1px bar edge line; lives in VisualTokens presentation.
+  readonly property bool edgeLineEnabled: visualTokens
+    ? visualTokens.edgeLineEnabled !== false : true
+  readonly property color pillColor: Qt.rgba(
+    Color.background.r, Color.background.g, Color.background.b, 0.18)
+  readonly property color pillBorderColor: "#20ffffff"
+  // Visual tokens for the weather panel. Loaded from
   // local.bar/styles/VisualTokens.qml (bar-scoped so widgets can read
-  // bar.visualTokens). Absent on the stock omarchy bar; guarded in ShibumiPanel.
+  // bar.visualTokens). Absent on the stock omarchy bar; guarded in Panel.
   readonly property var visualTokens: visualTokensLoader.item
+
+  function widgetGlyphColor(settings, fallback) {
+    var tokens = root.visualTokens
+    return tokens && typeof tokens.widgetGlyphColor === "function"
+      ? tokens.widgetGlyphColor(settings, fallback) : fallback
+  }
+
+  function widgetContentColor(settings, fallback) {
+    var tokens = root.visualTokens
+    return tokens && typeof tokens.widgetContentColor === "function"
+      ? tokens.widgetContentColor(settings, fallback) : fallback
+  }
+
+  function widgetFillColor(settings) {
+    var tokens = root.visualTokens
+    return tokens && typeof tokens.widgetFillColor === "function"
+      ? tokens.widgetFillColor(settings) : "transparent"
+  }
+
+  function widgetBorderColor(settings) {
+    var tokens = root.visualTokens
+    return tokens && typeof tokens.widgetBorderColor === "function"
+      ? tokens.widgetBorderColor(settings) : root.pillBorderColor
+  }
+
+  function boxBorderColorFor(entries) {
+    return root.boxBorderColor
+  }
 
   // ---- waybar-style module boxes (local.bar customization) ----------------
   // Visual-only. Defaults can be overridden with a `bar.box` object in
@@ -76,16 +127,16 @@ Item {
   // re-evaluate JS-expression bindings that read other `property var`s, so
   // these are refreshed imperatively by updateBoxConfig() on config load.
   property var boxConfig: {}
-  property int boxInnerPadding: 10
-  property int boxOuterMargin: 3
-  property int boxRadius: 10
-  property int boxInnerSpacing: 8
+  property int boxInnerPadding: 9
+  property int boxOuterMargin: 4
+  property int boxRadius: Style.space(12)
+  property int boxInnerSpacing: 5
   property int moduleSpacing: 6
   // A boxed module whose content is invisible or narrower than this collapses
   // its pill entirely (mpris idle, no pending system updates, no model usage).
   property int boxMinContentSize: 8
-  property color boxColor: "#14ffffff"
-  property color boxBorderColor: "#66ffffff"
+  property color boxColor: root.pillColor
+  property color boxBorderColor: root.pillBorderColor
   property var unboxedModules: ["omarchy.menu", "omarchy.spacer"]
   property var boxGroups: [["omarchy.network", "netspeed"]]
 
@@ -359,7 +410,7 @@ Item {
   }
 
   readonly property bool vertical: position === "left" || position === "right"
-  readonly property int barSize: vertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal
+  readonly property int barSize: vertical ? Style.bar.sizeVertical : Style.space(33)
 
   function normalizePosition(value) {
     return BarModel.normalizePosition(value)
@@ -519,6 +570,68 @@ Item {
     return BarModel.entryId(entry)
   }
 
+  // ---- Widget integration (local.bar host contract) ----------------
+  // Widgets read per-module settings and resolve sibling widgets through the
+  // bar. local.bar exposes the standard host-bar surface so widgets keep
+  // working without a native suite bar.
+
+  // Per-module settings resolved from the widget's own layout entry. The
+  // state service that used to own these keys no longer exists, so
+  // widgets fall back to their layout entry keys (e.g. "unit") via Ui.BarWidget
+  // setting() instead.
+  function widgetSettings(groupId, moduleId) {
+    return ({})
+  }
+
+  // Persist a per-module setting into the widget's layout entry in shell.json,
+  // e.g. weather unit toggles write `unit` next to the widget id.
+  function widgetSetSetting(moduleId, key, value) {
+    if (!root.shell || typeof root.shell.mutateShellConfig !== "function") return false
+    var changed = false
+    root.shell.mutateShellConfig(function(config) {
+      var regions = ["left", "center", "right"]
+      for (var r = 0; r < regions.length && !changed; r++) {
+        var entries = config.bar && config.bar.layout
+          && config.bar.layout[regions[r]]
+        if (!Array.isArray(entries)) continue
+        for (var i = 0; i < entries.length; i++) {
+          if (root.entryId(entries[i]) !== moduleId) continue
+          if (!Util.isPlainObject(entries[i])) entries[i] = { id: moduleId }
+          entries[i][key] = value
+          changed = true
+          break
+        }
+      }
+    })
+    return changed
+  }
+
+  // Resolve a registered bar widget to its QML component (from the widget
+  // registry mirror, same source ModuleSlot uses).
+  function registeredWidgetComponent(id) {
+    var w = root.barWidgetRegistry ? root.barWidgetRegistry.widgets : ({})
+    var entry = w[String(id || "")]
+    return entry ? entry.component : null
+  }
+
+  // Resolve a registered bar widget to its entry-point URL (used by widgets
+  // that load a sibling widget through a Loader by source).
+  function registeredWidgetSource(id) {
+    var registry = root.shell && "pluginRegistry" in root.shell
+      ? root.shell.pluginRegistry : null
+    var manifest = registry && registry.installedPlugins
+      ? registry.installedPlugins[String(id || "")] : null
+    return registry && typeof registry.entryPointUrl === "function"
+      ? registry.entryPointUrl(manifest, "barWidget") : ""
+  }
+
+  // The original suite host bar owned a widget-restore mechanism that
+  // local.bar does not implement; the control-center calls this on close.
+  // No-op stub keeps the contract without inventing restore behavior.
+  function cancelWidgetRestore(pluginId) {
+    // local.bar has no widget restore queue.
+  }
+
   // Split a section's entries into render groups: a run of modules sharing one
   // pill, a single boxed module, or a bare unboxed module. Groups only form
   // when their modules appear consecutively in the layout.
@@ -595,11 +708,13 @@ Item {
     return source ? Util.fileUrl(source) : ""
   }
 
-  Component.onCompleted: applyBarConfig()
+  Component.onCompleted: {
+    applyBarConfig()
+    updatePanelForeground()
+  }
 
   Loader {
     id: visualTokensLoader
-    active: false
     Component.onCompleted: setSource(Qt.resolvedUrl("styles/VisualTokens.qml"),
       { bar: root })
   }
@@ -1020,6 +1135,17 @@ Item {
     Loader {
       anchors.fill: parent
       sourceComponent: root.vertical ? verticalBar : horizontalBar
+    }
+
+    Rectangle {
+      id: edgeLine
+      z: 6
+      visible: root.edgeLineEnabled
+      color: root.shellBorderColor
+      x: root.vertical ? (root.position === "left" ? parent.width - 1 : 0) : 0
+      y: root.vertical ? 0 : (root.position === "top" ? parent.height - 1 : 0)
+      width: root.vertical ? 1 : parent.width
+      height: root.vertical ? parent.height : 1
     }
 
     PopupWindow {
@@ -1619,7 +1745,7 @@ Item {
     BorderSurface {
       anchors.fill: parent
       color: root.boxColor
-      borderSpec: Border.flat(root.boxBorderColor, 1)
+      borderSpec: Border.flat(root.boxBorderColorFor(box.entries), 1)
       radius: root.boxRadius
     }
 

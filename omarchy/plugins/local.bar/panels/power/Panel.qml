@@ -10,6 +10,9 @@ Panel {
   id: root
   moduleName: "omarchy.power"
   ipcTarget: "omarchy.power"
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.panelForeground)
+    : (bar ? bar.panelForeground : Color.foreground)
   property var batteryInfo: ({})
   property var systemInfo: ({})
   property var profiles: []
@@ -80,7 +83,7 @@ Panel {
   }
 
   readonly property color batteryFillColor: {
-    return root.bar ? root.bar.foreground : Color.foreground
+    return root.bar ? root.bar.panelForeground : Color.foreground
   }
 
   // Cute agent-flavored phrases shown in the hero status line, rotated on a
@@ -253,6 +256,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
+    foreground: root.glyphColor
     slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
@@ -298,7 +302,7 @@ Panel {
           Text {
             id: heroIcon
             text: root.batteryIcon()
-            color: root.bar.foreground
+            color: root.bar.panelForeground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.display
             anchors.left: parent.left
@@ -318,7 +322,7 @@ Panel {
 
             Text {
               text: "Battery"
-              color: root.bar.foreground
+              color: root.bar.panelForeground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
               font.bold: true
@@ -329,7 +333,7 @@ Panel {
             Text {
               id: heroStatus
               text: root.heroStatusText.toUpperCase()
-              color: Qt.darker(root.bar.foreground, 1.4)
+              color: Qt.darker(root.bar.panelForeground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
               font.bold: true
@@ -342,7 +346,7 @@ Panel {
           Text {
             id: heroPercent
             text: root.batteryInfo.percentage || "—"
-            color: root.bar.foreground
+            color: root.bar.panelForeground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.displayLarge
             font.bold: true
@@ -362,7 +366,7 @@ Panel {
             id: barTrack
             anchors.fill: parent
             radius: height / 2
-            color: Qt.rgba(root.bar.foreground.r, root.bar.foreground.g, root.bar.foreground.b, 0.12)
+            color: Qt.rgba(root.bar.panelForeground.r, root.bar.panelForeground.g, root.bar.panelForeground.b, 0.12)
           }
 
           Rectangle {
@@ -422,7 +426,7 @@ Panel {
 
         // ---------- Power profile picker ----------
         PanelSeparator {
-          foreground: root.bar.foreground
+          foreground: root.bar.panelForeground
         }
 
         Column {
@@ -431,7 +435,7 @@ Panel {
 
           PanelSectionHeader {
             text: "POWER PROFILE"
-            foreground: root.bar.foreground
+            foreground: root.bar.panelForeground
             fontFamily: root.bar.fontFamily
           }
 
@@ -454,7 +458,7 @@ Panel {
                 iconSize: Style.font.title
                 text: String(modelData).charAt(0).toUpperCase() + String(modelData).slice(1)
                 fontSize: Style.font.bodySmall
-                foreground: root.bar.foreground
+                foreground: root.bar.panelForeground
                 fontFamily: root.bar.fontFamily
                 horizontalPadding: Style.spacing.controlPaddingX
                 verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
@@ -489,14 +493,14 @@ Panel {
   }
 
   component InfoLabel: Text {
-    color: root.bar.foreground
+    color: root.bar.panelForeground
     opacity: 0.6
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall
   }
 
   component InfoValue: Text {
-    color: root.bar.foreground
+    color: root.bar.panelForeground
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall
   }

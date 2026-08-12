@@ -7,7 +7,7 @@ import qs.Commons as Commons
 import qs.Ui as Ui
 import "WeatherLocationModel.js" as WeatherLocationModel
 
-ShibumiPanel {
+Panel {
   id: panel
 
   required property var ownerWidget
@@ -16,9 +16,9 @@ ShibumiPanel {
   readonly property bool useImperial: ownerWidget.useImperial === true
   readonly property var forecastDays: weatherService
     && weatherService.forecastDays ? weatherService.forecastDays : []
-  readonly property color primaryTextColor: shibumiTokens
-    && shibumiTokens.paper !== undefined
-    ? shibumiTokens.paper : renderedSurfaceColor
+  readonly property color primaryTextColor: tokens
+    && tokens.paper !== undefined
+    ? tokens.paper : renderedSurfaceColor
   readonly property string configuredLocationName: {
     const location = weatherService && weatherService.configuredLocation
       ? weatherService.configuredLocation : null
@@ -318,32 +318,9 @@ ShibumiPanel {
           renderType: Text.NativeRendering
         }
 
-        Text {
-          anchors.right: parent.right
-          anchors.verticalCenter: parent.verticalCenter
-          visible: panel.shellStyle === "shibumi"
-          text: "\u2715"
-          color: closeMouse.containsMouse
-            ? panel.controlAccent : panel.controlMuted
-          font.family: panel.bar ? panel.bar.fontFamily
-            : Commons.Style.font.family
-          font.pixelSize: 12
-          renderType: Text.NativeRendering
-          Behavior on color { ColorAnimation { duration: 120 } }
-
-          MouseArea {
-            id: closeMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: panel.closePanel()
-          }
-        }
-
         IconAction {
           icon: "close"
           tooltip: "Close"
-          visible: panel.shellStyle !== "shibumi"
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
           onClicked: panel.closePanel()
@@ -889,7 +866,7 @@ ShibumiPanel {
     implicitWidth: Commons.Style.space(28)
     implicitHeight: Commons.Style.space(28)
     radius: panel.controlRadius
-    foreground: panel.bar ? panel.bar.foreground : Commons.Color.foreground
+    foreground: panel.bar ? panel.bar.panelForeground : Commons.Color.foreground
     accent: panel.bar ? panel.bar.urgent : Commons.Color.accent
 
     IconText {
@@ -908,7 +885,7 @@ ShibumiPanel {
       onClicked: action.clicked()
     }
 
-    ShibumiPanelToolTip {
+    PanelToolTip {
       panel: panel
       visible: action.tooltip !== "" && actionMouse.containsMouse
       text: action.tooltip

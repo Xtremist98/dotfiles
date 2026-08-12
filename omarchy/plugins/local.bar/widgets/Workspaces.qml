@@ -11,6 +11,9 @@ BarWidget {
   readonly property var wsIcons: ({ 1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "七", 8: "八", 9: "九" })
   readonly property string defaultIcon: "\ueA71"
   readonly property string activeIcon: "\uee0d "
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.barForeground)
+    : (bar ? bar.barForeground : Color.foreground)
 
   function workspaceById(id) {
     var values = Hyprland.workspaces.values
@@ -40,17 +43,16 @@ BarWidget {
   }
 
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(1.5)
+  readonly property real contentWidth: (Style.space(20) + Style.space(1)) * root.workspaceIds().length - Style.space(1)
 
-  implicitWidth: grid.implicitWidth + trailingGap
-  implicitHeight: grid.implicitHeight
+  implicitWidth: contentWidth + trailingGap
+  implicitHeight: root.barSize
 
-  GridLayout {
+  Item {
     id: grid
-    anchors.fill: parent
-    anchors.rightMargin: root.trailingGap
-    columns: root.vertical ? 1 : root.workspaceIds().length
-    columnSpacing: root.vertical ? 0 : Style.space(1)
-    rowSpacing: root.vertical ? Style.space(2) : 0
+    anchors.centerIn: parent
+    width: contentWidth
+    height: parent.height
 
     Repeater {
       model: root.workspaceIds()
@@ -58,6 +60,7 @@ BarWidget {
       Item {
         id: wsItem
         required property int modelData
+        required property int index
 
         readonly property var workspace: root.workspaceById(modelData)
         readonly property bool occupied: workspace !== null && workspace.toplevels.values.length > 0
@@ -65,14 +68,16 @@ BarWidget {
 
         width: root.vertical ? root.barSize : Style.space(20)
         height: root.vertical ? Style.space(20) : root.barSize
+        x: index * (Style.space(20) + Style.space(1))
+        anchors.verticalCenter: parent.verticalCenter
 
         WidgetButton {
           anchors.fill: parent
           bar: root.bar
           text: wsItem.focused ? root.activeIcon : (root.wsIcons[modelData] ? root.wsIcons[modelData] : root.defaultIcon)
           opacity: wsItem.occupied || wsItem.focused ? 1 : 0.5
-          foreground: bar ? bar.barForeground : Color.foreground
-          activeColor: bar ? bar.barForeground : Color.foreground
+          foreground: root.glyphColor
+          activeColor: root.glyphColor
           active: wsItem.focused
           fontSize: Style.bar.iconFont - 1
           horizontalMargin: 0

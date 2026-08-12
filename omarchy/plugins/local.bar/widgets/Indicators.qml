@@ -53,6 +53,11 @@ BarWidget {
           item = JSON.parse(JSON.stringify(item))
         } catch (error) {
         }
+      } else if (typeof item === "string") {
+        // Propagate this widget's palette color to each child indicator so the
+        // active icon glyphs colorize via widgetGlyphColor(root.indicatorSettings).
+        var strId = item
+        if (strId !== "") item = { id: strId, color: settings.color }
       }
       var id = entryId(item)
       if (id !== "") result.push(item)
@@ -408,6 +413,11 @@ BarWidget {
     readonly property string indicatorId: root.entryId(entry)
     readonly property var indicatorSettings: root.entrySettings(entry)
     readonly property var barRef: root.bar
+    readonly property color glyphColor: root.bar && root.bar.widgetGlyphColor
+      ? root.bar.widgetGlyphColor(
+          indicatorBlock === "active" ? { color: "color04" } : root.indicatorSettings,
+          root.bar.barForeground)
+      : (root.bar ? root.bar.barForeground : Color.foreground)
 
     implicitWidth: indicatorSource.item && indicatorSource.item.visible ? indicatorSource.item.implicitWidth : 0
     implicitHeight: indicatorSource.item && indicatorSource.item.visible ? indicatorSource.item.implicitHeight : 0
@@ -451,6 +461,7 @@ BarWidget {
       if ("bar" in target) target.bar = root.bar
       if ("moduleName" in target) target.moduleName = indicatorId
       if ("settings" in target) target.settings = indicatorSettings
+      if ("foreground" in target) target.foreground = glyphColor
       if ("indicatorBlock" in target) target.indicatorBlock = indicatorBlock
       if ("indicatorHost" in target) target.indicatorHost = root
       if ("activeOverride" in target) target.activeOverride = indicatorBlock === "active" ? true : null

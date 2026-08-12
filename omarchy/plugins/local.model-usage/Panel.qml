@@ -11,7 +11,9 @@ Panel {
   ipcTarget: "omarchy.model-usage"
   manageIpc: false
 
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color foreground: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.foreground)
+    : (bar ? bar.foreground : Color.foreground)
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property color surface: Color.popups.background
@@ -295,6 +297,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
+    foreground: root.foreground
     text: "󱚣"
     slotSize: Style.bar.iconCanvas + Style.spaceReal(6) * 2
     fontSize: Style.bar.iconFont - 1

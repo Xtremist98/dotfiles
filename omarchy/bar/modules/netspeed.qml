@@ -8,6 +8,10 @@ BarWidget {
   id: root
   moduleName: "netspeed"
 
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.barForeground)
+    : (bar ? bar.barForeground : Color.foreground)
+
   property string curIface: ""
   property var prevRx: 0
   property var prevTx: 0
@@ -93,7 +97,7 @@ BarWidget {
 
     Text {
       text: "󰇚"
-      color: root.bar ? root.bar.barForeground : Color.foreground
+      color: root.glyphColor
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
@@ -101,7 +105,7 @@ BarWidget {
 
     Text {
       text: root.formatRate(root.downRate)
-      color: root.bar ? root.bar.barForeground : Color.foreground
+      color: root.glyphColor
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering

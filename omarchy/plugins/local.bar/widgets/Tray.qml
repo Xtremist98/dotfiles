@@ -16,7 +16,9 @@ BarWidget {
   property bool trayMenuOpen: false
   property var activeTrayItem: null
   property var activeTrayAnchor: null
-  readonly property color foreground: bar ? bar.foreground : Color.foreground
+  readonly property color foreground: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.foreground)
+    : (bar ? bar.foreground : Color.foreground)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   // Show every tray icon by default instead of tucking unpinned items behind
   // the chevron drawer. Set false (or add "expandByDefault": false to the tray
@@ -208,6 +210,7 @@ BarWidget {
         BarIconButton {
           id: expandIcon
           bar: root.bar
+          foreground: root.foreground
           width: implicitWidth
           height: implicitHeight
           x: root.drawerExtent - root.revealExtent
@@ -291,6 +294,7 @@ BarWidget {
         BarIconButton {
           id: expandIcon
           bar: root.bar
+          foreground: root.foreground
           width: implicitWidth
           height: implicitHeight
           y: root.drawerExtent - root.revealExtent

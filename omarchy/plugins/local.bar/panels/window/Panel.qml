@@ -14,6 +14,10 @@ Panel {
   moduleName: "window-info"
   ipcTarget: "window-info"
 
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.panelForeground)
+    : (bar ? bar.panelForeground : Color.foreground)
+
   readonly property var toplevel: Hyprland.activeToplevel
 
   readonly property int barSize: root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
@@ -216,7 +220,7 @@ Panel {
     "fragments": ["󰇚", "Fragments"],
 
     // Omarchy & Modern Linux
-    "org.omarchy.bash": ["󰣇", "System-info"],
+    "org.omarchy.about": ["󰣇", "System-info"],
     "org.omarchy.btop": ["󰓅", "Btop-Monitor"],
     "hyprland": ["", "Hyprland"],
     "ghostty": ["󰊠", "Ghostty Terminal"],
@@ -368,7 +372,8 @@ Panel {
     "fdm": ["", "FDM"],
     "qbittorrent": ["", "Torrent"],
     "windscribe": ["", "Windscribe"],
-    "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"]
+    "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"],
+    "org.quickshell": ["", "Files"]
   })
 
   readonly property var siteMap: ({
@@ -662,7 +667,7 @@ Panel {
       id: glyphLabel
       anchors.verticalCenter: parent.verticalCenter
       text: root.buttonInfo[0]
-      color: root.bar ? root.bar.barForeground : Color.foreground
+      color: root.glyphColor
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
@@ -675,7 +680,7 @@ Panel {
       clip: true
       elide: Text.ElideRight
       text: root.buttonInfo[1]
-      color: root.bar ? root.bar.barForeground : Color.foreground
+      color: root.glyphColor
       font.family: root.bar ? root.bar.fontFamily : Style.font.family
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
@@ -724,7 +729,7 @@ Panel {
           Text {
             id: heroIcon
             text: root.buttonInfo[0]
-            color: root.bar.foreground
+            color: root.bar.panelForeground
             font.family: root.bar.fontFamily
             font.pixelSize: 42
             anchors.left: parent.left
@@ -741,7 +746,7 @@ Panel {
 
             Text {
               text: root.buttonInfo[1]
-              color: root.bar.foreground
+              color: root.bar.panelForeground
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.heading
               font.bold: true
@@ -752,7 +757,7 @@ Panel {
             Text {
               visible: root.win && root.win.title !== "" && root.win.title !== root.buttonInfo[1]
               text: root.win ? root.win.title : ""
-              color: Qt.darker(root.bar.foreground, 1.4)
+              color: Qt.darker(root.bar.panelForeground, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
               elide: Text.ElideRight
@@ -763,7 +768,7 @@ Panel {
 
         // ---------- Window details ----------
         PanelSeparator {
-          foreground: root.bar.foreground
+          foreground: root.bar.panelForeground
         }
 
         Column {
@@ -772,7 +777,7 @@ Panel {
 
           PanelSectionHeader {
             text: "WINDOW"
-            foreground: root.bar.foreground
+            foreground: root.bar.panelForeground
             fontFamily: root.bar.fontFamily
           }
 
@@ -791,7 +796,7 @@ Panel {
 
                 Text {
                   text: modelData.key
-                  color: Qt.darker(root.bar.foreground, 1.45)
+                  color: Qt.darker(root.bar.panelForeground, 1.45)
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -801,7 +806,7 @@ Panel {
 
                 Text {
                   text: modelData.value
-                  color: root.bar.foreground
+                  color: root.bar.panelForeground
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.body
                   elide: Text.ElideRight

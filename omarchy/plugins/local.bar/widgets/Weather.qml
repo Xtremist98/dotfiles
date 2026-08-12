@@ -16,10 +16,11 @@ Ui.BarWidget {
   readonly property var panelItem: panelLoader.item
   readonly property bool panelLoaded: panelItem !== null
   readonly property bool opened: panelOpen
-  readonly property var stateService: bar && bar.shell
-    && typeof bar.shell.serviceFor === "function"
-    ? bar.shell.serviceFor("hancore.shibumi.state") : null
-  readonly property string unitSetting: String(setting("unit", "") || "").toLowerCase()
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.foreground)
+    : (bar ? bar.foreground : Commons.Color.foreground)
+  readonly property string unitSetting: String(
+    setting("unit", "") || "").toLowerCase()
   readonly property bool useImperial: unitOverride !== ""
     ? unitOverride === "imperial"
     : unitSetting === "imperial"
@@ -77,13 +78,15 @@ Ui.BarWidget {
   }
 
   function toggleUnit() {
-    if (stateService && typeof stateService.setWidgetSetting === "function")
-      return stateService.setWidgetSetting("G8", moduleName, "unit",
-        useImperial ? "metric" : "imperial")
-    // Session-only toggle when hancore.shibumi.state is unavailable. To
-    // persist across restarts, set "settings": {"unit": "metric|imperial"}
-    // on the omarchy.weather entry in shell.json.
-    unitOverride = useImperial ? "metric" : "imperial"
+    const next = useImperial ? "metric" : "imperial"
+    if (bar && typeof bar.widgetSetSetting === "function") {
+      if (bar.widgetSetSetting(moduleName, "unit", next)) {
+        unitOverride = next
+        return true
+      }
+    }
+    // Fallback: session-only toggle when the bar cannot persist the setting.
+    unitOverride = next
     return true
   }
 
@@ -109,9 +112,9 @@ Ui.BarWidget {
       : root.weatherService && root.weatherService.unavailable ? "?" : "·"
     color: root.weatherService && root.weatherService.unavailable
       && !root.weatherService.loaded && root.bar
-      ? Qt.rgba(root.bar.foreground.r, root.bar.foreground.g,
-          root.bar.foreground.b, 0.4)
-      : root.bar ? root.bar.foreground : Commons.Color.foreground
+      ? Qt.rgba(root.glyphColor.r, root.glyphColor.g,
+          root.glyphColor.b, 0.4)
+      : root.glyphColor
     font.family: root.weatherService && root.weatherService.loaded
       ? "Material Symbols Rounded"
       : root.bar ? root.bar.fontFamily : Commons.Style.font.family

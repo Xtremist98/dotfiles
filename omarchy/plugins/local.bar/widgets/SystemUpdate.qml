@@ -8,6 +8,10 @@ BarWidget {
   id: root
   moduleName: "omarchy.system-update"
 
+  readonly property color glyphColor: bar && bar.widgetGlyphColor
+    ? bar.widgetGlyphColor(settings, bar.barForeground)
+    : (bar ? bar.barForeground : Color.foreground)
+
   property bool updateAvailable: false
 
   function refresh() {
@@ -56,6 +60,7 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
+    foreground: root.glyphColor
     text: "\uf021"
     slotSize: Style.bar.iconCanvas + Style.spaceReal(6) * 2
     fontSize: Style.bar.iconFont - 1
