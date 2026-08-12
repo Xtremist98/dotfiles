@@ -22,7 +22,6 @@
           "omarchy.power"
         ],
         [
-          "omarchy.tray",
           "theme-picker",
           "omarchy.dropbox",
           "local.model-usage"
@@ -132,6 +131,10 @@
         {
           "color": "color04",
           "id": "local.model-usage"
+        },
+        {
+          "color": "color04",
+          "id": "stappmus.activity-monitor"
         },
         {
           "color": "color04",
