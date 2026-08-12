@@ -1,9 +1,0 @@
-@import "../omarchy/current/theme/waybar.css";
-
-@define-color red     #f38ba8; /* red      → Catppuccin Red   */
-@define-color orange  #fab387; /* orange   → Catppuccin Peach */
-@define-color yellow  #f9e2af; /* yellow   → Catppuccin Yellow*/
-@define-color green   #a6e3a1; /* green    → Catppuccin Green */
-@define-color aqua    #94e2d5; /* aqua     → Catppuccin Teal  */
-@define-color blue    #89b4fa; /* blue     → Catppuccin Blue  */
-@define-color purple  #cba6f7; /* purple   → Catppuccin Mauve */
