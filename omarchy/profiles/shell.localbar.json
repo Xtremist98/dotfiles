@@ -112,7 +112,8 @@
             "localsend",
             "qbittorrent",
             "discord",
-            "vesktop"
+            "vesktop",
+            "chatgpt"
           ],
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
