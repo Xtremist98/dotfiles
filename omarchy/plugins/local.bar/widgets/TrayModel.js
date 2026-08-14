@@ -2,11 +2,11 @@ function text(value) {
   return String(value || "").toLowerCase()
 }
 
-function isDropboxTrayItem(item) {
+function itemNamed(item, name) {
   if (!item) return false
-  return text(item.id).indexOf("dropbox") !== -1
-    || text(item.title).indexOf("dropbox") !== -1
-    || text(item.tooltipTitle).indexOf("dropbox") !== -1
+  return text(item.id).indexOf(name) !== -1
+    || text(item.title).indexOf(name) !== -1
+    || text(item.tooltipTitle).indexOf(name) !== -1
 }
 
 function entryId(entry) {
@@ -30,18 +30,22 @@ function layoutHasWidget(layout, id) {
   return false
 }
 
-function ownedByDedicatedWidget(item, layout) {
-  // local.bar keeps the dedicated omarchy.dropbox widget AND shows the Dropbox
-  // tray icon (its right-click menu is only available from the tray), so don't
-  // suppress the Dropbox StatusNotifierItem here.
+function ownedByOmarchy(item, layout) {
+  // LocalSend's item shows no state, offers only Open and Quit, and its primary
+  // click is a no-op, so Share > Receive is the whole surface. Hiding it by hand
+  // doesn't stick either: LocalSend picks a fresh tray id every launch.
+  if (itemNamed(item, "localsend")) return true
+  // The dedicated Dropbox widget (local.dropbox) now owns the surface — Open,
+  // pause/resume, recent files — so the redundant tray item is dropped.
+  if ((layoutHasWidget(layout, "local.dropbox") || layoutHasWidget(layout, "omarchy.dropbox")) && itemNamed(item, "dropbox")) return true
   return false
 }
 
 if (typeof module !== "undefined") {
   module.exports = {
-    isDropboxTrayItem: isDropboxTrayItem,
+    itemNamed: itemNamed,
     entryId: entryId,
     layoutHasWidget: layoutHasWidget,
-    ownedByDedicatedWidget: ownedByDedicatedWidget
+    ownedByOmarchy: ownedByOmarchy
   }
 }
