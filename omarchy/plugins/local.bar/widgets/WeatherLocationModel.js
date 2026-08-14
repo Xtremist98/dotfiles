@@ -54,8 +54,9 @@ function parseGeocodingResults(raw, query) {
   }
 }
 
-// Prefer the highlighted geocoded result. A raw name remains a valid wttr.in
-// fallback when Open-Meteo has no match or is temporarily unavailable.
+// Prefer the highlighted geocoded result. A raw name without a match falls
+// back to a name-only location, which WeatherService resolves via Open-Meteo
+// geocoding when coordinates are absent.
 function locationCommit(text, suggestions, selectedIndex) {
   var name = String(text || "").replace(/^\s+|\s+$/g, "")
   if (name === "")

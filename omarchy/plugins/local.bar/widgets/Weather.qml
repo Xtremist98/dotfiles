@@ -33,7 +33,10 @@ Ui.BarWidget {
     if (!weatherService) return "Weather unavailable"
     if (!weatherService.loaded)
       return weatherService.unavailable ? "Weather offline" : "Loading weather"
-    const details = (weatherService.place ? weatherService.place + " · " : "")
+    const loc = weatherService.configuredLocation
+      && weatherService.configuredLocation.name
+      ? weatherService.configuredLocation.name : weatherService.place
+    const details = (loc ? loc + " · " : "")
       + temperature + unitSuffix
       + (weatherService.description ? " / " + weatherService.description : "")
     return weatherService.unavailable ? "Weather stale · " + details : details

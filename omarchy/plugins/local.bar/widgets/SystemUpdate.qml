@@ -56,6 +56,33 @@ BarWidget {
     onTriggered: root.refresh()
   }
 
+  // The network is often not ready yet at boot, so the startup check above
+  // can miss an update that is already published. Retry with backoff for the
+  // first few minutes after launch so the indicator appears once connectivity
+  // comes up, instead of waiting up to 6 hours for the next periodic check.
+  Timer {
+    id: bootRetryTimer
+    property int attempt: 0
+    interval: 10000
+    running: false
+    repeat: false
+    onTriggered: {
+      if (root.updateAvailable) return
+      root.refresh()
+      attempt++
+      if (attempt < 6) {
+        interval = Math.min(480000, 10000 * Math.pow(2, attempt))
+        running = true
+      }
+    }
+  }
+
+  Component.onCompleted: {
+    bootRetryTimer.attempt = 0
+    bootRetryTimer.interval = 10000
+    bootRetryTimer.running = true
+  }
+
   BarIconButton {
     id: button
     anchors.fill: parent

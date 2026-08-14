@@ -744,7 +744,7 @@ Panel {
               anchors.leftMargin: 76
               anchors.verticalCenter: parent.verticalCenter
               text: panel.weatherService.glyphForCode(
-                forecastRow.modelData.code, false)
+                forecastRow.modelData.code, true)
               color: panel.controlAccent
               font.family: "Material Symbols Rounded"
               font.pixelSize: 14
