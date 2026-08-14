@@ -31,7 +31,10 @@ function layoutHasWidget(layout, id) {
 }
 
 function ownedByDedicatedWidget(item, layout) {
-  return layoutHasWidget(layout, "omarchy.dropbox") && isDropboxTrayItem(item)
+  // local.bar keeps the dedicated omarchy.dropbox widget AND shows the Dropbox
+  // tray icon (its right-click menu is only available from the tray), so don't
+  // suppress the Dropbox StatusNotifierItem here.
+  return false
 }
 
 if (typeof module !== "undefined") {

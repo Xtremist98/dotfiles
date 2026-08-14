@@ -373,7 +373,8 @@ Panel {
     "qbittorrent": ["", "Torrent"],
     "windscribe": ["", "Windscribe"],
     "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"],
-    "org.quickshell": ["", "Files"]
+    "org.kde.ark": ["", "Ark"],
+    "iloader": ["", "sidestore"]
   })
 
   readonly property var siteMap: ({

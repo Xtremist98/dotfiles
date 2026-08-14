@@ -23,7 +23,6 @@
         ],
         [
           "theme-picker",
-          "omarchy.dropbox",
           "local.model-usage"
         ]
       ],
@@ -113,7 +112,8 @@
             "qbittorrent",
             "discord",
             "vesktop",
-            "chatgpt"
+            "chatgpt",
+            "dropbox"
           ],
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
@@ -122,12 +122,6 @@
         {
           "color": "color04",
           "id": "theme-picker"
-        },
-        {
-          "color": "color04",
-          "id": "omarchy.dropbox",
-          "source": "~/.config/omarchy/plugins/local.dropbox/Panel.qml",
-          "type": "qml"
         },
         {
           "color": "color04",
