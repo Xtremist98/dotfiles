@@ -95,3 +95,22 @@ function stream {
 
 # Bar toggle Switch between Custom bar & Omarchy default bar 
 alias switch-bar='$HOME/.config/omarchy/scripts/toggle-bar.sh'
+
+# NordVpn connectivity
+vpnup() {
+    local CONFIG_FILE="$HOME/nordvpn/$1.ovpn"
+    local CREDS_FILE="$HOME/.nordvpn-creds"
+
+    if [ -f "$CONFIG_FILE" ]; then
+        # --auth-user-pass tells OpenVPN exactly where to look for your login details
+        sudo openvpn --config "$CONFIG_FILE" --auth-user-pass "$CREDS_FILE" --daemon && echo "VPN started in the background using: $1"
+    else
+        echo "Error: Profile '$1' not found in ~/vpn-configs/"
+        echo "Available files in your folder:"
+        ls -1 "$HOME/vpn-configs/" | grep ".ovpn" | sed 's/\.ovpn//'
+    fi
+}
+# To Disconnect NordVpn
+alias vpndown="sudo killall openvpn && echo 'VPN Disconnected.'"
+
+
