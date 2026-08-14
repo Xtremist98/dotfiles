@@ -107,7 +107,7 @@ vpnup() {
     else
         echo "Error: Profile '$1' not found in ~/vpn-configs/"
         echo "Available files in your folder:"
-        ls -1 "$HOME/vpn-configs/" | grep ".ovpn" | sed 's/\.ovpn//'
+        ls -1 "$HOME/nordvpn/" | grep ".ovpn" | sed 's/\.ovpn//'
     fi
 }
 # To Disconnect NordVpn
