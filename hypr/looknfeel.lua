@@ -5,9 +5,9 @@ local inactive_border_color = "rgb(1e1e1e)"
 
 hl.config({
   general = {
-    gaps_in = 3,
-    gaps_out = 6,
-    border_size = 2,
+    gaps_in = 5,
+    gaps_out = 10,
+    border_size = 1,
 
     col = {
       active_border = active_border_color,
@@ -20,7 +20,7 @@ hl.config({
   },
 
   decoration = {
-    rounding = 5,
+    rounding = 3,
 
     shadow = {
       enabled = false,
@@ -38,24 +38,24 @@ hl.config({
     },
 
     groupbar = {
-      font_size = 12,
-      font_family = "monospace",
-      font_weight_active = "ultraheavy",
+      font_size = 11,
+      font_family = "Slate For OnePlus",
+      font_weight_active = "bold",
       font_weight_inactive = "normal",
-      indicator_height = 1,
-      indicator_gap = 5,
-      height = 22,
-      gaps_in = 5,
-      gaps_out = 0,
-      text_color = "rgb(ffffff)",
-      text_color_inactive = "rgba(ffffff90)",
+      indicator_height = 2,
+      indicator_gap = 4,
+      height = 26,
+      gaps_in = 6,
+      gaps_out = 4,
+      text_color = "rgb(cacccc)",
+      text_color_inactive = "rgba(798186b0)",
       col = {
-        active = "rgba(00000040)",
-        inactive = "rgba(00000020)",
+        active = "rgba(79818630)",
+        inactive = "rgba(101315a0)",
       },
-      gradients = true,
-      gradient_rounding = 0,
-      gradient_round_only_edges = false,
+      gradients = false,
+      gradient_rounding = 8,
+      gradient_round_only_edges = true,
     },
   },
 
@@ -85,7 +85,7 @@ hl.animation({ leaf = "layersIn", enabled = true, speed = 4, bezier = "easeOutQu
 hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "linear", style = "fade" })
 hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 1.79, bezier = "almostLinear" })
 hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 1.39, bezier = "almostLinear" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 3, bezier = "easeOutQuint", style = "slide" })
+hl.animation({ leaf = "workspaces", enabled = false })
 hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 3, bezier = "easeOutQuint", style = "slidevert" })
 
 hl.config({
@@ -131,4 +131,4 @@ o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
 
 -- GTK Theme Settings
 hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")
-hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'")
+hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme 'solitude'")
