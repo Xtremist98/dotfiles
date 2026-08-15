@@ -35,13 +35,16 @@ fi
 echo "==> Solitude Theme Kit installer"
 echo "    kit: $KIT"
 
-# 1. GTK theme (GTK2/3/4) — replaces adw-gtk3
+# 1. GTK theme (GTK2/3/4) — replaces adw-gtk-theme-git (the adwaita GTK3 port)
 GTK_PKG="$(ls "$KIT"/solitude-gtk-theme/solitude-gtk-theme-*.pkg.tar.gz 2>/dev/null | head -n1)"
 if [[ -z "${GTK_PKG:-}" ]]; then
   echo "!! solitude-gtk-theme package not found; building from source..."
   ( cd "$KIT/solitude-gtk-theme" && PKGEXT='.pkg.tar.gz' makepkg -f )
   GTK_PKG="$(ls "$KIT"/solitude-gtk-theme/solitude-gtk-theme-*.pkg.tar.gz | head -n1)"
 fi
+# Remove the adwaita GTK theme packages (Required By: none) so solitude cleanly replaces them
+echo "==> Removing adwaita GTK theme packages (adw-gtk-theme-git, gnome-themes-extra)..."
+sudo pacman -Rs --noconfirm adw-gtk-theme-git gnome-themes-extra 2>/dev/null || true
 echo "==> Installing solitude-gtk-theme (GTK2/3/4)..."
 sudo pacman -U --needed "$GTK_PKG"
 
