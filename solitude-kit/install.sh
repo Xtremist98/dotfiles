@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Solitude Theme Kit installer (thpm-OPTIONAL)
-# Installs a fully self-contained solitude desktop. thpm is NOT required:
-# the qt6ct/qt5ct color schemes and the vencord (Discord) theme are pre-rendered
-# in this kit, so nothing depends on thpm at install time.
+# Solitude Theme Kit installer
+# Installs a fully self-contained solitude desktop. Everything needed
+# (GTK theme, Kvantum style, qt6ct/qt5ct color schemes, vencord theme) is
+# pre-rendered in this kit -- no external theming engine is required.
 #
 # The kit is fetched from the GitHub dotfiles repo if it is not already present
 # next to this script. So you can run this straight from a curl'd copy:
@@ -32,7 +32,7 @@ else
   CLEANUP_TMP="$TMP"
 fi
 
-echo "==> Solitude Theme Kit installer (thpm optional)"
+echo "==> Solitude Theme Kit installer"
 echo "    kit: $KIT"
 
 # 1. GTK theme (GTK2/3/4) — replaces adw-gtk3
@@ -45,13 +45,13 @@ fi
 echo "==> Installing solitude-gtk-theme (GTK2/3/4)..."
 sudo pacman -U --needed "$GTK_PKG"
 
-# 2. Kvantum solitude (hand-made; thpm does NOT generate this)
+# 2. Kvantum solitude (hand-made style)
 echo "==> Installing Kvantum solitude..."
 mkdir -p "$HOME/.config/Kvantum/solitude"
 cp -r "$KIT/Kvantum/solitude/." "$HOME/.config/Kvantum/solitude/"
 printf '[General]\ntheme=solitude\n' > "$HOME/.config/Kvantum/kvantum.kvconfig"
 
-# 3. qt6ct + qt5ct color schemes (pre-rendered, no thpm needed)
+# 3. qt6ct + qt5ct color schemes (pre-rendered)
 echo "==> Installing qt6ct / qt5ct..."
 mkdir -p "$HOME/.config/qt6ct" "$HOME/.config/qt5ct"
 cp -r "$KIT/qt6ct/." "$HOME/.config/qt6ct/"
@@ -90,7 +90,7 @@ fi
 [[ -n "${CLEANUP_TMP:-}" ]] && rm -rf "$CLEANUP_TMP"
 
 echo
-echo "==> Done. Solitude is installed (thpm not required):"
+echo "==> Done. Solitude is installed:"
 echo "   - GTK theme : solitude (GTK2/3/4)"
 echo "   - Qt style  : Kvantum solitude"
 echo "   - qt6ct/qt5ct color schemes : installed from kit"
