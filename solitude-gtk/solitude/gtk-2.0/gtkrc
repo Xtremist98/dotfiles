@@ -1,0 +1,24 @@
+gtk-theme-name="solitude"
+gtk-color-scheme = "bg_color:#101315\nbase_color:#0c0e10\nfg_color:#cacccc\ntext_color:#cacccc\nselected_bg_color:#343d41\nselected_fg_color:#cacccc\ntooltip_bg_color:#101315\ntooltip_fg_color:#cacccc"
+
+style "default"
+{
+  bg[NORMAL] = "#101315"
+  bg[SELECTED] = "#343d41"
+  bg[INSENSITIVE] = "#1a1c1e"
+  bg[PRELIGHT] = "#1a1c1e"
+  bg[ACTIVE] = "#1a1c1e"
+  fg[NORMAL] = "#cacccc"
+  fg[SELECTED] = "#cacccc"
+  fg[INSENSITIVE] = "#4b4e55"
+  fg[PRELIGHT] = "#cacccc"
+  fg[ACTIVE] = "#cacccc"
+  base[NORMAL] = "#0c0e10"
+  base[SELECTED] = "#343d41"
+  base[INSENSITIVE] = "#1a1c1e"
+  text[NORMAL] = "#cacccc"
+  text[SELECTED] = "#cacccc"
+  text[INSENSITIVE] = "#4b4e55"
+}
+
+widget_class "*" style "default"

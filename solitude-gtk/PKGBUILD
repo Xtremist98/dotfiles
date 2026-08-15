@@ -1,0 +1,15 @@
+# Maintainer: linuxer
+pkgname=solitude-gtk-theme
+pkgver=1.0
+pkgrel=1
+pkgdesc="Solitude dark GTK theme (GTK2/3/4) matching the Omarchy solitude palette"
+arch=('any')
+license=('GPL3')
+url="https://github.com/linuxer/solitude-gtk-theme"
+provides=('solitude-gtk-theme')
+conflicts=('adw-gtk3')
+
+package() {
+  install -dm755 "$pkgdir/usr/share/themes/solitude"
+  cp -r "$startdir/solitude/." "$pkgdir/usr/share/themes/solitude/"
+}
