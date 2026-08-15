@@ -85,12 +85,12 @@ tooltip_blur_radius=0
 [GeneralColors]
 window.color=#101315
 base.color=#101315
-alt.base.color=#101315
+alt.base.color=#0c0e10
 button.color=#101315
-light.color=#101315
-mid.light.color=#101315
-dark.color=#101315
-mid.color=#101315
+light.color=#4b4e55
+mid.light.color=#343d41
+dark.color=#080a0b
+mid.color=#0c0e10
 highlight.color=#798186
 inactive.highlight.color=#343d41
 text.color=#cacccc
@@ -98,7 +98,7 @@ window.text.color=#cacccc
 button.text.color=#cacccc
 disabled.text.color=#4b4e55
 tooltip.text.color=#cacccc
-highlight.text.color=#101315
+highlight.text.color=#0c0e10
 link.color=#a5aeb4
 link.visited.color=#5d6367
 
