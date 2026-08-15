@@ -2,17 +2,35 @@
 #
 # Solitude Theme Kit installer (thpm-OPTIONAL)
 # Installs a fully self-contained solitude desktop. thpm is NOT required:
-# the qt6ct / qt5ct color schemes and the vencord theme are pre-rendered
+# the qt6ct/qt5ct color schemes and the vencord (Discord) theme are pre-rendered
 # in this kit, so nothing depends on thpm at install time.
 #
-# (You may still install thpm later for live re-theming of other apps, but
-#  it is not needed for the desktop to be solitude.)
+# The kit is fetched from the GitHub dotfiles repo if it is not already present
+# next to this script. So you can run this straight from a curl'd copy:
+#   bash <(curl -fsSL https://raw.githubusercontent.com/Xtremist98/dotfiles/main/solitude-kit/install.sh)
+# or after cloning:  bash solitude-kit/install.sh
 #
-# Run after selecting the solitude theme in Omarchy (for hyprland/bar theming).
+# Run AFTER selecting the solitude theme in Omarchy (for hyprland/bar theming).
 
 set -euo pipefail
 
-KIT="$(cd "$(dirname "$0")" && pwd)"
+REPO="https://github.com/Xtremist98/dotfiles.git"
+BRANCH="main"
+KIT_SUBDIR="solitude-kit"
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Use the kit next to this script if present; otherwise clone it from GitHub.
+if [[ -d "$SCRIPT_DIR/solitude-gtk-theme" ]]; then
+  KIT="$SCRIPT_DIR"
+else
+  echo "==> solitude-kit not found beside this script; cloning from GitHub ($REPO)..."
+  TMP="$(mktemp -d)"
+  git clone --depth 1 --filter=blob:none --sparse --branch "$BRANCH" "$REPO" "$TMP/dotfiles"
+  git -C "$TMP/dotfiles" sparse-checkout set "$KIT_SUBDIR"
+  KIT="$TMP/dotfiles/$KIT_SUBDIR"
+  CLEANUP_TMP="$TMP"
+fi
 
 echo "==> Solitude Theme Kit installer (thpm optional)"
 echo "    kit: $KIT"
@@ -67,6 +85,9 @@ sudo sed -i "s#/home/linuxer#/root#g" /root/.config/qt6ct/qt6ct.conf /root/.conf
 if [[ -f "$HOME/.config/gtk-3.0/gtk.css" ]]; then
   sudo cp "$HOME/.config/gtk-3.0/gtk.css" /root/.config/gtk-3.0/gtk.css
 fi
+
+# clean up temp clone if we made one
+[[ -n "${CLEANUP_TMP:-}" ]] && rm -rf "$CLEANUP_TMP"
 
 echo
 echo "==> Done. Solitude is installed (thpm not required):"

@@ -18,20 +18,29 @@ not required for the desktop to be solitude.
 - `qt6ct/`, `qt5ct/` — pre-rendered color schemes (no `thpm` needed).
 - `vencord/vencord.theme.css` — pre-rendered Discord theme (no `thpm` needed).
 
-## Fresh-install steps
-1. In Omarchy, select the **solitude** theme (for hyprland/bar theming).
-2. Run the installer:
-   ```bash
-   ~/Dropbox/dotfiles/solitude-kit/install.sh
-   ```
-   It will:
-   - install `solitude-gtk-theme` (GTK2/3/4) via `pacman -U`
-   - install the Kvantum `solitude` style and set it active
-   - install the pre-rendered qt6ct/qt5ct color schemes
-   - install the vencord theme
-   - set `gsettings` `gtk-theme=solitude` + `color-scheme=prefer-dark`
-   - copy qt6ct/Kvantum/gtk configs to `/root/.config` so root `pkexec` GUI
-     apps (GParted, btrfs-assistant, …) are also themed
+## Fresh-install (kit is fetched from GitHub automatically)
+After selecting the **solitude** theme in Omarchy (for hyprland/bar theming), run:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Xtremist98/dotfiles/main/solitude-kit/install.sh)
+```
+
+Or clone first:
+```bash
+git clone --depth 1 --filter=blob:none --sparse --branch main \
+  https://github.com/Xtremist98/dotfiles.git /tmp/dots
+cd /tmp/dots && git sparse-checkout set solitude-kit
+bash solitude-kit/install.sh
+```
+
+`install.sh` will:
+- install `solitude-gtk-theme` (GTK2/3/4) via `pacman -U`
+- install the Kvantum `solitude` style and set it active
+- install the pre-rendered qt6ct/qt5ct color schemes
+- install the vencord theme
+- set `gsettings` `gtk-theme=solitude` + `color-scheme=prefer-dark`
+- copy qt6ct/Kvantum/gtk configs to `/root/.config` so root `pkexec` GUI
+  apps (GParted, btrfs-assistant, …) are also themed
 
 ## Notes
 - No `adw-gtk3` and no `thpm` required for a solitude desktop.
