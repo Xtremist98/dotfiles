@@ -1,17 +1,8 @@
 # Solitude Theme Kit
-
-A self-contained, reproducible **solitude** desktop theme for Omarchy.
-Eliminates the `adw-gtk3` AUR dependency. `thpm` (actively developed:
-https://github.com/oldjobobo/thpm) stays required — it re-renders the qt6ct
-color scheme + app themes (cava, Discord/vencord, firefox, fish, fzf,
-qutebrowser, spicetify, superfile, zen, heroic, nwg-dock, hermes) live from
-the solitude palette whenever the Omarchy theme is set to solitude.
-
 ## What's inside
 - `solitude-gtk-theme/` — standalone GTK2/3/4 solitude theme (PKGBUILD + source
   + built `solitude-gtk-theme-*.pkg.tar.gz`). Replaces `adw-gtk3`.
-- `Kvantum/solitude/` — hand-made Kvantum `solitude` Qt style (`thpm` does NOT
-  generate this, so it lives here).
+- `Kvantum/solitude/` — hand-made Kvantum `solitude` Qt style
 
 ## Fresh-install steps
 1. Install `thpm` (AUR): `yay -S thpm`
