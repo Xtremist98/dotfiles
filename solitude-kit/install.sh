@@ -70,6 +70,14 @@ echo "==> Setting GTK theme to solitude..."
 gsettings set org.gnome.desktop.interface gtk-theme solitude
 gsettings set org.gnome.desktop.interface color-scheme prefer-dark
 
+# 5b. Stop Omarchy's looknfeel.lua from overriding the GTK theme back to
+#     adw-gtk3-dark on every Hyprland reload (it hardcodes that gsettings line).
+LOOKNFEEL="$HOME/.config/hypr/looknfeel.lua"
+if [[ -f "$LOOKNFEEL" ]] && grep -q "gtk-theme" "$LOOKNFEEL"; then
+  echo "==> Patching $LOOKNFEEL to keep gtk-theme=solitude..."
+  sed -i "s/gtk-theme '[^']*'/gtk-theme 'solitude'/g; s/gtk-theme \"[^\"]*\"/gtk-theme \"solitude\"/g" "$LOOKNFEEL"
+fi
+
 # 6. Root theming for pkexec GUI apps (GParted, btrfs-assistant, ...)
 echo "==> Installing root theming for pkexec apps..."
 sudo mkdir -p /root/.config/gtk-3.0 /root/.config/qt6ct/colors /root/.config/qt5ct/colors /root/.config/Kvantum/solitude
