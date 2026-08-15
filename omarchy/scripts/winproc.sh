@@ -32,10 +32,16 @@ done
 
 # The foreground process group on that pty is marked with '+' in STAT.
 # Pick the first foreground non-shell process.
-ps -t "$tty" -o stat=,comm= 2>/dev/null |
+ps -t "$tty" -o stat=,comm=,args= 2>/dev/null |
   awk '$1 ~ /\+/ {
     if ($2 == "bash" || $2 == "zsh" || $2 == "fish" || $2 == "sh" ||
         $2 == "dash" || $2 == "ksh" || $2 == "tmux") next
+    # Codex runs in a bwrap sandbox, so its foreground executable can be
+    # reported as bwrap. Its command line still carries the codex binary.
+    if (tolower($0) ~ /codex/) {
+      print "codex"
+      exit
+    }
     print $2
     exit
   }'

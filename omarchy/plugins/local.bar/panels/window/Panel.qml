@@ -284,6 +284,7 @@ Panel {
 
     // AI & LLM
     "chatgpt": ["󰭻", "ChatGPT (OpenAI)"],
+    "codex": ["󰭻", "Codex"],
     "OpenCode": ["󰚩", "OpenCode"],
     "gemini": ["󰚩", "Google Gemini"],
     "perplexity": ["󰖟", "Perplexity AI"],
