@@ -3,13 +3,11 @@
 A self-contained, reproducible **solitude** desktop theme for Omarchy.
 Everything needed (GTK theme, Kvantum style, qt6ct/qt5ct color schemes, a KDE
 color scheme, vencord theme) is pre-rendered in this kit, so no external
-theming engine is required to apply a full solitude desktop. The GTK theme
-(`solitude-gtk-theme`) replaces `adw-gtk3`; the kit installs it but no longer
-force-removes `adw-gtk-theme-git` (both can coexist).
+theming engine is required to apply a full solitude desktop
 
 ## What's inside
 - `solitude-gtk-theme/` — standalone GTK2/3/4 solitude theme (PKGBUILD + source
-  + built `solitude-gtk-theme-*.pkg.tar.gz`). Replaces `adw-gtk3`.
+  + built `solitude-gtk-theme-*.pkg.tar.gz`)
 - `Kvantum/solitude/` — hand-made Kvantum `solitude` Qt style.
 - `qt6ct/`, `qt5ct/` — pre-rendered color schemes.
 - `kde/Solitude.colors` — a KDE color scheme. qt6ct only sets the Qt widget
@@ -49,7 +47,6 @@ bash solitude-kit/install.sh
   "unknown error, loading canceled").
 
 ## Notes
-- No `adw-gtk3` required for a solitude desktop.
 - `QT_QPA_PLATFORMTHEME=qt6ct` must be set (Omarchy `envs.lua` already does this).
 - libadwaita GTK4 apps (e.g. Nautilus) follow the system dark style; they pick up
   `solitude` the same way `adw-gtk3-dark` did (via `gtk-theme-name` + `prefer-dark`;
