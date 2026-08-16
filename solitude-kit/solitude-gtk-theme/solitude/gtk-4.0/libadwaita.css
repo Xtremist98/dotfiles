@@ -1,103 +1,103 @@
-:root { --blue-1: #a5aeb4; --blue-2: #9fa5a9; --blue-3: #798186; --blue-4: #5d6367; --blue-5: #4b4e55; --green-1: #a5aeb4; --green-2: #9fa5a9; --green-3: #9fa5a9; --green-4: #343d41; --green-5: #4b4e55; --yellow-1: #d9dbdc; --yellow-2: #d9dbdc; --yellow-3: #d9dbdc; --yellow-4: #c9c2b4; --yellow-5: #c9c2b4; --orange-1: #c9c2b4; --orange-2: #c9c2b4; --orange-3: #de6145; --orange-4: #de6145; --orange-5: #de6145; --red-1: #de6145; --red-2: #de6145; --red-3: #de6145; --red-4: #de6145; --red-5: #b04a35; --purple-1: #a5aeb4; --purple-2: #aeaeae; --purple-3: #aeaeae; --purple-4: #9a9a9a; --purple-5: #4b4e55; --brown-1: #9fa5a9; --brown-2: #798186; --brown-3: #707070; --brown-4: #5d6367; --brown-5: #4b4e55; --light-1: #cacccc; --light-2: #d9dbdc; --light-3: #cacccc; --light-4: #a5aeb4; --light-5: #9fa5a9; --dark-1: #4b4e55; --dark-2: #3d3f44; --dark-3: #2a2d30; --dark-4: #1a1c1e; --dark-5: #080a0b; }
+:root { --blue-1: #99c1f1; --blue-2: #62a0ea; --blue-3: #798186; --blue-4: #1c71d8; --blue-5: #1a5fb4; --green-1: #8ff0a4; --green-2: #57e389; --green-3: #33d17a; --green-4: #2ec27e; --green-5: #26a269; --yellow-1: #f9f06b; --yellow-2: #f8e45c; --yellow-3: #f6d32d; --yellow-4: #f5c211; --yellow-5: #e5a50a; --orange-1: #ffbe6f; --orange-2: #ffa348; --orange-3: #ff7800; --orange-4: #e66100; --orange-5: #c64600; --red-1: #f66151; --red-2: #ed333b; --red-3: #e01b24; --red-4: #c01c28; --red-5: #a51d2d; --purple-1: #dc8add; --purple-2: #c061cb; --purple-3: #9141ac; --purple-4: #813d9c; --purple-5: #613583; --brown-1: #cdab8f; --brown-2: #b5835a; --brown-3: #986a44; --brown-4: #865e3c; --brown-5: #63452c; --light-1: #ffffff; --light-2: #f6f5f4; --light-3: #deddda; --light-4: #c0bfbc; --light-5: #9a9996; --dark-1: #77767b; --dark-2: #5e5c64; --dark-3: #3d3846; --dark-4: #241f31; --dark-5: #000000; }
 
-@define-color blue_1 #a5aeb4;
-@define-color blue_2 #9fa5a9;
+@define-color blue_1 #99c1f1;
+@define-color blue_2 #62a0ea;
 @define-color blue_3 #798186;
-@define-color blue_4 #5d6367;
-@define-color blue_5 #4b4e55;
-@define-color green_1 #a5aeb4;
-@define-color green_2 #9fa5a9;
-@define-color green_3 #9fa5a9;
-@define-color green_4 #343d41;
-@define-color green_5 #4b4e55;
-@define-color yellow_1 #d9dbdc;
-@define-color yellow_2 #d9dbdc;
-@define-color yellow_3 #d9dbdc;
-@define-color yellow_4 #c9c2b4;
-@define-color yellow_5 #c9c2b4;
-@define-color orange_1 #c9c2b4;
-@define-color orange_2 #c9c2b4;
-@define-color orange_3 #de6145;
-@define-color orange_4 #de6145;
-@define-color orange_5 #de6145;
-@define-color red_1 #de6145;
-@define-color red_2 #de6145;
-@define-color red_3 #de6145;
-@define-color red_4 #de6145;
-@define-color red_5 #b04a35;
-@define-color purple_1 #a5aeb4;
-@define-color purple_2 #aeaeae;
-@define-color purple_3 #aeaeae;
-@define-color purple_4 #9a9a9a;
-@define-color purple_5 #4b4e55;
-@define-color brown_1 #9fa5a9;
-@define-color brown_2 #798186;
-@define-color brown_3 #707070;
-@define-color brown_4 #5d6367;
-@define-color brown_5 #4b4e55;
-@define-color light_1 #cacccc;
-@define-color light_2 #d9dbdc;
-@define-color light_3 #cacccc;
-@define-color light_4 #a5aeb4;
-@define-color light_5 #9fa5a9;
-@define-color dark_1 #4b4e55;
-@define-color dark_2 #3d3f44;
-@define-color dark_3 #2a2d30;
-@define-color dark_4 #1a1c1e;
-@define-color dark_5 #080a0b;
+@define-color blue_4 #1c71d8;
+@define-color blue_5 #1a5fb4;
+@define-color green_1 #8ff0a4;
+@define-color green_2 #57e389;
+@define-color green_3 #33d17a;
+@define-color green_4 #2ec27e;
+@define-color green_5 #26a269;
+@define-color yellow_1 #f9f06b;
+@define-color yellow_2 #f8e45c;
+@define-color yellow_3 #f6d32d;
+@define-color yellow_4 #f5c211;
+@define-color yellow_5 #e5a50a;
+@define-color orange_1 #ffbe6f;
+@define-color orange_2 #ffa348;
+@define-color orange_3 #ff7800;
+@define-color orange_4 #e66100;
+@define-color orange_5 #c64600;
+@define-color red_1 #f66151;
+@define-color red_2 #ed333b;
+@define-color red_3 #e01b24;
+@define-color red_4 #c01c28;
+@define-color red_5 #a51d2d;
+@define-color purple_1 #dc8add;
+@define-color purple_2 #c061cb;
+@define-color purple_3 #9141ac;
+@define-color purple_4 #813d9c;
+@define-color purple_5 #613583;
+@define-color brown_1 #cdab8f;
+@define-color brown_2 #b5835a;
+@define-color brown_3 #986a44;
+@define-color brown_4 #865e3c;
+@define-color brown_5 #63452c;
+@define-color light_1 #ffffff;
+@define-color light_2 #f6f5f4;
+@define-color light_3 #deddda;
+@define-color light_4 #c0bfbc;
+@define-color light_5 #9a9996;
+@define-color dark_1 #77767b;
+@define-color dark_2 #5e5c64;
+@define-color dark_3 #3d3846;
+@define-color dark_4 #241f31;
+@define-color dark_5 #000000;
 /* GTK NAMED COLORS ---------------- use responsibly! */
 @define-color destructive_bg_color @red_3;
-@define-color destructive_fg_color #cacccc;
+@define-color destructive_fg_color white;
 @define-color success_bg_color @green_4;
-@define-color success_fg_color #cacccc;
+@define-color success_fg_color white;
 @define-color warning_bg_color @yellow_5;
 @define-color warning_fg_color RGB(0 0 0 / 80%);
 @define-color error_bg_color @red_3;
-@define-color error_fg_color #cacccc;
+@define-color error_fg_color white;
 @define-color accent_color oklab(from @accent_bg_color min(l, 0.5) a b);
 @define-color destructive_color oklab(from @destructive_bg_color min(l, 0.5) a b);
 @define-color success_color oklab(from @success_bg_color min(l, 0.5) a b);
 @define-color warning_color oklab(from @warning_bg_color min(l, 0.5) a b);
 @define-color error_color oklab(from @error_bg_color min(l, 0.5) a b);
-@define-color window_bg_color #101315;
+@define-color window_bg_color #fafafb;
 @define-color window_fg_color RGB(0 0 6 / 80%);
-@define-color view_bg_color #cacccc;
+@define-color view_bg_color #ffffff;
 @define-color view_fg_color RGB(0 0 6 / 80%);
-@define-color headerbar_bg_color #cacccc;
+@define-color headerbar_bg_color #ffffff;
 @define-color headerbar_fg_color RGB(0 0 6 / 80%);
 @define-color headerbar_border_color RGB(0 0 6 / 80%);
 @define-color headerbar_backdrop_color @window_bg_color;
 @define-color headerbar_shade_color RGB(0 0 6 / 12%);
 @define-color headerbar_darker_shade_color RGB(0 0 6 / 12%);
-@define-color sidebar_bg_color #101315;
+@define-color sidebar_bg_color #ebebed;
 @define-color sidebar_fg_color RGB(0 0 6 / 80%);
-@define-color sidebar_backdrop_color #0c0e10;
+@define-color sidebar_backdrop_color #f2f2f4;
 @define-color sidebar_shade_color RGB(0 0 6 / 7%);
 @define-color sidebar_border_color RGB(0 0 6 / 7%);
-@define-color secondary_sidebar_bg_color #d9dbdc;
+@define-color secondary_sidebar_bg_color #f3f3f5;
 @define-color secondary_sidebar_fg_color RGB(0 0 6 / 80%);
-@define-color secondary_sidebar_backdrop_color #d9dbdc;
+@define-color secondary_sidebar_backdrop_color #f6f6fa;
 @define-color secondary_sidebar_shade_color RGB(0 0 6 / 7%);
 @define-color secondary_sidebar_border_color RGB(0 0 6 / 7%);
-@define-color card_bg_color #cacccc;
+@define-color card_bg_color #ffffff;
 @define-color card_fg_color RGB(0 0 6 / 80%);
 @define-color card_shade_color RGB(0 0 6 / 7%);
-@define-color dialog_bg_color #101315;
+@define-color dialog_bg_color #fafafb;
 @define-color dialog_fg_color RGB(0 0 6 / 80%);
-@define-color popover_bg_color #cacccc;
+@define-color popover_bg_color #ffffff;
 @define-color popover_fg_color RGB(0 0 6 / 80%);
 @define-color popover_shade_color RGB(0 0 6 / 7%);
-@define-color thumbnail_bg_color #cacccc;
+@define-color thumbnail_bg_color #ffffff;
 @define-color thumbnail_fg_color RGB(0 0 6 / 80%);
 @define-color shade_color RGB(0 0 6 / 7%);
-@define-color scrollbar_outline_color #cacccc;
-@media (prefers-color-scheme: dark) { @define-color destructive_bg_color @red_4; @define-color success_bg_color @green_5; @define-color warning_bg_color #c9c2b4; @define-color error_bg_color @red_4; @define-color accent_color oklab(from @accent_bg_color min(l, 0.5) a b); @define-color destructive_color oklab(from @destructive_bg_color min(l, 0.5) a b); @define-color success_color oklab(from @success_bg_color min(l, 0.5) a b); @define-color warning_color oklab(from @warning_bg_color min(l, 0.5) a b); @define-color error_color oklab(from @error_bg_color min(l, 0.5) a b); @define-color accent_color oklab(from @accent_bg_color max(l, 0.85) a b); @define-color destructive_color oklab(from @destructive_bg_color max(l, 0.85) a b); @define-color success_color oklab(from @success_bg_color max(l, 0.85) a b); @define-color warning_color oklab(from @warning_bg_color max(l, 0.85) a b); @define-color error_color oklab(from @error_bg_color max(l, 0.85) a b); @define-color window_bg_color #101315; @define-color window_fg_color #cacccc; @define-color view_bg_color #0c0e10; @define-color view_fg_color #cacccc; @define-color headerbar_bg_color #101315; @define-color headerbar_fg_color #cacccc; @define-color headerbar_border_color #cacccc; @define-color headerbar_shade_color RGB(0 0 6 / 36%); @define-color headerbar_darker_shade_color RGB(0 0 12 / 90%); @define-color sidebar_bg_color #101315; @define-color sidebar_fg_color #cacccc; @define-color sidebar_backdrop_color #0c0e10; @define-color sidebar_shade_color RGB(0 0 6 / 25%); @define-color sidebar_border_color RGB(0 0 6 / 36%); @define-color secondary_sidebar_bg_color #0c0e10; @define-color secondary_sidebar_fg_color #cacccc; @define-color secondary_sidebar_backdrop_color #1a1c1e; @define-color secondary_sidebar_shade_color RGB(0 0 6 / 25%); @define-color secondary_sidebar_border_color RGB(0 0 6 / 36%); @define-color card_bg_color RGB(255 255 255 / 8%); @define-color card_fg_color #cacccc; @define-color card_shade_color RGB(0 0 6 / 36%); @define-color dialog_bg_color #101315; @define-color dialog_fg_color #cacccc; @define-color popover_bg_color #101315; @define-color popover_fg_color #cacccc; @define-color popover_shade_color RGB(0 0 6 / 25%); @define-color thumbnail_bg_color #14181b; @define-color thumbnail_fg_color #cacccc; @define-color shade_color RGB(0 0 6 / 25%); @define-color scrollbar_outline_color RGB(0 0 12 / 95%); }
+@define-color scrollbar_outline_color white;
+@media (prefers-color-scheme: dark) { @define-color destructive_bg_color @red_4; @define-color success_bg_color @green_5; @define-color warning_bg_color #cd9309; @define-color error_bg_color @red_4; @define-color accent_color oklab(from @accent_bg_color min(l, 0.5) a b); @define-color destructive_color oklab(from @destructive_bg_color min(l, 0.5) a b); @define-color success_color oklab(from @success_bg_color min(l, 0.5) a b); @define-color warning_color oklab(from @warning_bg_color min(l, 0.5) a b); @define-color error_color oklab(from @error_bg_color min(l, 0.5) a b); @define-color accent_color oklab(from @accent_bg_color max(l, 0.85) a b); @define-color destructive_color oklab(from @destructive_bg_color max(l, 0.85) a b); @define-color success_color oklab(from @success_bg_color max(l, 0.85) a b); @define-color warning_color oklab(from @warning_bg_color max(l, 0.85) a b); @define-color error_color oklab(from @error_bg_color max(l, 0.85) a b); @define-color window_bg_color #101315; @define-color window_fg_color #cacccc; @define-color view_bg_color #0c0e10; @define-color view_fg_color #cacccc; @define-color headerbar_bg_color #0c0e10; @define-color headerbar_fg_color #cacccc; @define-color headerbar_border_color RGB(202 204 204 / 18%); @define-color headerbar_shade_color RGB(202 204 204 / 15%); @define-color headerbar_darker_shade_color RGB(0 0 12 / 90%); @define-color sidebar_bg_color #0c0e10; @define-color sidebar_fg_color #cacccc; @define-color sidebar_backdrop_color #14171a; @define-color sidebar_shade_color RGB(0 0 0 / 30%); @define-color sidebar_border_color RGB(202 204 204 / 15%); @define-color secondary_sidebar_bg_color #14171a; @define-color secondary_sidebar_fg_color #cacccc; @define-color secondary_sidebar_backdrop_color #252529; @define-color secondary_sidebar_shade_color RGB(0 0 0 / 30%); @define-color secondary_sidebar_border_color RGB(202 204 204 / 15%); @define-color card_bg_color RGB(202 204 204 / 6%); @define-color card_fg_color #cacccc; @define-color card_shade_color RGB(202 204 204 / 15%); @define-color dialog_bg_color #0c0e10; @define-color dialog_fg_color #cacccc; @define-color popover_bg_color #0c0e10; @define-color popover_fg_color #cacccc; @define-color popover_shade_color RGB(0 0 0 / 30%); @define-color thumbnail_bg_color #14171a; @define-color thumbnail_fg_color #cacccc; @define-color shade_color RGB(0 0 0 / 30%); @define-color scrollbar_outline_color RGB(0 0 12 / 95%); }
 
 :root { --standalone-color-oklab: min(l, 0.5) a b; }
 
 @media (prefers-color-scheme: dark) { :root { --standalone-color-oklab: max(l, 0.85) a b; } }
 
-:root { --accent-blue: #798186; --accent-teal: #6f8396; --accent-green: #707070; --accent-yellow: #c9c2b4; --accent-orange: #de6145; --accent-red: #de6145; --accent-pink: #aeaeae; --accent-purple: #aeaeae; --accent-slate: #6f8396; --accent-bg-color: @accent_bg_color; --accent-fg-color: @accent_fg_color; --accent-color: oklab(
+:root { --accent-blue: #798186; --accent-teal: #2190a4; --accent-green: #3a944a; --accent-yellow: #c88800; --accent-orange: #ed5b00; --accent-red: #e62d42; --accent-pink: #d56199; --accent-purple: #9141ac; --accent-slate: #6f8396; --accent-bg-color: @accent_bg_color; --accent-fg-color: @accent_fg_color; --accent-color: oklab(
     from var(--accent-bg-color) var(--standalone-color-oklab)
   ); --destructive-bg-color: @destructive_bg_color; --destructive-fg-color: @destructive_fg_color; --destructive-color: oklab(
     from var(--destructive-bg-color) var(--standalone-color-oklab)
@@ -107,9 +107,9 @@
     from var(--warning-bg-color) var(--standalone-color-oklab)
   ); --error-bg-color: @error_bg_color; --error-fg-color: @error_fg_color; --error-color: oklab(
     from var(--error-bg-color) var(--standalone-color-oklab)
-  ); --window-bg-color: @window_bg_color; --window-fg-color: @window_fg_color; --view-bg-color: @view_bg_color; --view-fg-color: @view_fg_color; --headerbar-bg-color: @headerbar_bg_color; --headerbar-fg-color: @headerbar_fg_color; --headerbar-border-color: @headerbar_border_color; --headerbar-backdrop-color: @headerbar_backdrop_color; --headerbar-shade-color: @headerbar_shade_color; --headerbar-darker-shade-color: @headerbar_darker_shade_color; --sidebar-bg-color: @sidebar_bg_color; --sidebar-fg-color: @sidebar_fg_color; --sidebar-backdrop-color: @sidebar_backdrop_color; --sidebar-border-color: @sidebar_border_color; --sidebar-shade-color: @sidebar_shade_color; --secondary-sidebar-bg-color: @secondary_sidebar_bg_color; --secondary-sidebar-fg-color: @secondary_sidebar_fg_color; --secondary-sidebar-backdrop-color: @secondary_sidebar_backdrop_color; --secondary-sidebar-border-color: @secondary_sidebar_border_color; --secondary-sidebar-shade-color: @secondary_sidebar_shade_color; --card-bg-color: @card_bg_color; --card-fg-color: @card_fg_color; --card-shade-color: @card_shade_color; --dialog-bg-color: @dialog_bg_color; --dialog-fg-color: @dialog_fg_color; --popover-bg-color: @popover_bg_color; --popover-fg-color: @popover_fg_color; --popover-shade-color: @popover_shade_color; --thumbnail-bg-color: @thumbnail_bg_color; --thumbnail-fg-color: @thumbnail_fg_color; --shade-color: @shade_color; --scrollbar-outline-color: @scrollbar_outline_color; --active-toggle-bg-color: #cacccc; --active-toggle-fg-color: rgb(0 0 6 / 80%); --overview-bg-color: #d9dbdc; --overview-fg-color: rgb(0 0 6 / 80%); }
+  ); --window-bg-color: @window_bg_color; --window-fg-color: @window_fg_color; --view-bg-color: @view_bg_color; --view-fg-color: @view_fg_color; --headerbar-bg-color: @headerbar_bg_color; --headerbar-fg-color: @headerbar_fg_color; --headerbar-border-color: @headerbar_border_color; --headerbar-backdrop-color: @headerbar_backdrop_color; --headerbar-shade-color: @headerbar_shade_color; --headerbar-darker-shade-color: @headerbar_darker_shade_color; --sidebar-bg-color: @sidebar_bg_color; --sidebar-fg-color: @sidebar_fg_color; --sidebar-backdrop-color: @sidebar_backdrop_color; --sidebar-border-color: @sidebar_border_color; --sidebar-shade-color: @sidebar_shade_color; --secondary-sidebar-bg-color: @secondary_sidebar_bg_color; --secondary-sidebar-fg-color: @secondary_sidebar_fg_color; --secondary-sidebar-backdrop-color: @secondary_sidebar_backdrop_color; --secondary-sidebar-border-color: @secondary_sidebar_border_color; --secondary-sidebar-shade-color: @secondary_sidebar_shade_color; --card-bg-color: @card_bg_color; --card-fg-color: @card_fg_color; --card-shade-color: @card_shade_color; --dialog-bg-color: @dialog_bg_color; --dialog-fg-color: @dialog_fg_color; --popover-bg-color: @popover_bg_color; --popover-fg-color: @popover_fg_color; --popover-shade-color: @popover_shade_color; --thumbnail-bg-color: @thumbnail_bg_color; --thumbnail-fg-color: @thumbnail_fg_color; --shade-color: @shade_color; --scrollbar-outline-color: @scrollbar_outline_color; --active-toggle-bg-color: #ffffff; --active-toggle-fg-color: rgb(0 0 6 / 80%); --overview-bg-color: #f3f3f5; --overview-fg-color: rgb(0 0 6 / 80%); }
 
-@media (prefers-color-scheme: dark) { :root { --active-toggle-bg-color: rgb(255 255 255 / 20%); --active-toggle-fg-color: #cacccc; --overview-bg-color: #0c0e10; --overview-fg-color: #cacccc; } }
+@media (prefers-color-scheme: dark) { :root { --active-toggle-bg-color: rgb(255 255 255 / 20%); --active-toggle-fg-color: #ffffff; --overview-bg-color: #14171a; --overview-fg-color: #ffffff; } }
 
 :root { --border-color: color-mix(in srgb, currentColor var(--border-opacity), transparent); --border-opacity: 15%; --dim-opacity: 55%; --disabled-opacity: 50%; }
 
@@ -151,35 +151,35 @@ stacksidebar row.needs-attention > label:dir(rtl), stackswitcher > button.needs-
 
 avatar { border-radius: 9999px; font-weight: bold; }
 
-avatar.color1 { background-image: linear-gradient(#9fa5a9, #798186); color: #a5aeb4; }
+avatar.color1 { background-image: linear-gradient(#83b6ec, #337fdc); color: #cfe1f5; }
 
-avatar.color2 { background-image: linear-gradient(#a5aeb4, #6f8396); color: #a5aeb4; }
+avatar.color2 { background-image: linear-gradient(#7ad9f1, #0f9ac8); color: #caeaf2; }
 
-avatar.color3 { background-image: linear-gradient(#a5aeb4, #707070); color: #a5aeb4; }
+avatar.color3 { background-image: linear-gradient(#8de6b1, #29ae74); color: #cef8d8; }
 
-avatar.color4 { background-image: linear-gradient(#a5aeb4, #9fa5a9); color: #a5aeb4; }
+avatar.color4 { background-image: linear-gradient(#b5e98a, #6ab85b); color: #e6f9d7; }
 
-avatar.color5 { background-image: linear-gradient(#d9dbdc, #c9c2b4); color: #d9dbdc; }
+avatar.color5 { background-image: linear-gradient(#f8e359, #d29d09); color: #f9f4e1; }
 
-avatar.color6 { background-image: linear-gradient(#d9dbdc, #c9c2b4); color: #c9c2b4; }
+avatar.color6 { background-image: linear-gradient(#ffcb62, #d68400); color: #ffead1; }
 
-avatar.color7 { background-image: linear-gradient(#c9c2b4, #de6145); color: #c9c2b4; }
+avatar.color7 { background-image: linear-gradient(#ffa95a, #ed5b00); color: #ffe5c5; }
 
-avatar.color8 { background-image: linear-gradient(#de6145, #de6145); color: #c9c2b4; }
+avatar.color8 { background-image: linear-gradient(#f78773, #e62d42); color: #f8d2ce; }
 
-avatar.color9 { background-image: linear-gradient(#aeaeae, #de6145); color: #aeaeae; }
+avatar.color9 { background-image: linear-gradient(#e973ab, #e33b6a); color: #fac7de; }
 
-avatar.color10 { background-image: linear-gradient(#aeaeae, #aeaeae); color: #aeaeae; }
+avatar.color10 { background-image: linear-gradient(#cb78d4, #9945b5); color: #e7c2e8; }
 
-avatar.color11 { background-image: linear-gradient(#aeaeae, #aeaeae); color: #a5aeb4; }
+avatar.color11 { background-image: linear-gradient(#9e91e8, #7a59ca); color: #d5d2f5; }
 
-avatar.color12 { background-image: linear-gradient(#c9c2b4, #9fa5a9); color: #d9dbdc; }
+avatar.color12 { background-image: linear-gradient(#e3cf9c, #b08952); color: #f2eade; }
 
-avatar.color13 { background-image: linear-gradient(#9fa5a9, #707070); color: #c9c2b4; }
+avatar.color13 { background-image: linear-gradient(#be916d, #785336); color: #e5d6ca; }
 
-avatar.color14 { background-image: linear-gradient(#a5aeb4, #4b4e55); color: #cacccc; }
+avatar.color14 { background-image: linear-gradient(#c0bfbc, #6e6d71); color: #d8d7d3; }
 
-avatar.contrasted { color: #cacccc; }
+avatar.contrasted { color: white; }
 
 avatar.image { background: none; }
 
@@ -289,15 +289,15 @@ menubutton.osd > button:focus:focus-visible, button.osd:focus:focus-visible { ou
 
 @media (prefers-contrast: more) { menubutton.osd > button, button.osd { box-shadow: 0 0 0 1px currentColor; } }
 
-menubutton.osd > button:hover, button.osd:hover { color: #cacccc; background-color: color-mix(in srgb, #101315 calc(0.85 * 65%), currentColor calc(0.15 * 65%)); }
+menubutton.osd > button:hover, button.osd:hover { color: white; background-color: color-mix(in srgb, black calc(0.85 * 65%), currentColor calc(0.15 * 65%)); }
 
-menubutton.osd > button.keyboard-activating, menubutton.osd > button:active, button.osd.keyboard-activating, button.osd:active { color: #cacccc; background-color: color-mix(in srgb, #101315 calc(0.75 * 65%), currentColor calc(0.25 * 65%)); }
+menubutton.osd > button.keyboard-activating, menubutton.osd > button:active, button.osd.keyboard-activating, button.osd:active { color: white; background-color: color-mix(in srgb, black calc(0.75 * 65%), currentColor calc(0.25 * 65%)); }
 
-menubutton.osd > button:checked, button.osd:checked { background-color: color-mix(in srgb, #101315 calc(0.8 * 65%), currentColor calc(0.2 * 65%)); }
+menubutton.osd > button:checked, button.osd:checked { background-color: color-mix(in srgb, black calc(0.8 * 65%), currentColor calc(0.2 * 65%)); }
 
-menubutton.osd > button:checked:hover, button.osd:checked:hover { background-color: color-mix(in srgb, #101315 calc(0.75 * 65%), currentColor calc(0.25 * 65%)); }
+menubutton.osd > button:checked:hover, button.osd:checked:hover { background-color: color-mix(in srgb, black calc(0.75 * 65%), currentColor calc(0.25 * 65%)); }
 
-menubutton.osd > button:checked.keyboard-activating, menubutton.osd > button:checked:active, button.osd:checked.keyboard-activating, button.osd:checked:active { background-color: color-mix(in srgb, #101315 calc(0.65 * 65%), currentColor calc(0.35 * 65%)); }
+menubutton.osd > button:checked.keyboard-activating, menubutton.osd > button:checked:active, button.osd:checked.keyboard-activating, button.osd:checked:active { background-color: color-mix(in srgb, black calc(0.65 * 65%), currentColor calc(0.35 * 65%)); }
 
 actionbar > revealer > box menubutton.suggested-action > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), searchbar > revealer > box menubutton.suggested-action > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), .toolbar menubutton.suggested-action > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), headerbar menubutton.suggested-action > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), actionbar > revealer > box menubutton.opaque > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), searchbar > revealer > box menubutton.opaque > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), .toolbar menubutton.opaque > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), headerbar menubutton.opaque > button:not(.raised):not(.suggested-action):not(.destructive-action):not(.opaque), splitbutton.suggested-action > button, splitbutton.suggested-action > menubutton > button, splitbutton.opaque > button, splitbutton.opaque > menubutton > button, menubutton.suggested-action > button, menubutton.opaque > button, button.suggested-action, button.opaque { box-shadow: none; }
 
@@ -623,7 +623,7 @@ colorswatch.right > overlay, colorswatch:last-child:not(.bottom) > overlay { bor
 
 @media (prefers-contrast: more) { colorswatch > overlay { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--view-fg-color) 50%, transparent); } }
 
-colorswatch.dark > overlay { color: #cacccc; }
+colorswatch.dark > overlay { color: white; }
 
 colorswatch.light > overlay { color: RGB(0 0 6/75%); }
 
@@ -714,7 +714,7 @@ treeexpander { border-spacing: 4px; }
 /**************** Print dialog * */
 window.print:not(.ssd-frame) drawing { color: var(--window-fg-color); background: none; border: none; padding: 0; }
 
-window.print:not(.ssd-frame) drawing paper { background-color: #cacccc; color: RGB(0 0 6/80%); background-clip: padding-box; border: 1px solid color-mix(in srgb, currentColor var(--border-opacity), transparent); }
+window.print:not(.ssd-frame) drawing paper { background-color: white; color: RGB(0 0 6/80%); background-clip: padding-box; border: 1px solid color-mix(in srgb, currentColor var(--border-opacity), transparent); }
 
 /******************** Page setup dalog * */
 /****************** GtkAboutDialog * */
@@ -1107,7 +1107,7 @@ filechooser gridview > child filethumbnail image { filter: drop-shadow(0px 1px 1
 
 filechooser gridview > child box { border-spacing: 6px; }
 
-filechooser columnview > listview, filechooser treeview.view > listview, filechooser window.print:not(.ssd-frame) treeview.dialog-action-box > listview, window.print:not(.ssd-frame) filechooser treeview.dialog-action-box > listview, filechooser gridview { --accent-bg-color: #9fa5a9; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); }
+filechooser columnview > listview, filechooser treeview.view > listview, filechooser window.print:not(.ssd-frame) treeview.dialog-action-box > listview, window.print:not(.ssd-frame) filechooser treeview.dialog-action-box > listview, filechooser gridview { --accent-bg-color: #959595; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); }
 
 filechooser > box > actionbar { box-shadow: 0 -1px color-mix(in srgb, var(--headerbar-shade-color) 50%, transparent), 0 -2px 4px color-mix(in srgb, var(--headerbar-shade-color) 50%, transparent); }
 
@@ -1123,7 +1123,7 @@ filechooser placesview > stack > scrolledwindow > undershoot.bottom { box-shadow
 
 @media (prefers-contrast: more) { filechooser placesview > stack > scrolledwindow > undershoot.bottom { box-shadow: inset 0 -1px color-mix(in srgb, currentColor var(--border-opacity), transparent); } }
 
-filechooser placesview > stack > scrolledwindow list { --accent-bg-color: #9fa5a9; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); }
+filechooser placesview > stack > scrolledwindow list { --accent-bg-color: #959595; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); }
 
 filechooser placesview > actionbar > revealer > box { background: var(--view-bg-color); color: var(--view-fg-color); box-shadow: none; padding-top: 6px; }
 
@@ -1250,7 +1250,7 @@ window.devel sheet headerbar > windowhandle { background-image: unset; backgroun
 
 .accent-color-row color:disabled { opacity: var(--disabled-opacity); }
 
-adaptive-preview .device-view { background: #101315; color: #cacccc; box-shadow: 0 0 0 2px RGB(255 255 255/15%); margin: 2px; padding: var(--top-bezel) var(--side-bezel) var(--bottom-bezel); border-radius: var(--top-device-corner-radius) var(--top-device-corner-radius) var(--bottom-device-corner-radius) var(--bottom-device-corner-radius); --window-radius: 0px; /* Hack to make GtkGraphicsOffload disable offload in this case */ opacity: 99.9999999999999%; }
+adaptive-preview .device-view { background: #101013; color: white; box-shadow: 0 0 0 2px RGB(255 255 255/15%); margin: 2px; padding: var(--top-bezel) var(--side-bezel) var(--bottom-bezel); border-radius: var(--top-device-corner-radius) var(--top-device-corner-radius) var(--bottom-device-corner-radius) var(--bottom-device-corner-radius); --window-radius: 0px; /* Hack to make GtkGraphicsOffload disable offload in this case */ opacity: 99.9999999999999%; }
 
 adaptive-preview .device-view.custom { padding: 0; border-radius: 0; margin: 0; box-shadow: 0 0 14px 2px RGB(0 0 6/3%), 0 0 5px 2px RGB(0 0 6/10%), 0 0 0 1px RGB(0 0 0/5%); }
 
@@ -1266,7 +1266,7 @@ adaptive-preview .device-view .screen-view { border-radius: var(--top-screen-cor
 
 adaptive-preview .device-view .screen-view.outline { filter: drop-shadow(3px 0 0 var(--accent-bg-color)) drop-shadow(-3px 0 0 var(--accent-bg-color)) drop-shadow(0 3px 0 var(--accent-bg-color)) drop-shadow(0 -3px 0 var(--accent-bg-color)); }
 
-adaptive-preview .device-view .screen-view .shell-top-bar, adaptive-preview .device-view .screen-view .shell-bottom-bar { background: #101315; }
+adaptive-preview .device-view .screen-view .shell-top-bar, adaptive-preview .device-view .screen-view .shell-bottom-bar { background: black; }
 
 label { caret-color: currentColor; }
 
@@ -1432,11 +1432,11 @@ link:active, button.link:active { color: var(--accent-color); }
 
 link:disabled, button.link:disabled { color: color-mix(in srgb, currentColor var(--disabled-opacity), transparent); }
 
-.osd link, .osd button.link { color: color-mix(in srgb, var(--accent-bg-color) 50%, #cacccc); }
+.osd link, .osd button.link { color: color-mix(in srgb, var(--accent-bg-color) 50%, white); }
 
-.osd link:visited, .osd button.link:visited { color: color-mix(in srgb, var(--accent-bg-color) 75%, #cacccc); }
+.osd link:visited, .osd button.link:visited { color: color-mix(in srgb, var(--accent-bg-color) 75%, white); }
 
-.osd link:active, .osd button.link:active { color: color-mix(in srgb, var(--accent-bg-color) 50%, #cacccc); }
+.osd link:active, .osd button.link:active { color: color-mix(in srgb, var(--accent-bg-color) 50%, white); }
 
 link { outline: 0 solid transparent; outline-offset: 4px; transition: outline-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), outline-width 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), outline-offset 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94); }
 
@@ -1891,7 +1891,7 @@ separator.spacer.horizontal { min-width: 12px; }
 separator.spacer.vertical { min-height: 12px; }
 
 /********** Toasts * */
-toast { background: #4b4e55; color: #cacccc; box-shadow: 0 1px 3px 1px RGB(0 0 6/7%), 0 2px 6px 2px RGB(0 0 6/3%); --standalone-color-oklab: Max(l, 0.85) a b; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); --destructive-color: oklab(from var(--destructive-bg-color) var(--standalone-color-oklab)); --success-color: oklab(from var(--success-bg-color) var(--standalone-color-oklab)); --warning-color: oklab(from var(--warning-bg-color) var(--standalone-color-oklab)); --error-color: oklab(from var(--error-bg-color) var(--standalone-color-oklab)); margin: 12px; margin-bottom: 24px; border-radius: 150px; border-spacing: 6px; padding: 6px; }
+toast { background: #505053; color: white; box-shadow: 0 1px 3px 1px RGB(0 0 6/7%), 0 2px 6px 2px RGB(0 0 6/3%); --standalone-color-oklab: Max(l, 0.85) a b; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); --destructive-color: oklab(from var(--destructive-bg-color) var(--standalone-color-oklab)); --success-color: oklab(from var(--success-bg-color) var(--standalone-color-oklab)); --warning-color: oklab(from var(--warning-bg-color) var(--standalone-color-oklab)); --error-color: oklab(from var(--error-bg-color) var(--standalone-color-oklab)); margin: 12px; margin-bottom: 24px; border-radius: 150px; border-spacing: 6px; padding: 6px; }
 
 toast:dir(ltr) { padding-left: 12px; }
 
@@ -2178,7 +2178,7 @@ scale:focus:focus-visible > trough > slider { outline-color: color-mix(in srgb, 
 
 @media (prefers-contrast: more) { scale { ---slider-border-color: RGB(0 0 6 / 35%); } }
 
-scale > trough > slider { background-color: color-mix(in srgb, #cacccc 80%, var(--view-bg-color)); box-shadow: 0 0 0 1px var(---slider-border-color), 0 2px 4px RGB(0 0 6/20%); border-radius: 100%; min-width: 20px; min-height: 20px; margin: -8px; }
+scale > trough > slider { background-color: color-mix(in srgb, white 80%, var(--view-bg-color)); box-shadow: 0 0 0 1px var(---slider-border-color), 0 2px 4px RGB(0 0 6/20%); border-radius: 100%; min-width: 20px; min-height: 20px; margin: -8px; }
 
 scale:hover > trough, scale:active > trough { background-color: color-mix(in srgb, currentColor 20%, transparent); }
 
@@ -2186,7 +2186,7 @@ scale:hover > trough, scale:active > trough { background-color: color-mix(in srg
 
 scale:hover > trough > highlight, scale:active > trough > highlight { background-image: image(color-mix(in srgb, currentColor 10%, transparent)); }
 
-scale:hover > trough > slider, scale:active > trough > slider { background-color: #cacccc; }
+scale:hover > trough > slider, scale:active > trough > slider { background-color: white; }
 
 scale:disabled { filter: Opacity(var(--disabled-opacity)); }
 
@@ -2480,7 +2480,7 @@ view-switcher-sidebar .indicator { background: color-mix(in srgb, currentColor 4
 
 view-switcher-sidebar .indicator.dot { min-width: 8px; min-height: 8px; }
 
-view-switcher-sidebar .indicator > label { color: #cacccc; padding-left: 6px; padding-right: 6px; }
+view-switcher-sidebar .indicator > label { color: white; padding-left: 6px; padding-right: 6px; }
 
 view-switcher-sidebar .indicator.needs-attention { background: var(--accent-bg-color); }
 
@@ -2539,11 +2539,11 @@ switch:focus:focus-visible { outline-color: color-mix(in srgb, var(--accent-colo
 
 switch:disabled { filter: Opacity(var(--disabled-opacity)); }
 
-switch > slider { min-width: 20px; min-height: 20px; border-radius: 50%; background-color: color-mix(in srgb, #cacccc 80%, var(--view-bg-color)); box-shadow: 0 2px 4px RGB(0 0 6/20%); }
+switch > slider { min-width: 20px; min-height: 20px; border-radius: 50%; background-color: color-mix(in srgb, white 80%, var(--view-bg-color)); box-shadow: 0 2px 4px RGB(0 0 6/20%); }
 
 switch > slider:disabled { box-shadow: 0 2px 4px transparent; }
 
-switch:hover > slider, switch:active > slider { background: #cacccc; }
+switch:hover > slider, switch:active > slider { background: white; }
 
 switch:checked { color: var(--accent-fg-color); background-color: var(--accent-bg-color); }
 
@@ -2551,7 +2551,7 @@ switch:checked:hover { background-image: image(color-mix(in srgb, currentColor 1
 
 switch:checked:active { background-image: image(RGB(0 0 6/20%)); }
 
-switch:checked > slider { background-color: #cacccc; }
+switch:checked > slider { background-color: white; }
 
 @media (prefers-contrast: more) { switch:checked > image { color: inherit; } }
 
@@ -2732,9 +2732,9 @@ toggle-group > toggle:checked:disabled { background-color: color-mix(in srgb, va
 
 @media (prefers-contrast: more) { toggle-group > toggle:checked { box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor var(--border-opacity), transparent), 0 1px 3px 1px RGB(0 0 6/7%), 0 2px 6px 2px RGB(0 0 6/3%); } toggle-group > toggle:checked:disabled { box-shadow: inset 0 0 0 1px color-mix(in srgb, color-mix(in srgb, currentColor var(--border-opacity), transparent) var(--disabled-opacity), transparent); } }
 
-toggle-group.osd, .osd toggle-group { --active-toggle-bg-color: #cacccc; --active-toggle-fg-color: rgb(0 0 0 / 80%); }
+toggle-group.osd, .osd toggle-group { --active-toggle-bg-color: white; --active-toggle-fg-color: rgb(0 0 0 / 80%); }
 
-toggle-group.osd:not(.flat) > toggle:checked, .osd toggle-group:not(.flat) > toggle:checked { --accent-bg-color: rgb(0 0 0 / 75%); --accent-fg-color: #cacccc; --standalone-color-oklab: Min(l, 0.5) a b; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); --destructive-color: oklab(from var(--destructive-bg-color) var(--standalone-color-oklab)); --success-color: oklab(from var(--success-bg-color) var(--standalone-color-oklab)); --warning-color: oklab(from var(--warning-bg-color) var(--standalone-color-oklab)); --error-color: oklab(from var(--error-bg-color) var(--standalone-color-oklab)); box-shadow: 0 1px 3px 1px RGB(0 0 6/7%), 0 2px 6px 2px RGB(0 0 6/3%); }
+toggle-group.osd:not(.flat) > toggle:checked, .osd toggle-group:not(.flat) > toggle:checked { --accent-bg-color: rgb(0 0 0 / 75%); --accent-fg-color: white; --standalone-color-oklab: Min(l, 0.5) a b; --accent-color: oklab(from var(--accent-bg-color) var(--standalone-color-oklab)); --destructive-color: oklab(from var(--destructive-bg-color) var(--standalone-color-oklab)); --success-color: oklab(from var(--success-bg-color) var(--standalone-color-oklab)); --warning-color: oklab(from var(--warning-bg-color) var(--standalone-color-oklab)); --error-color: oklab(from var(--error-bg-color) var(--standalone-color-oklab)); box-shadow: 0 1px 3px 1px RGB(0 0 6/7%), 0 2px 6px 2px RGB(0 0 6/3%); }
 
 toggle-group.osd:not(.flat) > toggle:checked, .osd toggle-group:not(.flat) > toggle:checked { outline: 0 solid transparent; outline-offset: 5px; transition: outline-color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), outline-width 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), outline-offset 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), color 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), background 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94); }
 
@@ -2913,7 +2913,7 @@ window.devel sheet toolbarview > .top-bar { background-image: unset; background-
 
 tooltip { padding: 6px 10px; border-radius: 9px; box-shadow: none; }
 
-tooltip.background { background-color: RGB(0 0 6/80%); background-clip: padding-box; border: 1px solid RGB(255 255 255/10%); color: #cacccc; }
+tooltip.background { background-color: RGB(0 0 6/80%); background-clip: padding-box; border: 1px solid RGB(255 255 255/10%); color: white; }
 
 tooltip > box { border-spacing: 6px; }
 
@@ -2992,13 +2992,13 @@ indicatorbin > indicator, indicatorbin > mask { min-width: 6px; min-height: 6px;
 
 indicatorbin > indicator { margin: 2px; background: color-mix(in srgb, currentColor 40%, transparent); }
 
-indicatorbin > mask { padding: 2px; background: #101315; }
+indicatorbin > mask { padding: 2px; background: black; }
 
 indicatorbin.needs-attention > indicator { background: var(--accent-color); }
 
 indicatorbin.badge > indicator, indicatorbin.badge > mask { min-height: 13px; }
 
-indicatorbin.badge > indicator > label { font-size: 0.6rem; font-weight: bold; padding-left: 4px; padding-right: 4px; color: #cacccc; }
+indicatorbin.badge > indicator > label { font-size: 0.6rem; font-weight: bold; padding-left: 4px; padding-right: 4px; color: white; }
 
 indicatorbin.badge.needs-attention > indicator { background: var(--accent-bg-color); }
 

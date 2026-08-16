@@ -98,6 +98,17 @@ echo "==> Installing vencord theme..."
 mkdir -p "$HOME/.config/vesktop/themes"
 cp "$KIT/vencord/vencord.theme.css" "$HOME/.config/vesktop/themes/vencord.theme.css"
 
+# 5b. GtkSourceView editor scheme (xed / gedit / pluma). Gives the text editing
+#     surface solitude's own palette instead of the default light source scheme.
+echo "==> Installing GtkSourceView solitude scheme..."
+mkdir -p "$HOME/.local/share/gtksourceview-4/styles" "$HOME/.local/share/gtksourceview-3.0/styles"
+cp "$KIT/gtksourceview/solitude.xml" "$HOME/.local/share/gtksourceview-4/styles/solitude.xml"
+cp "$KIT/gtksourceview/solitude.xml" "$HOME/.local/share/gtksourceview-3.0/styles/solitude.xml"
+# Point xed (if installed) at the solitude scheme so it matches the GTK theme.
+if command -v xed >/dev/null 2>&1; then
+  gsettings set org.x.editor.preferences.editor scheme solitude 2>/dev/null || true
+fi
+
 # 6. GTK theme setting
 echo "==> Setting GTK theme to solitude..."
 gsettings set org.gnome.desktop.interface gtk-theme solitude

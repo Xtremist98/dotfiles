@@ -1,6 +1,6 @@
 [X-GNOME-Metatheme]
-Name=solitude
+Name=Solitude
 Type=X-GNOME-Metatheme
-Comment=solitude dark GTK theme (GTK2/3/4) matching the Omarchy solitude palette
+Comment=Solitude dark theme (adw-gtk3 recolor)
 Encoding=UTF-8
-GtkTheme=solitude
+GtkTheme=Solitude

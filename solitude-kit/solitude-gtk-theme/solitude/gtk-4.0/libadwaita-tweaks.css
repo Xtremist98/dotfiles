@@ -1,14 +1,14 @@
 @define-color accent_bg_color @blue_3;
-@define-color accent_fg_color #cacccc;
+@define-color accent_fg_color #0c0e10;
 :root {
-  --accent-blue: #798186;
-  --accent-teal: #6f8396;
-  --accent-green: #707070;
-  --accent-yellow: #c9c2b4;
-  --accent-orange: #de6145;
-  --accent-red: #de6145;
-  --accent-pink: #aeaeae;
-  --accent-purple: #aeaeae;
+  --accent-blue: #3584e4;
+  --accent-teal: #2190a4;
+  --accent-green: #3a944a;
+  --accent-yellow: #c88800;
+  --accent-orange: #ed5b00;
+  --accent-red: #e62d42;
+  --accent-pink: #d56199;
+  --accent-purple: #9141ac;
   --accent-slate: #6f8396;
   --accent-bg-color: var(--accent-blue);
   --accent-fg-color: @accent_fg_color;
