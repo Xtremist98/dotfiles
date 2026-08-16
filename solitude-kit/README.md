@@ -1,16 +1,21 @@
 # Solitude Theme Kit
 
 A self-contained, reproducible **solitude** desktop theme for Omarchy.
-Everything needed (GTK theme, Kvantum style, qt6ct/qt5ct color schemes, vencord
-theme) is pre-rendered in this kit, so no external theming engine is required to
-apply a full solitude desktop. This also eliminates the `adw-gtk3` AUR
-dependency (replaced by `solitude-gtk-theme`).
+Everything needed (GTK theme, Kvantum style, qt6ct/qt5ct color schemes, a KDE
+color scheme, vencord theme) is pre-rendered in this kit, so no external
+theming engine is required to apply a full solitude desktop. The GTK theme
+(`solitude-gtk-theme`) replaces `adw-gtk3`; the kit installs it but no longer
+force-removes `adw-gtk-theme-git` (both can coexist).
 
 ## What's inside
 - `solitude-gtk-theme/` — standalone GTK2/3/4 solitude theme (PKGBUILD + source
   + built `solitude-gtk-theme-*.pkg.tar.gz`). Replaces `adw-gtk3`.
 - `Kvantum/solitude/` — hand-made Kvantum `solitude` Qt style.
 - `qt6ct/`, `qt5ct/` — pre-rendered color schemes.
+- `kde/Solitude.colors` — a KDE color scheme. qt6ct only sets the Qt widget
+  style + QPalette; it does NOT populate KDE's `KColorScheme`, which KDE apps
+  (e.g. Dolphin's "Acting as administrator" banner) read. Without this the
+  banner falls back to white, so the kit installs it into kdeglobals.
 - `vencord/vencord.theme.css` — pre-rendered Discord theme.
 
 ## Fresh-install (kit is fetched from GitHub automatically)
@@ -32,10 +37,16 @@ bash solitude-kit/install.sh
 - install `solitude-gtk-theme` (GTK2/3/4) via `pacman -U`
 - install the Kvantum `solitude` style and set it active
 - install the pre-rendered qt6ct/qt5ct color schemes
+- install the KDE `Solitude` color scheme into `kdeglobals` (fixes Dolphin's
+  admin banner / KColorScheme roles)
 - install the vencord theme
 - set `gsettings` `gtk-theme=solitude` + `color-scheme=prefer-dark`
-- copy qt6ct/Kvantum/gtk configs to `/root/.config` so root `pkexec` GUI
-  apps (GParted, btrfs-assistant, …) are also themed
+- copy qt6ct/Kvantum/gtk configs to `/root/.config` so root `pkexec` GUI apps
+  (GParted, btrfs-assistant, …) are themed via `gtk-3.0/settings.ini`. NOTE: we
+  do NOT copy the user's `kdeglobals` to `/root` nor force the Qt platform theme
+  globally via `/etc/xdg/qt*.conf` — either loads qt6ct/Kvantum into the root
+  `kio-admin-helper` and crashes Dolphin's "Open as Administrator" (shows
+  "unknown error, loading canceled").
 
 ## Notes
 - No `adw-gtk3` required for a solitude desktop.
