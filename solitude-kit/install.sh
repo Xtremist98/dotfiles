@@ -36,11 +36,12 @@ fi
 echo "==> Solitude Theme Kit installer"
 echo "    kit: $KIT"
 
-# 1. GTK theme (GTK2/3/4) — solitude-gtk-theme replaces adw-gtk-theme-git
-#    (the adwaita GTK3 port). We do NOT force-remove adw-gtk-theme-git here;
-#    pacman will happily keep both installed side by side, and solitude is
-#    selected as the active theme below. Force-removal used to break GTK apps
-#    whose theme briefly pointed at a removed package.
+# 1. GTK theme (GTK3/4) — solitude-gtk-theme coexists with adw-gtk-theme-git.
+#    The PKGBUILD declares no conflicts/replaces/provides against adw-gtk-theme-git
+#    (solitude installs to /usr/share/themes/solitude, adw-gtk3 to
+#    /usr/share/themes/adw-gtk3 + adw-gtk3-dark — no file collision), so pacman
+#    keeps both installed side by side. solitude is just selected as the active
+#    theme below; adw-gtk3 stays available.
 GTK_PKG="$(ls "$KIT"/solitude-gtk-theme/solitude-gtk-theme-*.pkg.tar.gz 2>/dev/null | head -n1)"
 if [[ -z "${GTK_PKG:-}" ]]; then
   echo "!! solitude-gtk-theme package not found; building from source..."

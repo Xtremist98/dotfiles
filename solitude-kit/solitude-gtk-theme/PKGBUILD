@@ -6,9 +6,6 @@ pkgdesc="Solitude dark GTK theme (GTK2/3/4) matching the Omarchy solitude palett
 arch=('any')
 license=('GPL3')
 url="https://github.com/linuxer/solitude-gtk-theme"
-provides=('solitude-gtk-theme' 'adw-gtk-theme-git')
-conflicts=('adw-gtk-theme-git')
-replaces=('adw-gtk-theme-git')
 
 package() {
   install -dm755 "$pkgdir/usr/share/themes/solitude"
