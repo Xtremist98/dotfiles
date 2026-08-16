@@ -57,7 +57,7 @@ export PATH="$HOME/.local/share/mise/installs/node/22.23.0/bin:$PATH"
 # Optimize Node V8 engine thread management and garbage collection for streaming hooks
 export NODE_OPTIONS="--max-semi-space-size=64 --v8-pool-size=4"
 
-alias backup-dots='cd "/mnt/media/Dots" && git add . && git commit -m "Automated backup" && git pull origin main --rebase && git push origin main && cd - > /dev/null'
+alias backup-dots='cd "/mnt/media/Dots" && git add . && git commit -m "Automated backup" && git pull backup-dots main --rebase && git push backup-dots main && cd - > /dev/null'
 
 # Native Go TorrServer stream function (With 100+ Video Grid UI)
 function stream {
@@ -98,18 +98,11 @@ alias switch-bar='$HOME/.config/omarchy/scripts/toggle-bar.sh'
 
 # NordVpn connectivity
 vpnup() {
-    local CONFIG_FILE="$HOME/nordvpn/$1.ovpn"
     local CREDS_FILE="$HOME/.nordvpn-creds"
-
-    if [ -f "$CONFIG_FILE" ]; then
-        # --auth-user-pass tells OpenVPN exactly where to look for your login details
-        sudo openvpn --config "$CONFIG_FILE" --auth-user-pass "$CREDS_FILE" --daemon && echo "VPN started in the background using: $1"
-    else
-        echo "Error: Profile '$1' not found in ~/nordvpn/"
-        echo "Available files in your folder:"
-        ls -1 "$HOME/nordvpn/" | grep ".ovpn" | sed 's/\.ovpn//'
-    fi
+    # block-ipv6 prevents the 100% packet loss leak over your Jazz SIM
+    sudo openvpn --config "$1" --auth-user-pass "$CREDS_FILE" --block-ipv6 --redirect-gateway def1 --daemon && echo "VPN is running safely in the background!"
 }
+
 # To Disconnect NordVpn
 alias vpndown="sudo killall openvpn && echo 'VPN Disconnected.'"
 
