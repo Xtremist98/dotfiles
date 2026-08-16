@@ -105,7 +105,7 @@ vpnup() {
         # --auth-user-pass tells OpenVPN exactly where to look for your login details
         sudo openvpn --config "$CONFIG_FILE" --auth-user-pass "$CREDS_FILE" --daemon && echo "VPN started in the background using: $1"
     else
-        echo "Error: Profile '$1' not found in ~/vpn-configs/"
+        echo "Error: Profile '$1' not found in ~/nordvpn/"
         echo "Available files in your folder:"
         ls -1 "$HOME/nordvpn/" | grep ".ovpn" | sed 's/\.ovpn//'
     fi
