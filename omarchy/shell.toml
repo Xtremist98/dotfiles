@@ -1,0 +1,25 @@
+[font]
+base-size = 12
+body = 14
+
+# Bar-flyout surfaces (KeyboardPanel/PopupCard cards, dropdowns, OSD) render
+# at the same translucency as the bar and the cpu/ram panels instead of solid
+# black. User keys win over the theme's [popups] block.
+[popups]
+background-alpha = 0.94
+
+# Control chrome state tokens (toggle switches, buttons, dropdowns, tab
+# strips) resolve through [controls] colors. The theme ships these as the
+# white foreground (#cacccc), which painted every toggle's knob/track/border
+# white regardless of the bar's color04 `foreground` prop. Pin them to color04
+# so interactive chrome matches the bar's palette. User keys win over the
+# theme's [controls] block and hot-reload on save.
+[controls]
+normal-color        = "#798186"
+normal-border       = "#798186"
+hover-cursor-color  = "#798186"
+hover-cursor-border = "#798186"
+focus-color         = "#798186"
+focus-border        = "#798186"
+selected-color      = "#798186"
+selected-border     = "#798186"
