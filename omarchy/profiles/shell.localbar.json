@@ -22,7 +22,7 @@
           "omarchy.power"
         ],
         [
-          "theme-picker",
+          "io.github.birajdotdev.omacore",
           "local.model-usage",
           "local.dropbox"
         ]
@@ -121,7 +121,8 @@
         },
         {
           "color": "color04",
-          "id": "theme-picker"
+          "id": "io.github.birajdotdev.omacore",
+          "macAddress": "34:09:C9:96:82:0C"
         },
         {
           "color": "color04",
