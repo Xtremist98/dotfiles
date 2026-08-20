@@ -29,6 +29,7 @@ Item {
   property color color06: Commons.Color.accent
   property color color07: Commons.Color.foreground
   property color color08: Commons.Color.muted
+  property color color09: "#8a9296"
   readonly property color foregroundSoft: Qt.rgba(
     Commons.Color.foreground.r * 0.88 + Commons.Color.background.r * 0.12,
     Commons.Color.foreground.g * 0.88 + Commons.Color.background.g * 0.12,
@@ -50,6 +51,7 @@ Item {
     color06 = palette.color06 || Commons.Color.accent
     color07 = palette.color07 || Commons.Color.foreground
     color08 = palette.color08 || Commons.Color.muted
+    color09 = palette.color09 || "#8a9296"
   }
 
   function colorFor(value) {
@@ -61,6 +63,7 @@ Item {
     if (id === "color06") return color06
     if (id === "color07") return color07
     if (id === "color08") return color08
+    if (id === "color09") return color09
     if (id === "foreground") return foregroundSoft
     return color01
   }

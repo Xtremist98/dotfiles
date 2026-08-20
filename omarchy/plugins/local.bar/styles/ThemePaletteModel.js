@@ -19,8 +19,9 @@ function parse(raw) {
     color04: values.color4 || values.blue || "",
     color05: values.color5 || values.magenta || "",
     color06: values.color6 || values.cyan || "",
-    color07: values.color7 || values.bright_fg || values.light_fg || "",
-    color08: values.color8 || values.bright_black || ""
+    color07: values.color7 || values.bright_fg || values.light_fg || values.bright_foreground || values.light_foreground || "",
+    color08: values.color8 || values.bright_black || values.muted || values.dark_foreground || "",
+    color09: values.color9 || ""
   }
 }
 
@@ -33,6 +34,6 @@ function selection(value) {
   if (candidate === "yellow" || candidate === "color3") return "color03"
   return [
     "color01", "color02", "color03", "color04",
-    "color05", "color06", "color07", "color08", "foreground"
+    "color05", "color06", "color07", "color08", "color09", "foreground"
   ].indexOf(candidate) >= 0 ? candidate : "color01"
 }
