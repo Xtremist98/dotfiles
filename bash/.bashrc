@@ -103,7 +103,18 @@ vpnup() {
     sudo openvpn --config "$1" --auth-user-pass "$CREDS_FILE" --block-ipv6 --redirect-gateway def1 --daemon && echo "VPN is running safely in the background!"
 }
 
-# To Disconnect NordVpn
-alias vpndown="sudo killall openvpn && echo 'VPN Disconnected.'"
+# To Disconnect NordVpn (manual openvpn daemon)
+alias vpndown="sudo pkill openvpn; echo 'VPN Disconnected.'"
+
+# Cliamp
+cliamp() {
+  if [ "$#" -eq 0 ]; then
+    command cliamp /mnt/media/Music-Audio
+  elif [ "$#" -eq 1 ] && [ "${1#-}" != "$1" ]; then
+    command cliamp /mnt/media/Music-Audio "$@"
+  else
+    command cliamp "$@"
+  fi
+}
 
 
