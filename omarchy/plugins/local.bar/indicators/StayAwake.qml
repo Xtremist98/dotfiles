@@ -6,7 +6,8 @@ BarIndicator {
   id: root
 
   fontSize: Style.bar.iconFont - 1
-  fixedWidth: Style.bar.statusSlot + Style.spaceReal(3)
+  fixedWidth: Style.bar.statusSlot
+  transform: Translate { x: -Style.spaceReal(1) }
 
   readonly property var idleService: bar?.shell?.firstPartyServiceFor("omarchy.idle")
 

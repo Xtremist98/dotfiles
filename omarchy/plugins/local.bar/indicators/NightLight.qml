@@ -6,7 +6,7 @@ BarIndicator {
   id: root
 
   fontSize: Style.bar.iconFont - 1
-  fixedWidth: Style.bar.statusSlot + Style.spaceReal(3)
+  fixedWidth: Style.bar.statusSlot
 
   readonly property var nightlightService: bar?.shell?.firstPartyServiceFor("omarchy.nightlight")
 

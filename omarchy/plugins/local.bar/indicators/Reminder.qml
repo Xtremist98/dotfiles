@@ -8,7 +8,7 @@ BarIndicator {
   id: root
 
   fontSize: Style.bar.iconFont - 1
-  fixedWidth: Style.bar.statusSlot + Style.spaceReal(3)
+  fixedWidth: Style.bar.statusSlot
 
   property int reminderCount: 0
   property string tooltip: ""

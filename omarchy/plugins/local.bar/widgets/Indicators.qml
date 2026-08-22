@@ -303,7 +303,7 @@ BarWidget {
       id: horizontalActiveIndicatorBlock
 
       Row {
-        spacing: 0
+        spacing: -Style.spaceReal(3)
 
         Repeater {
           model: activeIndicatorBlockRoot.indicatorModel
@@ -323,7 +323,7 @@ BarWidget {
       id: verticalActiveIndicatorBlock
 
       Column {
-        spacing: 0
+        spacing: -Style.spaceReal(3)
 
         Repeater {
           model: activeIndicatorBlockRoot.indicatorModel
