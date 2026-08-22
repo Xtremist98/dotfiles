@@ -38,14 +38,14 @@ hl.config({
     },
 
     groupbar = {
-      font_size = 11,
+      font_size = 15,
       font_family = "Slate For OnePlus",
-      font_weight_active = "bold",
+      font_weight_active = "ultraheavy",
       font_weight_inactive = "normal",
       indicator_height = 2,
       indicator_gap = 4,
-      height = 26,
-      gaps_in = 6,
+      height = 22,
+      gaps_in = 4,
       gaps_out = 4,
       text_color = "rgb(cacccc)",
       text_color_inactive = "rgba(798186b0)",
@@ -128,6 +128,9 @@ o.window("mpv", { tag = "-floating-window", tile = true })
 
 -- Make Windscribe always floating and centered.
 o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
+
+-- Omagrab Windowsrules
+o.window("^omagrab$", {float = true, center = true, {size = 520, 260} })
 
 -- GTK Theme Settings
 hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")

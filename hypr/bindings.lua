@@ -55,3 +55,7 @@ hl.bind("SUPER + I", hl.dsp.exec_cmd("omarchy-shell shell summon shell.settings"
 -- >>> omagrab keybind begin
 hl.bind("SUPER + SHIFT + V", hl.dsp.exec_cmd("xdg-terminal-exec --app-id=omagrab -e omagrab --clip"), { description = "omagrab" })
 -- <<< omagrab keybind end
+
+-- cliamp music player (overrides default SUPER+SHIFT+M "Music")
+hl.unbind("SUPER + SHIFT + M")
+hl.bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("omarchy launch or focus tui cliamp /mnt/media/Music-Audio"), { description = "cliamp" })
