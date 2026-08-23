@@ -78,8 +78,8 @@ Item {
     : Commons.Color.bar.active
   readonly property color mutedInk: sumi
   readonly property color pill: Qt.rgba(paper.r, paper.g, paper.b, 0.18)
-  readonly property color barBackground: Qt.rgba(paper.r, paper.g, paper.b, 0.94)
-  readonly property color panelBackground: Qt.rgba(paper.r, paper.g, paper.b, 0.94)
+  readonly property color barBackground: Qt.rgba(paper.r, paper.g, paper.b, 1.0)
+  readonly property color panelBackground: Qt.rgba(paper.r, paper.g, paper.b, 1.0)
   readonly property color pillBorder: "#22ffffff"
   readonly property color islandBorder: mix(paper, ink, 0.16)
   readonly property color shellBorder: mix(paper, ink, 0.22)

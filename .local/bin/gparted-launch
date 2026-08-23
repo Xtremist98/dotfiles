@@ -1,0 +1,4 @@
+#!/bin/sh
+xhost +SI:localuser:root >/dev/null 2>&1
+exec pkexec env WAYLAND_DISPLAY="$WAYLAND_DISPLAY" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+  sh -c 'export GTK_THEME=adw-gtk3-dark HOME=/root XDG_CONFIG_HOME=/root/.config GDK_BACKEND=wayland; exec /usr/bin/gparted "$@"' sh "$@"

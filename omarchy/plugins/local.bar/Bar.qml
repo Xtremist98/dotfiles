@@ -75,7 +75,7 @@ Item {
       : themeForeground
   }
   property bool foregroundAnimationEnabled: true
-  property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 0.94)
+  property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
   property color urgent: Color.bar.active
   readonly property color shellBorderColor: Qt.rgba(
     Color.background.r * 0.78 + Color.foreground.r * 0.22,

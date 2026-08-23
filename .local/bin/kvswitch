@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# kvswitch - switch the USER Qt/Kvantum theme between rose-pine-dark and solitude.
+# User-side only (no sudo). For GTK, also run: omarchy theme set <name>
+set -euo pipefail
+
+THEME="${1:-}"
+case "$THEME" in
+  rose-pine-dark|rose-pine|rp)
+    KV="rose-pine-dark"
+    QT_SCHEME="$HOME/.config/qt6ct/colors/rosepine-dark.conf"
+    ;;
+  solitude|sol)
+    KV="solitude"
+    QT_SCHEME="$HOME/.config/qt6ct/colors/solitude.conf"
+    ;;
+  *)
+    echo "Usage: kvswitch {rose-pine-dark|solitude}" >&2
+    exit 1
+    ;;
+esac
+
+# Kvantum theme (widget styling)
+sed -i "s/^theme=.*/theme=$KV/" "$HOME/.config/Kvantum/kvantum.kvconfig"
+
+# qt6ct color scheme (palette layer)
+sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_SCHEME|" "$HOME/.config/qt6ct/qt6ct.conf"
+
+# Keep GTK in sync too (same name works for both themes)
+gsettings set org.gnome.desktop.interface gtk-theme "$KV" 2>/dev/null || true
+gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" 2>/dev/null || true
+
+echo "User session -> $KV (restart Qt apps / KvantumManager to apply)"
