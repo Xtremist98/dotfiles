@@ -36,9 +36,23 @@ case "$THEME" in
     ;;
 esac
 
-# Root Qt/Kvantum (btrfs-assistant)
-sed -i "s/^theme=.*/theme=$KV/" /root/.config/Kvantum/kvantum.kvconfig
-sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_SCHEME|" /root/.config/qt6ct/qt6ct.conf
+# Root Qt/Kvantum (btrfs-assistant). Create the configs if missing so the
+# script never aborts on a fresh machine (set -e would otherwise kill it).
+mkdir -p /root/.config/Kvantum /root/.config/qt6ct/colors
+if [ -f /root/.config/Kvantum/kvantum.kvconfig ]; then
+  sed -i "s/^theme=.*/theme=$KV/" /root/.config/Kvantum/kvantum.kvconfig
+else
+  printf '[General]\ntheme=%s\n' "$KV" > /root/.config/Kvantum/kvantum.kvconfig
+fi
+if [ -f /root/.config/qt6ct/qt6ct.conf ]; then
+  sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_SCHEME|" /root/.config/qt6ct/qt6ct.conf
+else
+  printf '[Appearance]\ncolor_scheme_path=%s\n' "$QT_SCHEME" > /root/.config/qt6ct/qt6ct.conf
+fi
+# Ensure the root color scheme file exists (copy from the user session if needed)
+if [ ! -f "$QT_SCHEME" ] && [ -f "/home/linuxer/.config/qt6ct/colors/$(basename "$QT_SCHEME")" ]; then
+  cp "/home/linuxer/.config/qt6ct/colors/$(basename "$QT_SCHEME")" "$QT_SCHEME"
+fi
 
 # gparted's launcher hardcodes GTK_THEME (written by the solitude kit).
 # GTK_THEME env overrides settings.ini, so it must be switched too.

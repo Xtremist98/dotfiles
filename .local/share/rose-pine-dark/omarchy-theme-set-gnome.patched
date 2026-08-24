@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# omarchy:summary=Apply the current theme to GNOME color mode and icon settings
+# omarchy:hidden=true
+
+# gsettings needs a user DBus session. During ISO installs this command can be
+# reached from arch-chroot while applying the initial Omarchy theme; defer until
+# the user has a real session instead of emitting dconf warnings.
+if [[ -z ${DBUS_SESSION_BUS_ADDRESS:-} ]]; then
+  exit 0
+fi
+
+THEME_DIR=$HOME/.local/state/omarchy/current/theme
+COLORS_FILE="$THEME_DIR/colors.toml"
+THEME_NAME="$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null | tr -d '[:space:]')"
+
+# omarchy-theme-color resolves mode from colors.toml (`mode = "light"`), a
+# legacy light.mode marker beside it, or background luminance for user themes.
+mode=$(omarchy-theme-color --file "$COLORS_FILE" mode)
+
+if [[ $mode == "light" ]]; then
+  gsettings set org.gnome.desktop.interface color-scheme "prefer-light"
+  GTK_THEME="Adwaita"
+else
+  gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+  GTK_THEME="Adwaita-dark"
+fi
+
+# Use the theme's own shipped GTK theme when one exists (e.g. rose-pine-dark,
+# solitude). On this machine Adwaita-dark has no GTK3 theme installed, so the
+# fallback above breaks GTK3 apps (xed, pavucontrol) and Chromium (reads GTK3);
+# the full theme directory is correct instead.
+if [[ -n "$THEME_NAME" && -d "/usr/share/themes/$THEME_NAME" ]]; then
+  GTK_THEME="$THEME_NAME"
+fi
+
+gsettings set org.gnome.desktop.interface gtk-theme "$GTK_THEME"
+
+# Change gnome icon theme color
+GNOME_ICONS_THEME=$HOME/.local/state/omarchy/current/theme/icons.theme
+if [[ -f $GNOME_ICONS_THEME ]]; then
+  gsettings set org.gnome.desktop.interface icon-theme "$(<$GNOME_ICONS_THEME)"
+else
+  gsettings set org.gnome.desktop.interface icon-theme "Yaru-blue"
+fi
