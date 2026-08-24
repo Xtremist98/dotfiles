@@ -1,0 +1,6 @@
+[X-GNOME-Metatheme]
+Name=Solitude
+Type=X-GNOME-Metatheme
+Comment=Solitude dark theme (adw-gtk3 recolor)
+Encoding=UTF-8
+GtkTheme=Solitude

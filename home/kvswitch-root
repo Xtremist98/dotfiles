@@ -8,44 +8,27 @@ case "$THEME" in
   rose-pine-dark)
     KV="rose-pine-dark"
     QT_SCHEME="/root/.config/qt6ct/colors/rosepine-dark.conf"
-    FLAT3='@define-color bg #191724;
-@define-color view #191724;
-@define-color surface #191724;
-@define-color sidebar #191724;
-@define-color headerbar #191724;
-@define-color card #191724;
-@define-color popover #191724;
-@define-color dialog #191724;
-@define-color window #191724;
-@define-color menu #191724;
-
-* { background-color: #191724; }'
-    FLAT4='@define-color window_bg_color #191724;
-@define-color window_fg_color #e0def4;
-@define-color view_bg_color #191724;
-@define-color view_fg_color #e0def4;
-@define-color headerbar_bg_color #191724;
-@define-color headerbar_fg_color #e0def4;
-@define-color sidebar_bg_color #191724;
-@define-color card_bg_color #191724;
-@define-color popover_bg_color #191724;
-@define-color dialog_bg_color #191724;
-@define-color secondary_sidebar_bg_color #191724;
-@define-color thumbnail_bg_color #191724;
-@define-color thumbnail_fg_color #e0def4;
-
-window, view, headerbar, headerbar.titlebar, .titlebar,
-sidebar, separator, paned, notebook, notebook tab,
-popover, menu, menuitem, treeview, textview, frame,
-box, button, entry, toolbar, scrolledwindow,
-statusbar, grid, overlay, content { background-color: #191724; color: #e0def4; }
-tooltip { background-color: #191724; color: #e0def4; }'
+    # Minimal :root safety net (mirrors the user kvswitch). The flat #191724 look
+    # also lives in the theme itself (/usr/share/themes/rose-pine-dark/...), so
+    # this only guarantees it if libadwaita ignores the theme css. GTK3 needs no
+    # override because it always reads the theme (/usr/share is synced flat).
+    GTK4_NET=':root {
+  --window-bg-color: #191724;
+  --view-bg-color: #191724;
+  --headerbar-bg-color: #191724;
+  --sidebar-bg-color: #191724;
+  --secondary-sidebar-bg-color: #191724;
+  --dialog-bg-color: #191724;
+  --popover-bg-color: #191724;
+  --sidebar-backdrop-color: #191724;
+  --secondary-sidebar-backdrop-color: #191724;
+  --headerbar-backdrop-color: #191724;
+}'
     ;;
   solitude)
     KV="solitude"
     QT_SCHEME="/root/.config/qt6ct/colors/solitude.conf"
-    FLAT3=""
-    FLAT4=""
+    GTK4_NET=""
     ;;
   *)
     echo "Usage: sudo bash $0 {rose-pine-dark|solitude}" >&2
@@ -57,13 +40,11 @@ esac
 sed -i "s/^theme=.*/theme=$KV/" /root/.config/Kvantum/kvantum.kvconfig
 sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_SCHEME|" /root/.config/qt6ct/qt6ct.conf
 
-# Root GTK (gparted)
+# Root GTK (gparted reads the theme from /usr/share; the flat look is baked there)
 sed -i "s/^gtk-theme-name=.*/gtk-theme-name=$KV/" /root/.config/gtk-3.0/settings.ini
-if [ -n "$FLAT3" ]; then
-  printf '%s\n' "$FLAT3" > /root/.config/gtk-3.0/gtk.css
-  printf '%s\n' "$FLAT4" > /root/.config/gtk-4.0/gtk.css
+if [ -n "$GTK4_NET" ]; then
+  printf '%s\n' "$GTK4_NET" > /root/.config/gtk-4.0/gtk.css
 else
-  # solitude: drop the flat overrides so solitude's own colors render
   rm -f /root/.config/gtk-3.0/gtk.css /root/.config/gtk-4.0/gtk.css
 fi
 
