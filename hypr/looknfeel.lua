@@ -1,11 +1,11 @@
 -- Change the default Omarchy look'n'feel.
 
-local active_border_color = { colors = { "rgba(798186ee)", "rgba(caccccee)" }, angle = 45 }
+local active_border_color = { colors = { "rgba(e8bab8ee)", "rgba(caccccee)" }, angle = 45 }
 local inactive_border_color = "rgb(1e1e1e)"
 
 hl.config({
   general = {
-    gaps_in = 5,
+    gaps_in = 3,
     gaps_out = 10,
     border_size = 1,
 
@@ -33,7 +33,7 @@ hl.config({
 
   group = {
     col = {
-      border_active = active_border_color,
+        border_active = "rgba(e8bab8ee)",
       border_inactive = inactive_border_color,
     },
 
@@ -132,6 +132,6 @@ o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
 -- Omagrab Windowsrules
 o.window("^omagrab$", {float = true, center = true, {size = 520, 260} })
 
--- GTK Theme Settings
-hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")
-hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme 'solitude'")
+-- GTK theme for rose-pine-dark is applied by the theme-set hook
+-- (~/.config/omarchy/hooks/theme-set.d/60-gtk-theme) so it only applies to
+-- that theme and not when switching to other themes.
