@@ -40,8 +40,23 @@ esac
 sed -i "s/^theme=.*/theme=$KV/" /root/.config/Kvantum/kvantum.kvconfig
 sed -i "s|^color_scheme_path=.*|color_scheme_path=$QT_SCHEME|" /root/.config/qt6ct/qt6ct.conf
 
+# gparted's launcher hardcodes GTK_THEME (written by the solitude kit).
+# GTK_THEME env overrides settings.ini, so it must be switched too.
+if [ -f /usr/bin/gparted ]; then
+  sed -i "s/^export GTK_THEME=.*/export GTK_THEME=$KV/" /usr/bin/gparted
+fi
+
 # Root GTK (gparted reads the theme from /usr/share; the flat look is baked there)
-sed -i "s/^gtk-theme-name=.*/gtk-theme-name=$KV/" /root/.config/gtk-3.0/settings.ini
+ROOT_INI="/root/.config/gtk-3.0/settings.ini"
+mkdir -p "$(dirname "$ROOT_INI")"
+if ! grep -qi '^\s*\[Settings\]' "$ROOT_INI" 2>/dev/null; then
+  printf '[Settings]\n' >> "$ROOT_INI"
+fi
+if grep -qi '^\s*gtk-theme-name' "$ROOT_INI"; then
+  sed -i "s/^\s*gtk-theme-name\s*=.*/gtk-theme-name=$KV/" "$ROOT_INI"
+else
+  printf 'gtk-theme-name=%s\n' "$KV" >> "$ROOT_INI"
+fi
 if [ -n "$GTK4_NET" ]; then
   printf '%s\n' "$GTK4_NET" > /root/.config/gtk-4.0/gtk.css
 else
