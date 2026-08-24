@@ -1,7 +1,3 @@
-/* Safety net: forces the flat #191724 look even if libadwaita falls back to
-   built-in Adwaita and ignores the theme's libadwaita.css. The theme
-   (rose-pine-dark/gtk-4.0/libadwaita.css) now also sets these, so this is
-   belt-and-suspenders, not the old heavy override. */
 :root {
   --window-bg-color: #191724;
   --view-bg-color: #191724;
