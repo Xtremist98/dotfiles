@@ -62,7 +62,7 @@
 @define-color window_fg_color #e0def4;
 @define-color view_bg_color #1f1d2e;
 @define-color view_fg_color #e0def4;
-@define-color headerbar_bg_color #26233a;
+@define-color headerbar_bg_color #191724;
 @define-color headerbar_fg_color #e0def4;
 @define-color headerbar_border_color rgba(224,222,244,0.15);
 @define-color headerbar_backdrop_color @window_bg_color;
@@ -7820,3 +7820,27 @@ window.background:not(.solid-csd):not(.csd) > notebook > stack:not(:only-child) 
 @define-color theme_base_color #191724;
 @define-color insensitive_base_color #191724;
 @define-color theme_unfocused_text_color #191724;
+
+/* rose-pine-dark: clearly show file-chooser selection + keyboard focus
+   (focus applies to the row only, NOT the whole .view/iconview container,
+   so the empty area below the files stays view_bg_color) */
+treeview.view:selected,
+treeview.view:selected:focus,
+filechooser treeview.view:selected,
+.view:selected,
+iconview:selected,
+row:selected,
+row:focus {
+  background-color: #ebbcba;
+  background-image: none;
+  color: #191724;
+  border-radius: 3px;
+}
+treeview.view:focus,
+.view:focus,
+row:focus {
+  outline-color: #ebbcba;
+  outline-width: 2px;
+  outline-offset: -2px;
+  outline-style: solid;
+}

@@ -1,4 +1,4 @@
-@define-color accent_bg_color @blue_3;
+@define-color accent_bg_color #eb6f92;
 @define-color accent_fg_color #191724;
 :root {
   --accent-blue: #3584e4;
@@ -10,7 +10,7 @@
   --accent-pink: #d56199;
   --accent-purple: #9141ac;
   --accent-slate: #6f8396;
-  --accent-bg-color: #ebbcba;
+  --accent-bg-color: #eb6f92;
   --accent-fg-color: @accent_fg_color;
   --window-bg-color: @window_bg_color;
   --headerbar-bg-color: @headerbar_bg_color;
@@ -76,4 +76,16 @@ headerbar.default-decoration windowcontrols.end {
 
 tooltip.background.chromium {
   background-color: RGB(0 0 6/80%);
+}
+
+/* file chooser directory view: force the empty area to the view background
+   instead of the rose-tinted default that leaks through when a folder has
+   only a few items (the unfilled strip below the last row). */
+filechooser gridview,
+filechooser columnview,
+filechooser listview,
+filechooser .view,
+filechooser scrolledwindow,
+filechooser scrolledwindow viewport {
+  background-color: var(--view-bg-color);
 }

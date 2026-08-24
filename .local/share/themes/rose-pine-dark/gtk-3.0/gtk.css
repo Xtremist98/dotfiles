@@ -43,7 +43,7 @@
 @define-color dark_3 #524f67;
 @define-color dark_4 #403d52;
 @define-color dark_5 #191724;
-@define-color accent_bg_color @blue_3;
+@define-color accent_bg_color #eb6f92;
 @define-color accent_fg_color #191724;
 @define-color destructive_bg_color @red_4;
 @define-color destructive_fg_color white;
@@ -7813,13 +7813,9 @@ window.background:not(.solid-csd):not(.csd) > notebook > stack:not(:only-child) 
 /* rose-pine-dark: clearly show file-chooser selection + keyboard focus */
 treeview.view:selected,
 treeview.view:selected:focus,
-treeview.view:focus,
 filechooser treeview.view:selected,
-filechooser treeview.view:focus,
 .view:selected,
-.view:focus,
 iconview:selected,
-iconview:focus,
 row:selected,
 row:focus {
   background-color: #ebbcba;
