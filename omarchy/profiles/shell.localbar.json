@@ -69,10 +69,6 @@
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Weather.qml",
           "type": "qml",
           "unit": "metric"
-        },
-        {
-          "color": "color09",
-          "id": "omamail"
         }
       ],
       "left": [

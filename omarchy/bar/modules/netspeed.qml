@@ -86,7 +86,7 @@ BarWidget {
     onTriggered: root.refresh()
   }
 
-  implicitWidth: label.implicitWidth
+  implicitWidth: label.implicitWidth + Style.space(12)
   implicitHeight: barSize
 
   Row {
@@ -110,5 +110,15 @@ BarWidget {
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
     }
+  }
+
+  Rectangle {
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.right: parent.right
+    anchors.rightMargin: Style.space(2)
+    width: 1
+    height: Math.min(parent.height - 14, 10)
+    color: bar ? bar.barForeground : Color.foreground
+    opacity: 0.12
   }
 }
