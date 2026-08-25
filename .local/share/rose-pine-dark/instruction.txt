@@ -1,3 +1,0 @@
-## Patch the stock setter so `thpm run`/`reconcile` don't reset to Adwaita-dark
-sudo cp ~/.local/share/rose-pine-dark/omarchy-theme-set-gnome.patched /usr/bin/omarchy-theme-set-gnome
-sudo chmod 755 /usr/bin/omarchy-theme-set-gnome

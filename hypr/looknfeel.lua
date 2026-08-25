@@ -132,6 +132,6 @@ o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
 -- Omagrab Windowsrules
 o.window("^omagrab$", {float = true, center = true, {size = 520, 260} })
 
--- GTK theme for rose-pine-dark is applied by the theme-set hook
--- (~/.config/omarchy/hooks/theme-set.d/60-gtk-theme) so it only applies to
--- that theme and not when switching to other themes.
+-- GTK
+hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme 'rose-pine-dark'")
+hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")

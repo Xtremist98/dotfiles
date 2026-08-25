@@ -1,39 +1,9 @@
 /* Rose Pine Dark — single GTK override (Last-Call-style)
- * Copied by the theme-set hook into BOTH ~/.config/gtk-4.0/gtk.css and
- * ~/.config/gtk-3.0/gtk.css. GTK4 (libadwaita) reads the :root custom props +
- * @define-color names; GTK3 reads the legacy @define-color names. Unknown
- * declarations are ignored by the other toolkit, so one file serves both.
+ * thpm copies this into both ~/.config/gtk-{3,4}.0/thpm-theme.css.
+ * GTK3 does NOT support :root or color-mix(), so both are omitted.
+ * GTK4 libadwaita reads @define-color names (sufficient); GTK3 reads
+ * the legacy @define-color names.
  */
-
-/* ---- Palette (libadwaita custom properties) ---- */
-:root {
-  --blue-1: #f2e3ea; --blue-2: #ebbcba; --blue-3: #ebbcba; --blue-4: #c4a7e7; --blue-5: #9ccfd8;
-  --green-1: #9be3d2; --green-2: #6fd6c4; --green-3: #46b8a8; --green-4: #31748f; --green-5: #31748f;
-  --yellow-1: #fbe6b0; --yellow-2: #f9d980; --yellow-3: #f6c177; --yellow-4: #f6c177; --yellow-5: #f6c177;
-  --orange-1: #f3c39a; --orange-2: #eaa673; --orange-3: #e08a4e; --orange-4: #cf8f7b; --orange-5: #c0765f;
-  --red-1: #f6a6b4; --red-2: #f08a9c; --red-3: #eb6f92; --red-4: #eb6f92; --red-5: #c75a78;
-  --purple-1: #e4c8ef; --purple-2: #d0a8e0; --purple-3: #c4a7e7; --purple-4: #a98fd0; --purple-5: #8a6fb0;
-  --brown-1: #d8c4b3; --brown-2: #b89e8a; --brown-3: #907aa9; --brown-4: #6e6a86; --brown-5: #524f67;
-  --light-1: #ffffff; --light-2: #e0def4; --light-3: #c5c3ce; --light-4: #908caa; --light-5: #6e6a86;
-  --dark-1: #908caa; --dark-2: #6e6a86; --dark-3: #524f67; --dark-4: #403d52; --dark-5: #191724;
-
-  --window-bg-color: #191724;
-  --view-bg-color: #191724;
-  --headerbar-bg-color: #191724;
-  --sidebar-bg-color: #191724;
-  --secondary-sidebar-bg-color: #191724;
-  --dialog-bg-color: #191724;
-  --popover-bg-color: #191724;
-  --sidebar-backdrop-color: #191724;
-  --secondary-sidebar-backdrop-color: #191724;
-  --headerbar-backdrop-color: #191724;
-  --accent-bg-color: #eb6f92;
-  --accent-fg-color: #191724;
-  --window-fg-color: #e0def4;
-  --view-fg-color: #e0def4;
-  --headerbar-fg-color: #e0def4;
-  --sidebar-fg-color: #e0def4;
-}
 
 /* ---- GTK4 libadwaita named colors ---- */
 @define-color background #191724;
@@ -84,6 +54,8 @@
 @define-color dialog_bg_color #191724;
 @define-color dialog_fg_color #e0def4;
 @define-color thumbnail_bg_color #191724;
+@define-color content_view_bg #191724;
+@define-color text_view_bg #191724;
 @define-color borders alpha(#e0def4, 0.1);
 
 @define-color destructive_bg_color #eb6f92;
@@ -98,6 +70,11 @@
 @define-color success_color #31748f;
 @define-color warning_color #f6c177;
 @define-color error_color #eb6f92;
+
+/* ---- Rose Pine slider fix (rose accent on all scales) ---- */
+scale fill, scale trough { background-color: alpha(#eb6f92, 0.22); }
+scale:active fill, scale:hover fill { background-color: #eb6f92; }
+scale trough, scale slider { color: #eb6f92; }
 
 /* ---- GTK3 Adwaita legacy colors (recolor legacy GTK3 apps) ---- */
 @define-color theme_fg_color #e0def4;
@@ -143,13 +120,13 @@
   color: #191724;
 }
 .background.chromium windowcontrols > button {
-  background-color: color-mix(in srgb, currentColor 10%, transparent);
+  background-color: alpha(#e0def4, 0.10);
   color: #e0def4;
   border-radius: 100%;
   box-shadow: none;
 }
 .background.chromium windowcontrols > button:hover {
-  background-color: color-mix(in srgb, currentColor 15%, transparent);
+  background-color: alpha(#e0def4, 0.15);
 }
 
 /* ---- File-chooser empty area (GTK3 portal) stays flat ---- */
