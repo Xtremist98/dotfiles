@@ -375,7 +375,8 @@ Panel {
     "windscribe": ["", "Windscribe"],
     "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"],
     "org.kde.ark": ["", "Ark"],
-    "iloader": ["", "sidestore"]
+    "iloader": ["", "sidestore"],
+    "cliamp": ["󰝚", "Music"]
   })
 
   readonly property var siteMap: ({
