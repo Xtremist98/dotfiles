@@ -1,32 +1,51 @@
 mode = "dark"
 
-accent = "#eb6f92"
-selection = "#524f67"
-muted = "#6e6a86"
-
+# Official Rose Pine (main) dark — all 15 colors
 background = "#191724"
+surface = "#1f1d2e"
+overlay = "#26233a"
+
+muted = "#626286"
+subtle = "#908caa"
+foreground = "#e0def4"
+
+accent = "#eb6f92"
+love = "#eb6f92"
+gold = "#f6c177"
+rose = "#ebbcba"
+pine = "#31748f"
+foam = "#9ccfd8"
+iris = "#c4a7e7"
+
+highlight_low = "#21202e"
+highlight_med = "#403d52"
+highlight_high = "#524f67"
+
+selection = "#524f67"
+
+# Black = overlay (official Rose Pine alacritty mapping)
+black = "#26233a"
+
+# Legacy aliases
 dark_background = "#1f1d2e"
 darker_background = "#26233a"
 lighter_background = "#21202e"
-
-foreground = "#e0def4"
 dark_foreground = "#908caa"
 light_foreground = "#e0def4"
 bright_foreground = "#e0def4"
 
+# ANSI colors — official Rose Pine mapping from rose-pine/alacritty
 red = "#eb6f92"
 yellow = "#f6c177"
-orange = "#f6c177"
-green = "#31748f"
-cyan = "#9ccfd8"
-blue = "#9ccfd8"
+green = "#9ccfd8"
+cyan = "#ebbcba"
+blue = "#31748f"
 magenta = "#c4a7e7"
-purple = "#c4a7e7"
-brown = "#907aa9"
 
+# Bright ANSI — official Rose Pine (same as normal per alacritty template)
 bright_red = "#eb6f92"
 bright_yellow = "#f6c177"
-bright_green = "#31748f"
-bright_cyan = "#9ccfd8"
-bright_blue = "#9ccfd8"
+bright_green = "#9ccfd8"
+bright_cyan = "#ebbcba"
+bright_blue = "#31748f"
 bright_magenta = "#c4a7e7"

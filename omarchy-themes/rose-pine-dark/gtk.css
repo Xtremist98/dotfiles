@@ -1,16 +1,22 @@
-/* Rose Pine Dark — single GTK override (Last-Call-style)
- * thpm copies this into both ~/.config/gtk-{3,4}.0/thpm-theme.css.
- * GTK3 does NOT support :root or color-mix(), so both are omitted.
- * GTK4 libadwaita reads @define-color names (sufficient); GTK3 reads
- * the legacy @define-color names.
+/* Rose Pine Dark — GTK overlay (Last-Call-style hybrid)
+ * thpm copies this into ~/.config/gtk-{3,4}.0/thpm-theme.css.
+ * Palette: official Rose Pine (main) dark.
+ * Strategy: @define-color named colors for everything,
+ * explicit rules ONLY for Adwaita hard-coded gradients.
  */
 
-/* ---- GTK4 libadwaita named colors ---- */
+/* ================================================================
+ * Palette — named color references (like Last-Call)
+ * ================================================================ */
 @define-color background #191724;
-@define-color surface #1f1d2e;
-@define-color raised_surface #1f1d2e;
-@define-color selection #524f67;
+@define-color surface #191724;
+@define-color raised_surface #191724;
+@define-color selection #2e2b3a;
 @define-color foreground #e0def4;
+@define-color focus #eb6f92;
+@define-color muted #626286;
+@define-color subtle #908caa;
+@define-color overlay #262332;
 
 @define-color black #191724;
 @define-color red #eb6f92;
@@ -21,120 +27,305 @@
 @define-color cyan #9ccfd8;
 @define-color white #e0def4;
 @define-color bright_black #524f67;
-@define-color bright_red #f08a9c;
-@define-color bright_green #9ccfd8;
-@define-color bright_yellow #f6c177;
-@define-color bright_blue #9ccfd8;
-@define-color bright_magenta #c4a7e7;
-@define-color bright_cyan #9ccfd8;
+@define-color bright_red #f097b0;
+@define-color bright_green #5a95ad;
+@define-color bright_yellow #f9d1a0;
+@define-color bright_blue #b0d9df;
+@define-color bright_magenta #d1bdeb;
+@define-color bright_cyan #b0d9df;
 @define-color bright_white #e0def4;
-@define-color muted_text #6e6a86;
+@define-color muted_text #626286;
 
-@define-color accent_bg_color #eb6f92;
-@define-color accent_fg_color #191724;
-@define-color accent_color #eb6f92;
+/* ================================================================
+ * GTK4 libadwaita named colors
+ * ================================================================ */
+@define-color accent_bg_color @focus;
+@define-color accent_fg_color @background;
+@define-color accent_color @focus;
 
-@define-color window_bg_color #191724;
-@define-color window_fg_color #e0def4;
-@define-color view_bg_color #191724;
-@define-color view_fg_color #e0def4;
-@define-color headerbar_bg_color #191724;
-@define-color headerbar_fg_color #e0def4;
-@define-color headerbar_backdrop_color #191724;
-@define-color sidebar_bg_color #191724;
-@define-color sidebar_fg_color #e0def4;
-@define-color sidebar_backdrop_color #191724;
-@define-color secondary_sidebar_bg_color #191724;
-@define-color secondary_sidebar_fg_color #e0def4;
-@define-color secondary_sidebar_backdrop_color #191724;
-@define-color card_bg_color #191724;
-@define-color card_fg_color #e0def4;
-@define-color popover_bg_color #191724;
-@define-color popover_fg_color #e0def4;
-@define-color dialog_bg_color #191724;
-@define-color dialog_fg_color #e0def4;
-@define-color thumbnail_bg_color #191724;
-@define-color content_view_bg #191724;
-@define-color text_view_bg #191724;
-@define-color borders alpha(#e0def4, 0.1);
+@define-color window_bg_color @background;
+@define-color window_fg_color @foreground;
+@define-color view_bg_color @background;
+@define-color view_fg_color @foreground;
+@define-color headerbar_bg_color @background;
+@define-color headerbar_fg_color @foreground;
+@define-color headerbar_backdrop_color @background;
+@define-color sidebar_bg_color @background;
+@define-color sidebar_fg_color @foreground;
+@define-color sidebar_backdrop_color @background;
+@define-color secondary_sidebar_bg_color @background;
+@define-color secondary_sidebar_fg_color @foreground;
+@define-color secondary_sidebar_backdrop_color @background;
+@define-color card_bg_color @surface;
+@define-color card_fg_color @foreground;
+@define-color popover_bg_color @surface;
+@define-color popover_fg_color @foreground;
+@define-color dialog_bg_color @surface;
+@define-color dialog_fg_color @foreground;
+@define-color thumbnail_bg_color @background;
+@define-color content_view_bg @background;
+@define-color text_view_bg @background;
+@define-color borders alpha(@foreground, 0.1);
 
-@define-color destructive_bg_color #eb6f92;
-@define-color destructive_fg_color #191724;
-@define-color success_bg_color #31748f;
-@define-color success_fg_color #e0def4;
-@define-color warning_bg_color #f6c177;
-@define-color warning_fg_color #191724;
-@define-color error_bg_color #eb6f92;
-@define-color error_fg_color #191724;
-@define-color destructive_color #eb6f92;
-@define-color success_color #31748f;
-@define-color warning_color #f6c177;
-@define-color error_color #eb6f92;
+@define-color destructive_bg_color @red;
+@define-color destructive_fg_color @background;
+@define-color success_bg_color @green;
+@define-color success_fg_color @background;
+@define-color warning_bg_color @yellow;
+@define-color warning_fg_color @background;
+@define-color error_bg_color @red;
+@define-color error_fg_color @background;
+@define-color destructive_color @red;
+@define-color success_color @green;
+@define-color warning_color @yellow;
+@define-color error_color @red;
 
-/* ---- Rose Pine slider fix (rose accent on all scales) ---- */
-scale fill, scale trough { background-color: alpha(#eb6f92, 0.22); }
-scale:active fill, scale:hover fill { background-color: #eb6f92; }
-scale trough, scale slider { color: #eb6f92; }
-
-/* ---- GTK3 Adwaita legacy colors (recolor legacy GTK3 apps) ---- */
-@define-color theme_fg_color #e0def4;
-@define-color theme_text_color #e0def4;
-@define-color theme_bg_color #191724;
-@define-color theme_base_color #191724;
-@define-color theme_selected_bg_color #524f67;
-@define-color theme_selected_fg_color #e0def4;
-@define-color theme_unfocused_fg_color #908caa;
-@define-color theme_unfocused_text_color #908caa;
-@define-color theme_unfocused_bg_color #1f1d2e;
-@define-color theme_unfocused_base_color #1f1d2e;
-@define-color theme_unfocused_selected_bg_color #524f67;
-@define-color theme_unfocused_selected_fg_color #e0def4;
+/* ================================================================
+ * GTK3 Adwaita legacy named colors
+ * ================================================================ */
+@define-color theme_fg_color @foreground;
+@define-color theme_text_color @foreground;
+@define-color theme_bg_color @background;
+@define-color theme_base_color @background;
+@define-color theme_selected_bg_color @selection;
+@define-color theme_selected_fg_color @foreground;
+@define-color theme_unfocused_fg_color @subtle;
+@define-color theme_unfocused_text_color @subtle;
+@define-color theme_unfocused_bg_color @background;
+@define-color theme_unfocused_base_color @background;
+@define-color theme_unfocused_selected_bg_color @selection;
+@define-color theme_unfocused_selected_fg_color @foreground;
 @define-color insensitive_bg_color #21202e;
-@define-color insensitive_fg_color #6e6a86;
+@define-color insensitive_fg_color @muted;
 @define-color insensitive_base_color #21202e;
-@define-color unfocused_insensitive_color #6e6a86;
-@define-color unfocused_borders alpha(#e0def4, 0.1);
-@define-color bg_color #191724;
-@define-color fg_color #e0def4;
-@define-color base_color #191724;
-@define-color text_color #e0def4;
-@define-color selected_bg_color #524f67;
-@define-color selected_fg_color #e0def4;
-@define-color headerbar_bg_color #191724;
-@define-color headerbar_fg_color #e0def4;
-@define-color titlebar_bg_color #191724;
-@define-color titlebar_fg_color #e0def4;
-@define-color backdrop_bg_color #1f1d2e;
-@define-color backdrop_fg_color #908caa;
-@define-color borders alpha(#e0def4, 0.1);
-@define-color link_color #9ccfd8;
-@define-color visited_link_color #c4a7e7;
-@define-color warning_color #f6c177;
-@define-color error_color #eb6f92;
-@define-color success_color #31748f;
+@define-color unfocused_insensitive_color @muted;
+@define-color unfocused_borders alpha(@foreground, 0.1);
+@define-color bg_color @background;
+@define-color fg_color @foreground;
+@define-color base_color @background;
+@define-color text_color @foreground;
+@define-color selected_bg_color @selection;
+@define-color selected_fg_color @foreground;
+@define-color headerbar_bg_color @background;
+@define-color headerbar_fg_color @foreground;
+@define-color titlebar_bg_color @background;
+@define-color titlebar_fg_color @foreground;
+@define-color backdrop_bg_color @background;
+@define-color backdrop_fg_color @subtle;
+@define-color borders alpha(@foreground, 0.1);
+@define-color link_color @cyan;
+@define-color visited_link_color @magenta;
+@define-color warning_color @yellow;
+@define-color error_color @red;
+@define-color success_color @green;
 
-/* ---- Chromium (libadwaita .background.chromium) ---- */
-.background.chromium { background-color: #191724; }
+/* ================================================================
+ * Nuclear: kill ALL Adwaita-dark background-image gradients.
+ * Adwaita hard-codes gradient images on headerbar/toolbar/box that
+ * @define-color alone cannot override.  This kills them globally;
+ * explicit background-color rules below reclaim the flat color.
+ * ================================================================ */
+.background *, .background {
+  background-image: none;
+}
+
+/* ================================================================
+ * Rose Pine slider fix (rose accent on all scales)
+ * ================================================================ */
+scale fill, scale trough { background-color: alpha(@focus, 0.22); }
+scale:active fill, scale:hover fill { background-color: @focus; }
+scale trough, scale slider { color: @focus; }
+
+/* ================================================================
+ * Chromium (libadwaita .background.chromium)
+ * ================================================================ */
+.background.chromium { background-color: @background; }
 .background.chromium selection, .background.chromium selection:focus {
-  background-color: #eb6f92;
-  color: #191724;
+  background-color: @focus;
+  color: @background;
 }
 .background.chromium windowcontrols > button {
-  background-color: alpha(#e0def4, 0.10);
-  color: #e0def4;
+  background-color: alpha(@foreground, 0.10);
+  color: @foreground;
   border-radius: 100%;
   box-shadow: none;
 }
 .background.chromium windowcontrols > button:hover {
-  background-color: alpha(#e0def4, 0.15);
+  background-color: alpha(@foreground, 0.15);
 }
 
-/* ---- File-chooser empty area (GTK3 portal) stays flat ---- */
-filechooser gridview,
-filechooser columnview,
-filechooser listview,
-filechooser .view,
-filechooser scrolledwindow,
-filechooser scrolledwindow viewport {
-  background-color: #191724;
+/* ================================================================
+ * Explicit widget rules — ONLY for what @define-color can't fix.
+ * Adwaita-dark hard-codes hex on many widgets; @define-color alone
+ * cannot override them.  These rules set the flat base color.
+ * ================================================================ */
+
+/* Window + main containers */
+window, .background {
+  background-color: @background;
+  color: @foreground;
+}
+
+/* GtkBox containers inside .background — covers sidebar/content wrappers
+ * that Adwaita hard-codes to #353536.  Only targets direct/nested boxes,
+ * not leaf widgets like labels or buttons. */
+.background > box,
+.background > box > box,
+.background > box > box > box,
+.background > frame,
+.background > box > frame {
+  background-color: @background;
+}
+
+/* Sidebar */
+.sidebar, .sidebar > view, .sidebar list,
+.sidebar label, .sidebar .dim-label,
+sidebar, paned > sidebar, .navigation-sidebar {
+  background-color: @background;
+  color: @foreground;
+}
+.sidebar separator, sidebar separator {
+  background-color: alpha(@foreground, 0.1);
+}
+
+/* Views */
+.content-view, .view, .text-view,
+iconview, treeview, treeview.view,
+list, listview, columnview, cellview {
+  background-color: @background;
+  color: @foreground;
+}
+
+/* Headerbar / titlebar — Adwaita hard-codes gradient */
+headerbar, .titlebar, .header-bar, .primary-toolbar {
+  background-color: @background;
+  color: @foreground;
+}
+headerbar:backdrop, .titlebar:backdrop {
+  background-color: @background;
+}
+
+/* Toolbar — Adwaita hard-codes gradient to #353535 */
+toolbar, .toolbar {
+  background-color: @background;
+}
+toolbar:backdrop, .toolbar:backdrop {
+  background-color: @background;
+}
+
+/* Notebooks / tabs */
+notebook, notebook > header, notebook > header > tabs, notebook tab {
+  background-color: @background;
+  color: @foreground;
+}
+notebook > header tab { background-color: #21202e; color: @subtle; }
+notebook > header tab:checked { background-color: @background; color: @foreground; }
+
+/* Popovers, menus */
+popover, popover.background, .popover, menu, .menu, .context-menu {
+  background-color: @surface;
+  color: @foreground;
+}
+
+/* Nautilus sidebar: full-width row selection #2e2b3a */
+.sidebar row, sidebar row,
+listview > row, columnview > item, row {
+  background-color: transparent;
+}
+.sidebar row:selected, sidebar row:selected,
+listview > row:selected, columnview > item:selected,
+row:selected, row:selected:focus {
+  background-color: @selection;
+  color: @foreground;
+}
+/* Children must match row so selection fills full width */
+.sidebar row:selected *,
+.sidebar row:selected box,
+.sidebar row:selected box label,
+.sidebar row:selected label,
+.sidebar row:selected image,
+listview > row:selected *,
+row:selected > * {
+  background-color: @selection;
+  color: @foreground;
+}
+.sidebar row:hover:not(:selected), sidebar row:hover:not(:selected) {
+  background-color: alpha(@foreground, 0.05);
+}
+
+/* TreeView column headers */
+treeview header button {
+  background-color: @background;
+  color: @subtle;
+  border-bottom-color: alpha(@foreground, 0.1);
+}
+treeview:selected { background-color: @selection; color: @foreground; }
+
+/* Inline toolbars */
+.inline-toolbar, .inline-toolbar button, .inline-toolbar toolbutton > button {
+  background-color: @background;
+  color: @foreground;
+}
+.inline-toolbar button:hover { background-color: @overlay; }
+.inline-toolbar button:active, .inline-toolbar button:checked {
+  background-color: @bright_black;
+}
+
+/* Scrollbars */
+scrollbar, scrollbar slider { background-color: transparent; }
+scrollbar slider {
+  background-color: alpha(@foreground, 0.15);
+  border-radius: 99px;
+}
+scrollbar slider:hover { background-color: alpha(@foreground, 0.3); }
+
+/* Switches, checkboxes, radios */
+switch, switch slider { background-color: #4b4e55; }
+switch:checked { background-color: @focus; }
+check, radio { color: @foreground; }
+
+/* Buttons */
+button { color: @foreground; }
+button:hover { background-color: alpha(@foreground, 0.08); }
+button:active, button:checked { background-color: alpha(@foreground, 0.12); }
+
+/* Dim labels */
+.dim-label { color: @subtle; }
+
+/* Progress bars */
+progressbar, progressbar trough { background-color: @overlay; }
+progressbar progress { background-color: @focus; }
+
+/* Status page */
+statuspage, .status-page, statuspage > box {
+  background-color: @background;
+  color: @foreground;
+}
+
+/* Frame / borders */
+frame > border, separator { background-color: alpha(@foreground, 0.1); }
+
+/* File-chooser (GTK3 portal) */
+filechooser gridview, filechooser columnview, filechooser listview,
+filechooser .view, filechooser scrolledwindow,
+filechooser scrolledwindow viewport { background-color: @background; }
+
+/* ================================================================
+ * GNOME Disks — target by CSS node names from the binary
+ * plus deep box nesting for sidebar/content wrappers
+ * ================================================================ */
+#disks-main-headerbar,
+#disks-side-headerbar {
+  background-color: @background;
+}
+#disks-devtab,
+#disks-devtab headerbar,
+#disks-devtab toolbar,
+#disks-devtab box,
+#disks-devtab box box,
+#disks-devtab box box box,
+#disks-stack,
+#disks-stack > box,
+#disks-stack > box > box {
+  background-color: @background;
 }
