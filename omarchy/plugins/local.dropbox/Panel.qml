@@ -35,6 +35,10 @@ Panel {
   readonly property color foreground: bar ? bar.panelForeground : Color.foreground
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
+  readonly property color scrollbarColor: {
+    var c = foreground
+    return Qt.rgba(c.r, c.g, c.b, 0.45)
+  }
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property color iconColor: dropbox.authenticated && dropbox.active ? foreground : dim
   readonly property string toggleHint: dropbox.active ? "Pause syncing" : "Resume syncing"
@@ -221,17 +225,17 @@ Panel {
       Flickable {
         id: panelFlick
         anchors.fill: parent
-        contentWidth: width
+        contentWidth: column.width
         contentHeight: column.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         flickableDirection: Flickable.VerticalFlick
         interactive: contentHeight > height
-        ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
+        // Column width is shrunk so content never runs under the scrollbar.
 
         Column {
           id: column
-          width: panelFlick.width
+          width: panelFlick.width - Style.space(4)
           spacing: Style.space(12)
 
           Item {
@@ -264,7 +268,7 @@ Panel {
               // header's only cursor target. The service already flips `active`
               // optimistically, so the knob throws the instant you click it.
               trailingControl: Component {
-                ToggleSwitch {
+                ThemedToggle {
                   id: powerSwitch
                   visible: dropbox.installed
                   checked: dropbox.active
@@ -355,6 +359,40 @@ Panel {
               }
             }
           }
+        }
+      }
+
+      // Themed scrollbar: parked in the reserved right gutter so it never
+      // overlaps the toggle or file rows, and colored from the panel
+      // foreground so it re-themes with the active theme instead of the
+      // white app-default scrollbar.
+      Item {
+        id: verticalScrollBar
+        anchors.top: panelFlick.top
+        anchors.bottom: panelFlick.bottom
+        anchors.right: panelFlick.right
+        // Slide into the popup's padding gutter, stopping ~6px short of the
+        // panel border so it hugs the edge without touching it. (popupPadding
+        // is 14 by default; the Card is inset by that plus its border width.)
+        anchors.rightMargin: -(Style.spacing.popupPadding - 6)
+        anchors.topMargin: 2
+        anchors.bottomMargin: 2
+        width: Style.space(2)
+        visible: panelFlick.contentHeight > panelFlick.height
+
+        Rectangle {
+          id: verticalScrollHandle
+          width: parent.width
+          radius: height / 2
+          height: Math.max(18, panelFlick.height * panelFlick.height / Math.max(1, panelFlick.contentHeight))
+          y: {
+            var spread = Math.max(1, panelFlick.contentHeight - panelFlick.height)
+            var travel = Math.max(0, parent.height - verticalScrollHandle.height)
+            return travel * panelFlick.contentY / spread
+          }
+          color: root.scrollbarColor
+
+          Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         }
       }
     }

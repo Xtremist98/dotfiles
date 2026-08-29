@@ -7,8 +7,9 @@ Canvas {
   required property int percent
   required property color foreground
   required property color accent
+  property int size: Commons.Style.space(13)
 
-  width: Commons.Style.space(16)
+  width: size
   height: width
 
   onPercentChanged: requestPaint()

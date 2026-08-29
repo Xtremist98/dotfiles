@@ -110,6 +110,7 @@ Ui.Panel {
       MemoryRing {
         visible: root.displayMode !== "text"
         anchors.verticalCenter: parent.verticalCenter
+        size: root.tokens.iconSize - Commons.Style.space(2)
         percent: root.percent
         foreground: root.widgetInk
         accent: root.widgetInk
@@ -135,6 +136,7 @@ Ui.Panel {
 
       MemoryRing {
         anchors.horizontalCenter: parent.horizontalCenter
+        size: root.tokens.iconSize - Commons.Style.space(2)
         percent: root.percent
         foreground: root.widgetInk
         accent: root.widgetInk
