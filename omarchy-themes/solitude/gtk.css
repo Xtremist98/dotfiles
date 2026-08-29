@@ -1,0 +1,129 @@
+/* Solitude — single GTK override (Last-Call-style)
+ * Copied by the theme-set hook into BOTH ~/.config/gtk-4.0/gtk.css and
+ * ~/.config/gtk-3.0/gtk.css. Mirrors the rose-pine approach: flat #101315
+ * surfaces, grey #798186 accent.
+ */
+
+:root {
+  --window-bg-color: #101315;
+  --view-bg-color: #101315;
+  --headerbar-bg-color: #101315;
+  --sidebar-bg-color: #101315;
+  --secondary-sidebar-bg-color: #101315;
+  --dialog-bg-color: #101315;
+  --popover-bg-color: #101315;
+  --sidebar-backdrop-color: #101315;
+  --secondary-sidebar-backdrop-color: #101315;
+  --headerbar-backdrop-color: #101315;
+  --accent-bg-color: #798186;
+  --accent-fg-color: #101315;
+  --window-fg-color: #cacccc;
+  --view-fg-color: #cacccc;
+  --headerbar-fg-color: #cacccc;
+  --sidebar-fg-color: #cacccc;
+}
+
+@define-color background #101315;
+@define-color surface #0c0e10;
+@define-color raised_surface #0c0e10;
+@define-color selection #565d60;
+@define-color foreground #cacccc;
+
+@define-color black #101315;
+@define-color red #de6145;
+@define-color green #3a944a;
+@define-color yellow #f6c177;
+@define-color blue #9fa5a9;
+@define-color magenta #c4a7e7;
+@define-color cyan #9ccfd8;
+@define-color white #cacccc;
+@define-color bright_black #565d60;
+@define-color bright_red #de6145;
+@define-color bright_green #3a944a;
+@define-color bright_yellow #f6c177;
+@define-color bright_blue #9fa5a9;
+@define-color bright_magenta #c4a7e7;
+@define-color bright_cyan #9ccfd8;
+@define-color bright_white #cacccc;
+@define-color muted_text #798186;
+
+@define-color accent_bg_color #798186;
+@define-color accent_fg_color #101315;
+@define-color accent_color #798186;
+
+@define-color window_bg_color #101315;
+@define-color window_fg_color #cacccc;
+@define-color view_bg_color #101315;
+@define-color view_fg_color #cacccc;
+@define-color headerbar_bg_color #101315;
+@define-color headerbar_fg_color #cacccc;
+@define-color headerbar_backdrop_color #101315;
+@define-color sidebar_bg_color #101315;
+@define-color sidebar_fg_color #cacccc;
+@define-color sidebar_backdrop_color #101315;
+@define-color secondary_sidebar_bg_color #101315;
+@define-color secondary_sidebar_fg_color #cacccc;
+@define-color secondary_sidebar_backdrop_color #101315;
+@define-color card_bg_color #101315;
+@define-color card_fg_color #cacccc;
+@define-color popover_bg_color #101315;
+@define-color popover_fg_color #cacccc;
+@define-color dialog_bg_color #101315;
+@define-color dialog_fg_color #cacccc;
+@define-color thumbnail_bg_color #101315;
+@define-color borders alpha(#cacccc, 0.15);
+
+@define-color destructive_bg_color #de6145;
+@define-color destructive_fg_color #101315;
+@define-color success_bg_color #3a944a;
+@define-color success_fg_color #101315;
+@define-color warning_bg_color #f6c177;
+@define-color warning_fg_color #101315;
+@define-color error_bg_color #de6145;
+@define-color error_fg_color #101315;
+@define-color destructive_color #de6145;
+@define-color success_color #3a944a;
+@define-color warning_color #f6c177;
+@define-color error_color #de6145;
+
+@define-color theme_fg_color #cacccc;
+@define-color theme_text_color #cacccc;
+@define-color theme_bg_color #101315;
+@define-color theme_base_color #101315;
+@define-color theme_selected_bg_color #798186;
+@define-color theme_selected_fg_color #101315;
+@define-color insensitive_bg_color #101315;
+@define-color insensitive_fg_color #798186;
+@define-color insensitive_base_color #101315;
+@define-color theme_unfocused_fg_color #cacccc;
+@define-color theme_unfocused_text_color #cacccc;
+@define-color theme_unfocused_bg_color #101315;
+@define-color theme_unfocused_base_color #101315;
+@define-color theme_unfocused_selected_bg_color #565d60;
+@define-color theme_unfocused_selected_fg_color #101315;
+@define-color unfocused_insensitive_color #798186;
+@define-color unfocused_borders alpha(#cacccc, 0.15);
+
+.background.chromium { background-color: #101315; }
+.background.chromium selection, .background.chromium selection:focus {
+  background-color: #798186;
+  color: #101315;
+}
+.background.chromium windowcontrols > button {
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
+  color: #cacccc;
+  border-radius: 100%;
+  box-shadow: none;
+}
+.background.chromium windowcontrols > button:hover {
+  background-color: color-mix(in srgb, currentColor 15%, transparent);
+}
+
+filechooser gridview,
+filechooser columnview,
+filechooser listview,
+filechooser .view,
+filechooser scrolledwindow,
+filechooser scrolledwindow viewport {
+  background-color: #101315;
+}

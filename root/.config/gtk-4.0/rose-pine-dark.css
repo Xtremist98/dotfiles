@@ -134,7 +134,7 @@ headerbar:backdrop, .titlebar:backdrop {
   background-image: none;
 }
 .sidebar, .sidebar:backdrop, paned > sidebar, .navigation-sidebar {
-  background-color: #191724;
+  background-color: #1f1d2e;
   background-image: none;
 }
 .view, iconview, treeview, treeview.view {

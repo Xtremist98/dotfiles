@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-scheme id="rose-pine" _name="Rose Pine" version="1.0">
+
+  <author>linuxer</author>
+  <_description>Rose Pine dark color scheme matching #191724</_description>
+
+  <!-- Rose Pine palette -->
+  <color name="fg"       value="#e0def4"/>
+  <color name="bg"       value="#191724"/>
+  <color name="surface"  value="#1f1d2e"/>
+  <color name="muted"    value="#6e6a86"/>
+  <color name="rose"     value="#eb6f92"/>
+  <color name="pine"     value="#31748f"/>
+  <color name="foam"     value="#9ccfd8"/>
+  <color name="gold"     value="#f6c177"/>
+  <color name="iris"     value="#c4a7e7"/>
+  <color name="love"     value="#eb6f92"/>
+  <color name="selection" value="#524f67"/>
+
+  <!-- Global Settings -->
+  <style name="text"               foreground="fg" background="bg"/>
+  <style name="selection"          foreground="bg" background="selection"/>
+  <style name="cursor"             foreground="fg"/>
+  <style name="secondary-cursor"   foreground="muted"/>
+  <style name="current-line"       background="surface"/>
+  <style name="line-numbers"       foreground="muted" background="bg"/>
+  <style name="draw-spaces"        foreground="muted"/>
+  <style name="background-pattern" background="surface"/>
+
+  <!-- Bracket Matching -->
+  <style name="bracket-match"      foreground="iris" bold="true"/>
+  <style name="bracket-mismatch"   foreground="bg" background="rose" bold="true"/>
+
+  <!-- Right Margin -->
+  <style name="right-margin"       foreground="fg" background="muted"/>
+
+  <!-- Search Matching -->
+  <style name="search-match"       foreground="bg" background="gold"/>
+
+  <!-- Comments -->
+  <style name="def:comment"            foreground="muted"/>
+  <style name="def:shebang"            foreground="muted" bold="true"/>
+  <style name="def:doc-comment-element" italic="true"/>
+
+  <!-- Constants -->
+  <style name="def:constant"           foreground="love"/>
+  <style name="def:string"             foreground="foam"/>
+  <style name="def:special-char"       foreground="love"/>
+  <style name="def:special-constant"   foreground="love"/>
+  <style name="def:floating-point"     foreground="love"/>
+
+  <!-- Identifiers -->
+  <style name="def:identifier"         foreground="fg"/>
+
+  <!-- Statements -->
+  <style name="def:statement"          foreground="rose" bold="true"/>
+
+  <!-- Types -->
+  <style name="def:type"               foreground="iris" bold="true"/>
+
+  <!-- Markup -->
+  <style name="def:emphasis"           italic="true"/>
+  <style name="def:strong-emphasis"    foreground="fg" bold="true"/>
+  <style name="def:inline-code"        foreground="foam"/>
+  <style name="def:insertion"          underline="single"/>
+  <style name="def:deletion"           strikethrough="true"/>
+  <style name="def:link-text"          foreground="muted"/>
+  <style name="def:link-symbol"        foreground="muted" bold="true"/>
+  <style name="def:link-destination"   italic="true" underline="single"/>
+  <style name="def:heading"            foreground="iris" bold="true"/>
+  <style name="def:thematic-break"     foreground="iris" bold="true"/>
+  <style name="def:preformatted-section" foreground="foam"/>
+  <style name="def:list-marker"        foreground="fg" bold="true"/>
+
+  <!-- Others -->
+  <style name="def:preprocessor"       foreground="iris"/>
+  <style name="def:error"              foreground="bg" background="rose" bold="true"/>
+  <style name="def:warning"            foreground="bg" background="gold" bold="true"/>
+  <style name="def:note"               background="iris" foreground="bg" bold="true"/>
+  <style name="def:net-address"        italic="true" underline="single"/>
+
+  <!-- Language specific -->
+  <style name="diff:added-line"         foreground="foam"/>
+  <style name="diff:removed-line"       foreground="rose"/>
+  <style name="diff:changed-line"       foreground="gold"/>
+  <style name="diff:diff-file"          foreground="iris" bold="true"/>
+  <style name="diff:location"           foreground="iris"/>
+  <style name="diff:special-case"       foreground="fg" bold="true"/>
+
+  <style name="latex:command"           foreground="iris" bold="true"/>
+  <style name="latex:include"           use-style="def:preprocessor"/>
+
+</style-scheme>

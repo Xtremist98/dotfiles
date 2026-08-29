@@ -9,6 +9,7 @@
         ],
         [
           "local.cpu",
+          "dim-separator",
           "local.memory"
         ],
         [
@@ -24,11 +25,10 @@
         [
           "wian47.removable-drives",
           "io.github.birajdotdev.omacore",
-          "local.model-usage",
           "local.dropbox"
         ]
       ],
-      "innerPadding": 4,
+      "innerPadding": 2,
       "innerSpacing": 0,
       "moduleSpacing": 6,
       "outerMargin": 4,
@@ -55,7 +55,7 @@
           "lifeExpectancy": 90,
           "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
           "type": "qml",
-          "verticalFormat": "HH\n\u2014\nmm"
+          "verticalFormat": "HH\n—\nmm"
         },
         {
           "color": "color09",
@@ -130,10 +130,6 @@
         },
         {
           "color": "color09",
-          "id": "local.model-usage"
-        },
-        {
-          "color": "color09",
           "id": "local.dropbox"
         },
         {
@@ -143,6 +139,9 @@
         {
           "color": "color09",
           "id": "local.cpu"
+        },
+        { "id": "dim-separator",
+          "type": "qml"
         },
         {
           "color": "color09",

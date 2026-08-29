@@ -7,6 +7,7 @@ import Quickshell.Networking
 import qs.Ui
 import qs.Commons
 import "Model.js" as Model
+import "../shared"
 
 Panel {
   id: root
@@ -1112,7 +1113,7 @@ Panel {
             onClicked: root.summonSpeedTest()
           }
 
-          ToggleSwitch {
+          ThemedToggle {
             id: powerSwitch
             visible: root.canToggleWifi
             checked: Networking.wifiEnabled
@@ -1284,7 +1285,7 @@ Panel {
             // PanelSectionHeader carries topPadding to protect Nerd Font
             // overshoot, which pushes its text below its own box centre, so a
             // plain verticalCenter would sit the switch visibly high.
-            ToggleSwitch {
+            ThemedToggle {
               id: bandAutoSwitch
               trackHeight: Math.round(bandAutoLabel.font.pixelSize * 1.2)
               cursorPad: Style.space(3)

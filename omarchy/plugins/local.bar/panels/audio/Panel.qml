@@ -7,6 +7,7 @@ import Quickshell.Services.Pipewire
 import qs.Ui
 import qs.Commons
 import "Model.js" as Model
+import "../shared"
 
 Panel {
   id: root
@@ -743,7 +744,7 @@ Panel {
             // Compact on/off switch on the trailing edge of the hero, and the
             // header's only cursor target. Checked means something is still
             // audible, so muting everything reads as switching audio off.
-            ToggleSwitch {
+            ThemedToggle {
               id: powerSwitch
               checked: root.anyAudible
               hasCursor: root.headerHasCursor
