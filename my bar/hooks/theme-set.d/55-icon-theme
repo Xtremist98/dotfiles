@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Force Papirus-Dark icon theme for all apps regardless of theme
+
+# GTK apps (Nautilus, etc.)
+gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark 2>/dev/null
+
+# Qt/KDE apps (Dolphin, etc.)
+KDE_GLOBALS="$HOME/.config/kdeglobals"
+if grep -q "^\[Icons\]" "$KDE_GLOBALS" 2>/dev/null; then
+  sed -i '/^\[Icons\]/,/^\[/{s/^Theme=.*/Theme=Papirus-Dark/}' "$KDE_GLOBALS"
+else
+  echo -e "\n[Icons]\nTheme=Papirus-Dark" >> "$KDE_GLOBALS"
+fi

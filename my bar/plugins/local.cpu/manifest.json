@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "local.cpu",
+  "name": "CPU",
+  "version": "0.1.0",
+  "author": "local",
+  "license": "MIT",
+  "description": "Local CPU widget, GPU sampler, and detailed usage panel.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "CPU",
+    "description": "CPU activity with optional GPU details",
+    "category": "System",
+    "defaultSection": "left",
+    "allowMultiple": false
+  }
+}

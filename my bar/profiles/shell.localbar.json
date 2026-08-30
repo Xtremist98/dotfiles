@@ -1,0 +1,214 @@
+{
+  "bar": {
+    "edgeLine": false,
+    "transparent": false,
+    "box": {
+      "groups": [
+        [
+          "omarchy.menu",
+          "omarchy.workspaces"
+        ],
+        [
+          "local.cpu",
+          "dim-separator",
+          "local.memory"
+        ],
+        [
+          "netspeed",
+          "omarchy.network"
+        ],
+        [
+          "omarchy.bluetooth",
+          "omarchy.audio",
+          "omarchy.monitor",
+          "omarchy.power"
+        ],
+        [
+          "wian47.removable-drives",
+          "io.github.birajdotdev.omacore",
+          "local.dropbox"
+        ]
+      ],
+      "innerPadding": 12,
+      "innerSpacing": 0,
+      "moduleSpacing": 6,
+      "outerMargin": 4,
+      "color": "#cc26233a",
+      "borderColor": "transparent",
+      "unboxed": [
+        "omarchy.spacer",
+        "omarchy.tray"
+      ]
+    },
+    "centerAnchor": "omarchy.clock",
+    "id": "local.bar",
+    "layout": {
+      "center": [
+        {
+          "color": "color01",
+          "id": "omarchy.indicators",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Indicators.qml",
+          "type": "qml"
+        },
+        {
+          "birthYear": 1991,
+          "color": "color03",
+          "format": "dddd hh:mm A",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "id": "omarchy.clock",
+          "lifeExpectancy": 90,
+          "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
+          "type": "qml",
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "color": "color03",
+          "id": "omarchy.system-update",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/SystemUpdate.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color06",
+          "id": "omarchy.weather",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Weather.qml",
+          "type": "qml",
+          "unit": "metric"
+        }
+      ],
+      "left": [
+        {
+          "color": "color06",
+          "id": "omarchy.menu"
+        },
+        {
+          "color": "color01",
+          "id": "omarchy.workspaces",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Workspaces.qml",
+          "type": "qml"
+        },
+        {
+          "id": "omarchy.spacer",
+          "size": 0
+        },
+        {
+          "color": "color05",
+          "id": "mpris",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/media/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "id": "omarchy.spacer",
+          "size": 0
+        },
+        {
+          "color": "color01",
+          "id": "window-info",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/window/Panel.qml",
+          "type": "qml"
+        }
+      ],
+      "right": [
+        {
+          "color": "color06",
+          "forceColorize": [
+            "Free Download",
+            "stremio-service",
+            "Windscribe",
+            "localsend",
+            "qbittorrent",
+            "discord",
+            "vesktop",
+            "chatgpt"
+          ],
+          "id": "omarchy.tray",
+          "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color03",
+          "id": "wian47.removable-drives"
+        },
+        {
+          "color": "color01",
+          "id": "io.github.birajdotdev.omacore",
+          "macAddress": "34:09:C9:96:82:0C"
+        },
+        {
+          "color": "color04",
+          "id": "local.dropbox"
+        },
+        {
+          "color": "color03",
+          "id": "stappmus.activity-monitor"
+        },
+        {
+          "color": "color01",
+          "id": "local.cpu"
+        },
+        {
+          "id": "dim-separator",
+          "type": "qml"
+        },
+        {
+          "color": "color06",
+          "id": "local.memory"
+        },
+        {
+          "color": "color01",
+          "id": "netspeed",
+          "type": "qml"
+        },
+        {
+          "color": "color06",
+          "id": "omarchy.network",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/network/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color05",
+          "id": "omarchy.bluetooth",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/bluetooth/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color01",
+          "id": "omarchy.audio",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/audio/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color06",
+          "id": "omarchy.monitor",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/monitor/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color01",
+          "id": "omarchy.power",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/power/Panel.qml",
+          "type": "qml"
+        },
+        {
+          "color": "color03",
+          "id": "omarchy.system",
+          "source": "~/.config/omarchy/plugins/local.bar/panels/system/Panel.qml",
+          "type": "qml"
+        }
+      ]
+    },
+    "position": "top"
+  },
+  "idle": {
+    "lock": 300,
+    "screensaver": 150
+  },
+  "plugins": [
+    {
+      "id": "io.github.oldjobobo.thpm"
+    },
+    {
+      "id": "mirador"
+    }
+  ],
+  "version": 1
+}

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Re-apply the rose-pine-dark Plymouth/SDDM unlock theme after every Omarchy
+# system update.
+#
+# Why this exists: the unpacked unlock (boot) theme is stored only as byte
+# copies in files owned/overwritten by the omarchy-settings-dev package
+# (/usr/share/plymouth/themes/omarchy/{logo.png,omarchy.script} and
+# /etc/plymouth/plymouthd.conf). Every package upgrade resets them to the
+# packaged default, so whatever you picked in menu > style > unlock reverts to
+# "default". This hook re-runs the same command that menu item runs, but only
+# when the current desktop theme is rose-pine-dark.
+#
+# It needs root for the install step, done internally by omarchy-plymouth-set
+# (which spawns `sudo` itself). Install the matching NOPASSWD rule
+# (~/rose-pine-unlock.sudoers) so the internal sudo calls run unattended:
+#   sudo install -m 0440 -o root -g root \
+#     ~/rose-pine-unlock.sudoers \
+#     /etc/sudoers.d/50-rose-pine-unlock
+# Otherwise it silently does nothing and you re-apply manually after an update.
+#
+# IMPORTANT: do NOT prefix this with `sudo`. The wrapper must run as the USER —
+# it resolves the theme dir from $HOME (user config) and omarchy-plymouth-set
+# refuses to run under an already-root EUID, spawning its own sudo internally.
+
+set -u
+
+current_theme=$(cat "$HOME/.local/state/omarchy/current/theme.name" 2>/dev/null || true)
+if [[ "$current_theme" != "rose-pine-dark" ]]; then
+  exit 0
+fi
+
+# Run as the user. The internal sudo calls are covered by the NOPASSWD rule; if
+# that rule is absent, sudo has no tty here to prompt on and fails rather than
+# hanging (the theme just stays default until a manual re-apply).
+omarchy-plymouth-set-by-theme rose-pine-dark >/dev/null 2>&1 || true
