@@ -1,0 +1,20 @@
+# Passwordless apply of the rose-pine-dark unlock (boot/plymouth) theme so the
+# post-update hook can re-apply it unattended after every omarchy update.
+#
+# Install with:
+#   sudo install -m 0440 -o root -g root \
+#     ~/rose-pine-unlock.sudoers \
+#     /etc/sudoers.d/50-rose-pine-unlock
+#
+# SCOPE NOTE: the last /bin/bash -c entry is what lets omarchy-plymouth-set run
+# its root transaction (writes the theme assets) without prompting. Granting
+# passwordless `bash -c` is effectively passwordless root, which you already
+# hold via (ALL) ALL -- this only stops the mid-update prompts. If you would
+# rather keep that one interactive, drop the /bin/bash line; the hook will then
+# reuse the sudo timestamp cached by the interactive `omarchy update` (the
+# plymouth + mkinitcpio commands will still be covered).
+linuxer ALL=(root) NOPASSWD: /usr/bin/omarchy-plymouth-set-by-theme rose-pine-dark, \
+    /usr/bin/plymouth-set-default-theme omarchy, \
+    /usr/bin/limine-mkinitcpio, \
+    /usr/bin/mkinitcpio -P, \
+    /bin/bash -c *

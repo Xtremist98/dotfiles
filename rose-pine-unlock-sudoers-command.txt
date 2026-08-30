@@ -1,0 +1,1 @@
+sudo install -m 0440 -o root -g root ~/rose-pine-unlock.sudoers /etc/sudoers.d/50-rose-pine-unlock
