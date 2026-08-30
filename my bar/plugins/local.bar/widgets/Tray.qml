@@ -321,6 +321,8 @@ BarWidget {
         height: root.pillHeight
         radius: root.pillRadius
         color: "#cc26233a"
+        border.color: "#17ebbcba"
+        border.width: 1
         anchors.verticalCenter: parent.verticalCenter
 
         Row {
@@ -399,6 +401,8 @@ BarWidget {
         width: root.barSize
         radius: root.pillRadius
         color: "#cc26233a"
+        border.color: "#17ebbcba"
+        border.width: 1
         anchors.horizontalCenter: parent.horizontalCenter
 
         Column {

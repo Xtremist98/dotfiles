@@ -415,7 +415,10 @@ Item {
   }
 
   readonly property bool vertical: position === "left" || position === "right"
-  readonly property int barSize: vertical ? Style.bar.sizeVertical : Style.space(38)
+  // Full bar (transparent=false, double-click) gets a normal bar height;
+  // transparent pills mode stays thin.
+  readonly property int barSize: vertical ? Style.bar.sizeVertical
+    : (transparent ? Style.space(38) : Style.space(36))
 
   function normalizePosition(value) {
     return BarModel.normalizePosition(value)

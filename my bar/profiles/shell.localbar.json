@@ -29,12 +29,12 @@
           "local.dropbox"
         ]
       ],
-      "innerPadding": 12,
+      "innerPadding": 6,
       "innerSpacing": 0,
       "moduleSpacing": 6,
       "outerMargin": 4,
       "color": "#cc26233a",
-      "borderColor": "transparent",
+      "borderColor": "#17ebbcba",
       "unboxed": [
         "omarchy.spacer",
         "omarchy.tray"
