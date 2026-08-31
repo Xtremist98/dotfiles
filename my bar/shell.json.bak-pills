@@ -1,8 +1,6 @@
 {
   "bar": {
     "edgeLine": false,
-    "transparent": true,
-    "barMode": 0,
     "box": {
       "groups": [
         [
@@ -30,15 +28,12 @@
           "local.dropbox"
         ]
       ],
-      "innerPadding": 6,
+      "innerPadding": 2,
       "innerSpacing": 0,
       "moduleSpacing": 6,
       "outerMargin": 4,
-      "color": "#cc26233a",
-      "borderColor": "#19ebbcba",
       "unboxed": [
-        "omarchy.spacer",
-        "omarchy.tray"
+        "omarchy.spacer"
       ]
     },
     "centerAnchor": "omarchy.clock",
@@ -46,14 +41,14 @@
     "layout": {
       "center": [
         {
-          "color": "color01",
+          "color": "color09",
           "id": "omarchy.indicators",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Indicators.qml",
           "type": "qml"
         },
         {
           "birthYear": 1991,
-          "color": "color03",
+          "color": "color09",
           "format": "dddd hh:mm A",
           "formatAlt": "d MMMM 'W'ww yyyy",
           "id": "omarchy.clock",
@@ -63,13 +58,13 @@
           "verticalFormat": "HH\n—\nmm"
         },
         {
-          "color": "color03",
+          "color": "color09",
           "id": "omarchy.system-update",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/SystemUpdate.qml",
           "type": "qml"
         },
         {
-          "color": "color06",
+          "color": "color09",
           "id": "omarchy.weather",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Weather.qml",
           "type": "qml",
@@ -78,11 +73,11 @@
       ],
       "left": [
         {
-          "color": "color06",
+          "color": "color09",
           "id": "omarchy.menu"
         },
         {
-          "color": "color01",
+          "color": "color09",
           "id": "omarchy.workspaces",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Workspaces.qml",
           "type": "qml"
@@ -92,7 +87,7 @@
           "size": 0
         },
         {
-          "color": "color05",
+          "color": "color09",
           "id": "mpris",
           "source": "~/.config/omarchy/plugins/local.bar/panels/media/Panel.qml",
           "type": "qml"
@@ -102,7 +97,7 @@
           "size": 0
         },
         {
-          "color": "color01",
+          "color": "color09",
           "id": "window-info",
           "source": "~/.config/omarchy/plugins/local.bar/panels/window/Panel.qml",
           "type": "qml"
@@ -110,7 +105,7 @@
       ],
       "right": [
         {
-          "color": "color06",
+          "color": "color09",
           "forceColorize": [
             "Free Download",
             "stremio-service",
@@ -126,24 +121,23 @@
           "type": "qml"
         },
         {
-          "color": "color03",
+          "color": "color09",
           "id": "wian47.removable-drives"
         },
         {
-          "color": "color01",
           "id": "io.github.birajdotdev.omacore",
           "macAddress": "34:09:C9:96:82:0C"
         },
         {
-          "color": "color04",
+          "color": "color09",
           "id": "local.dropbox"
         },
         {
-          "color": "color03",
+          "color": "color09",
           "id": "stappmus.activity-monitor"
         },
         {
-          "color": "color01",
+          "color": "color09",
           "id": "local.cpu"
         },
         {
@@ -151,53 +145,54 @@
           "type": "qml"
         },
         {
-          "color": "color06",
+          "color": "color09",
           "id": "local.memory"
         },
         {
-          "color": "color01",
+          "color": "color09",
           "id": "netspeed",
           "type": "qml"
         },
         {
-          "color": "color06",
+          "color": "color09",
           "id": "omarchy.network",
           "source": "~/.config/omarchy/plugins/local.bar/panels/network/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color05",
+          "color": "color09",
           "id": "omarchy.bluetooth",
           "source": "~/.config/omarchy/plugins/local.bar/panels/bluetooth/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color01",
+          "color": "color09",
           "id": "omarchy.audio",
           "source": "~/.config/omarchy/plugins/local.bar/panels/audio/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color06",
+          "color": "color09",
           "id": "omarchy.monitor",
           "source": "~/.config/omarchy/plugins/local.bar/panels/monitor/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color01",
+          "color": "color09",
           "id": "omarchy.power",
           "source": "~/.config/omarchy/plugins/local.bar/panels/power/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color03",
+          "color": "color09",
           "id": "omarchy.system",
           "source": "~/.config/omarchy/plugins/local.bar/panels/system/Panel.qml",
           "type": "qml"
         }
       ]
     },
-    "position": "top"
+    "position": "top",
+    "transparent": false
   },
   "idle": {
     "lock": 300,

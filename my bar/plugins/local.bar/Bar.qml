@@ -46,6 +46,9 @@ Item {
   property bool requestedTransparent: false
   property bool useTransparentForeground: false
   property bool transparent: false
+  // 0 = transparent (no strip), 1 = semi-transparent pill color (#cc26233a),
+  // 2 = solid theme base (follows omarchy theme changes).
+  property int barMode: 0
   property bool centerSectionHovered: false
   property bool centerSectionRevealHeld: false
   property bool centerHoverRevealSuppressed: false
@@ -75,7 +78,9 @@ Item {
       : themeForeground
   }
   property bool foregroundAnimationEnabled: true
-  property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
+  property color background: barMode === 2
+    ? Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
+    : "#cc26233a"
   property color urgent: Color.bar.active
   readonly property color shellBorderColor: Qt.rgba(
     Color.background.r * 0.78 + Color.foreground.r * 0.22,
@@ -449,7 +454,9 @@ Item {
     updateBoxConfig()
 
     position = normalizePosition(config.position)
-    setRequestedTransparency(config.transparent === true)
+    var mode = (config.barMode !== undefined) ? Number(config.barMode) : (config.transparent === true ? 0 : 1)
+    barMode = (mode >= 0 && mode <= 2) ? mode : 0
+    setRequestedTransparency(barMode === 0)
     centerAnchor = Util.canonicalWidgetId(config.centerAnchor || "")
     layoutConfig = normalizeLayout(config.layout)
     barConfigSerial++
@@ -750,14 +757,17 @@ Item {
   }
 
   function toggleTransparency() {
-    var nextTransparent = !(root.requestedTransparent === true)
+    var nextMode = (root.barMode + 1) % 3
+    var nextTransparent = nextMode === 0
     if (root.shell && typeof root.shell.mutateShellConfig === "function") {
       root.shell.mutateShellConfig(function(config) {
         if (!Util.isPlainObject(config.bar)) config.bar = {}
         config.bar.transparent = nextTransparent
+        config.bar.barMode = nextMode
       })
     } else {
       root.setRequestedTransparency(nextTransparent)
+      root.barMode = nextMode
     }
   }
 
