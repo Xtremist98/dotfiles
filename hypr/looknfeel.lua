@@ -1,18 +1,10 @@
 -- Change the default Omarchy look'n'feel.
 
-local active_border_color = { colors = { "rgba(e8bab8ee)", "rgba(caccccee)" }, angle = 45 }
-local inactive_border_color = "rgb(1e1e1e)"
-
 hl.config({
   general = {
     gaps_in = 3,
     gaps_out = 10,
     border_size = 1,
-
-    col = {
-      active_border = active_border_color,
-      inactive_border = inactive_border_color,
-    },
 
     resize_on_border = true,
     allow_tearing = false,
@@ -20,7 +12,7 @@ hl.config({
   },
 
   decoration = {
-    rounding = 3,
+    rounding = 0,
 
     shadow = {
       enabled = false,
@@ -32,10 +24,6 @@ hl.config({
   },
 
   group = {
-    col = {
-        border_active = "rgba(e8bab8ee)",
-      border_inactive = inactive_border_color,
-    },
 
     groupbar = {
       font_size = 15,
