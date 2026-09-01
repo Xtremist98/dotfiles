@@ -1,4 +1,4 @@
-/* Rose Pine Dark
+/* Rose Pine Dark */
 
 /* ---- GTK4 libadwaita named colors ---- */
 @define-color background #191724;
@@ -25,9 +25,9 @@
 @define-color bright_white #e0def4;
 @define-color muted_text #6e6a86;
 
-@define-color accent_bg_color #eb6f92;
+@define-color accent_bg_color #ebbcba;
 @define-color accent_fg_color #191724;
-@define-color accent_color #eb6f92;
+@define-color accent_color #ebbcba;
 
 @define-color window_bg_color #191724;
 @define-color window_fg_color #e0def4;
@@ -67,9 +67,9 @@
 @define-color error_color #eb6f92;
 
 /* ---- Rose Pine slider fix (rose accent on all scales) ---- */
-scale fill, scale trough { background-color: alpha(#eb6f92, 0.22); }
-scale:active fill, scale:hover fill { background-color: #eb6f92; }
-scale trough, scale slider { color: #eb6f92; }
+scale fill, scale trough { background-color: alpha(#ebbcba, 0.22); }
+scale:active fill, scale:hover fill { background-color: #ebbcba; }
+scale trough, scale slider { color: #ebbcba; }
 
 /* ---- GTK3 Adwaita legacy colors (recolor legacy GTK3 apps) ---- */
 @define-color theme_fg_color #e0def4;
@@ -111,7 +111,7 @@ scale trough, scale slider { color: #eb6f92; }
 /* ---- Chromium (libadwaita .background.chromium) ---- */
 .background.chromium { background-color: #191724; }
 .background.chromium selection, .background.chromium selection:focus {
-  background-color: #eb6f92;
+  background-color: #ebbcba;
   color: #191724;
 }
 .background.chromium windowcontrols > button {
@@ -168,7 +168,7 @@ scrolledwindow, scrolledwindow > viewport, viewport {
   background-color: #403d52;
 }
 
-/* ---- File-chooser empty area (GTK3 portal) stays flat ---- */
+/* ---- File-chooser (GTK3 portal) stays flat ---- */
 filechooser gridview,
 filechooser columnview,
 filechooser listview,
@@ -176,4 +176,26 @@ filechooser .view,
 filechooser scrolledwindow,
 filechooser scrolledwindow viewport {
   background-color: #191724;
+}
+
+/* File-chooser/file-list selection readable on dark base (muted #403d52 like Nautilus/Kvantum) */
+.view:selected,
+iconview:selected,
+treeview:selected,
+treeview.view:selected,
+filechooser .view:selected,
+filechooser iconview:selected,
+filechooser treeview:selected {
+  background-color: #403d52;
+  color: #e0def4;
+}
+.view:selected:focus,
+iconview:selected:focus,
+treeview:selected:focus,
+treeview.view:selected:focus,
+filechooser .view:selected:focus,
+filechooser iconview:selected:focus,
+filechooser treeview:selected:focus {
+  background-color: #403d52;
+  color: #e0def4;
 }

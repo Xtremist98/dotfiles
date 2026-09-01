@@ -91,7 +91,7 @@ light.color=#26233a
 mid.light.color=#2a2740
 dark.color=#191724
 mid.color=#1f1d2e
-highlight.color=#eb6f92
+highlight.color=#403d52
 inactive.highlight.color=#26233a
 text.color=#e0def4
 window.text.color=#e0def4
@@ -106,7 +106,7 @@ link.visited.color=#eb6f92
 inherits=PanelButtonCommand
 frame.element=itemview
 interior.element=itemview
-frame=true
+frame=false
 interior=true
 text.iconspacing=3
 text.toggle.color=#e0def4
@@ -168,7 +168,7 @@ frame=false
 
 [Focus]
 inherits=PanelButtonCommand
-frame=true
+frame=false
 frame.element=focus
 frame.top=1
 frame.bottom=1
