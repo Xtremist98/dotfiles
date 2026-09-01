@@ -166,13 +166,13 @@
           "type": "qml"
         },
         {
-          "color": "color05",
+          "color": "color03",
           "id": "omarchy.bluetooth",
           "source": "~/.config/omarchy/plugins/local.bar/panels/bluetooth/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color01",
+          "color": "color05",
           "id": "omarchy.audio",
           "source": "~/.config/omarchy/plugins/local.bar/panels/audio/Panel.qml",
           "type": "qml"
