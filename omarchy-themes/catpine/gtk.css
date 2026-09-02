@@ -1,0 +1,202 @@
+/* catpine — Rose Pine x Catppuccin Mocha blend. Flat #191724 background,
+   accent rose #ebbcba, colorful semantic slots from both palettes. */
+
+/* ---- GTK4 libadwaita named colors ---- */
+@define-color background #191724;
+@define-color surface #191724;
+@define-color raised_surface #191724;
+@define-color selection #524f67;
+@define-color foreground #e0def4;
+
+@define-color black #191724;
+@define-color red #f38ba8;
+@define-color green #a6e3a1;
+@define-color yellow #f6c177;
+@define-color blue #89b4fa;
+@define-color magenta #c4a7e7;
+@define-color cyan #9ccfd8;
+@define-color white #e0def4;
+@define-color bright_black #6e6a86;
+@define-color bright_red #eb6f92;
+@define-color bright_green #94e2d5;
+@define-color bright_yellow #f9e2af;
+@define-color bright_blue #74c7ec;
+@define-color bright_magenta #f5c2e7;
+@define-color bright_cyan #89dceb;
+@define-color bright_white #e0def4;
+@define-color muted_text #6e6a86;
+
+@define-color accent_bg_color #ebbcba;
+@define-color accent_fg_color #191724;
+@define-color accent_color #ebbcba;
+
+@define-color window_bg_color #191724;
+@define-color window_fg_color #e0def4;
+@define-color view_bg_color #191724;
+@define-color view_fg_color #e0def4;
+@define-color headerbar_bg_color #191724;
+@define-color headerbar_fg_color #e0def4;
+@define-color headerbar_backdrop_color #191724;
+@define-color sidebar_bg_color #191724;
+@define-color sidebar_fg_color #e0def4;
+@define-color sidebar_backdrop_color #191724;
+@define-color secondary_sidebar_bg_color #191724;
+@define-color secondary_sidebar_fg_color #e0def4;
+@define-color secondary_sidebar_backdrop_color #191724;
+@define-color card_bg_color #191724;
+@define-color card_fg_color #e0def4;
+@define-color popover_bg_color #191724;
+@define-color popover_fg_color #e0def4;
+@define-color dialog_bg_color #191724;
+@define-color dialog_fg_color #e0def4;
+@define-color thumbnail_bg_color #191724;
+@define-color content_view_bg #191724;
+@define-color text_view_bg #191724;
+@define-color borders alpha(#e0def4, 0.1);
+
+@define-color destructive_bg_color #f38ba8;
+@define-color destructive_fg_color #191724;
+@define-color success_bg_color #a6e3a1;
+@define-color success_fg_color #191724;
+@define-color warning_bg_color #f6c177;
+@define-color warning_fg_color #191724;
+@define-color error_bg_color #f38ba8;
+@define-color error_fg_color #191724;
+@define-color destructive_color #f38ba8;
+@define-color success_color #a6e3a1;
+@define-color warning_color #f6c177;
+@define-color error_color #f38ba8;
+
+/* ---- Slider fix (rose accent on all scales) ---- */
+scale fill, scale trough { background-color: alpha(#ebbcba, 0.22); }
+scale:active fill, scale:hover fill { background-color: #ebbcba; }
+scale trough, scale slider { color: #ebbcba; }
+
+/* ---- GTK3 Adwaita legacy colors (recolor legacy GTK3 apps) ---- */
+@define-color theme_fg_color #e0def4;
+@define-color theme_text_color #e0def4;
+@define-color theme_bg_color #191724;
+@define-color theme_base_color #191724;
+@define-color theme_selected_bg_color #524f67;
+@define-color theme_selected_fg_color #e0def4;
+@define-color theme_unfocused_fg_color #908caa;
+@define-color theme_unfocused_text_color #908caa;
+@define-color theme_unfocused_bg_color #191724;
+@define-color theme_unfocused_base_color #191724;
+@define-color theme_unfocused_selected_bg_color #524f67;
+@define-color theme_unfocused_selected_fg_color #e0def4;
+@define-color insensitive_bg_color #191724;
+@define-color insensitive_fg_color #6e6a86;
+@define-color insensitive_base_color #191724;
+@define-color unfocused_insensitive_color #6e6a86;
+@define-color unfocused_borders alpha(#e0def4, 0.1);
+@define-color bg_color #191724;
+@define-color fg_color #e0def4;
+@define-color base_color #191724;
+@define-color text_color #e0def4;
+@define-color selected_bg_color #524f67;
+@define-color selected_fg_color #e0def4;
+@define-color headerbar_bg_color #191724;
+@define-color headerbar_fg_color #e0def4;
+@define-color titlebar_bg_color #191724;
+@define-color titlebar_fg_color #e0def4;
+@define-color backdrop_bg_color #191724;
+@define-color backdrop_fg_color #908caa;
+@define-color borders alpha(#e0def4, 0.1);
+@define-color link_color #89b4fa;
+@define-color visited_link_color #c4a7e7;
+@define-color warning_color #f6c177;
+@define-color error_color #f38ba8;
+@define-color success_color #a6e3a1;
+
+/* ---- Chromium (libadwaita .background.chromium) ---- */
+.background.chromium { background-color: #191724; }
+.background.chromium selection, .background.chromium selection:focus {
+  background-color: #ebbcba;
+  color: #191724;
+}
+.background.chromium windowcontrols > button {
+  background-color: alpha(#e0def4, 0.10);
+  color: #e0def4;
+  border-radius: 100%;
+  box-shadow: none;
+}
+.background.chromium windowcontrols > button:hover {
+  background-color: alpha(#e0def4, 0.15);
+}
+
+/* ---- GTK3 explicit widget overrides (kill Adwaita gradients that @define-color can't reach) ---- */
+headerbar, .titlebar, .headerbar, .primary-toolbar {
+  background-color: #191724;
+  background-image: none;
+}
+headerbar:backdrop, .titlebar:backdrop {
+  background-color: #191724;
+  background-image: none;
+}
+.sidebar, .sidebar:backdrop, paned > sidebar, .navigation-sidebar {
+  background-color: #191724;
+  background-image: none;
+}
+.view, iconview, treeview, treeview.view {
+  background-color: #191724;
+  background-image: none;
+}
+stack, stack > * {
+  background-color: #191724;
+  background-image: none;
+}
+scrolledwindow, scrolledwindow > viewport, viewport {
+  background-color: #191724;
+  background-image: none;
+}
+.toolbar, .inline-toolbar {
+  background-color: #191724;
+  background-image: none;
+}
+
+/* ---- GNOME Disks: kill Adwaita gradient on disk grid ---- */
+.gnome-disk-utility-grid {
+  background-color: #191724;
+  background-image: none;
+}
+.gnome-disk-utility-grid:selected {
+  background-image: none;
+  background-color: #524f67;
+}
+.gnome-disk-utility-grid:selected:backdrop {
+  background-image: none;
+  background-color: #524f67;
+}
+
+/* ---- File-chooser (GTK3 portal) stays flat ---- */
+filechooser gridview,
+filechooser columnview,
+filechooser listview,
+filechooser .view,
+filechooser scrolledwindow,
+filechooser scrolledwindow viewport {
+  background-color: #191724;
+}
+
+/* ---- File-chooser/file-list selection readable on dark base ---- */
+.view:selected,
+iconview:selected,
+treeview:selected,
+treeview.view:selected,
+filechooser .view:selected,
+filechooser iconview:selected,
+filechooser treeview:selected {
+  background-color: #524f67;
+  color: #e0def4;
+}
+.view:selected:focus,
+iconview:selected:focus,
+treeview:selected:focus,
+treeview.view:selected:focus,
+filechooser .view:selected:focus,
+filechooser iconview:selected:focus,
+filechooser treeview:selected:focus {
+  background-color: #524f67;
+  color: #e0def4;
+}

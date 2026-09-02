@@ -46,7 +46,7 @@ Panel {
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
     : (bar ? bar.panelForeground : Color.foreground)
   readonly property int barIconSize: Math.round((Style.bar.iconFont - 1) * 0.8)
-  readonly property color barIconColor: dropbox.authenticated && dropbox.active ? root.barGlyphColor : Qt.darker(root.barGlyphColor, 1.55)
+  readonly property color barIconColor: root.barGlyphColor
   // Only claim the header cursor when the switch is actually on screen —
   // "header" stays navigable, but an absent CLI leaves nothing to highlight.
   readonly property bool headerHasCursor: cursorActive && focusSection === "header" && dropbox.installed
