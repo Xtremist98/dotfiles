@@ -205,7 +205,18 @@
     },
     {
       "id": "mirador"
+    },
+    {
+      "id": "io.github.sirjul1337.lock-explorer",
+      "design": "rain",
+      "boot": "theme"
     }
   ],
-  "version": 1
+  "version": 1,
+  "disabledPlugins": [
+    "omarchy.lock"
+  ],
+  "cloneSourceRestores": [
+    "io.github.sirjul1337.lock-explorer"
+  ]
 }
