@@ -123,3 +123,5 @@ o.window("^omagrab$", {float = true, center = true, {size = 520, 260} })
 -- GTK
 hl.exec_cmd("gsettings set org.gnome.desktop.interface gtk-theme 'rose-pine-dark'")
 hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")
+hl.exec_cmd("gsettings set org.gnome.desktop.interface font-name 'Noto Sans 11'")
+hl.exec_cmd("gsettings set org.gnome.desktop.interface document-font-name 'Noto Sans 11'")

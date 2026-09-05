@@ -92,7 +92,7 @@
           "size": 0
         },
         {
-          "color": "color04",
+          "color": "color01",
           "id": "mpris",
           "source": "~/.config/omarchy/plugins/local.bar/panels/media/Panel.qml",
           "type": "qml"
@@ -102,7 +102,7 @@
           "size": 0
         },
         {
-          "color": "color01",
+          "color": "color05",
           "id": "window-info",
           "source": "~/.config/omarchy/plugins/local.bar/panels/window/Panel.qml",
           "type": "qml"
