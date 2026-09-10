@@ -415,7 +415,7 @@ BarWidget {
     readonly property var barRef: root.bar
     readonly property color glyphColor: root.bar && root.bar.widgetGlyphColor
       ? root.bar.widgetGlyphColor(
-          indicatorBlock === "active" ? { color: "color04" } : root.indicatorSettings,
+          indicatorBlock === "active" ? { color: "color01" } : root.indicatorSettings,
           root.bar.barForeground)
       : (root.bar ? root.bar.barForeground : Color.foreground)
 
