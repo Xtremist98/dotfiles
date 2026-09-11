@@ -78,10 +78,9 @@ PanelWindow {
     : Math.min(Commons.Style.space(6), Commons.Style.cornerRadius)
   readonly property color controlForeground: surfaceOverrideEnabled
     ? controlForegroundOverride : bar
-    ? bar.panelForeground : Commons.Color.popups.text
+    ? bar.panelForeground : Commons.Color.accent
   readonly property color controlAccent: surfaceOverrideEnabled
-    ? controlAccentOverride : bar
-    ? bar.urgent : Commons.Color.accent
+    ? controlAccentOverride : Commons.Color.accent
   readonly property color controlMuted: tokens
     && tokens.sumi !== undefined
     ? tokens.sumi : Commons.Color.muted

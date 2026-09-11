@@ -376,7 +376,8 @@ Panel {
     "org.rncbc.qpwgraph": ["󰺢", "Qpwgraph"],
     "org.kde.ark": ["", "Ark"],
     "iloader": ["", "sidestore"],
-    "cliamp": ["󰝚", "Music"]
+    "cliamp": ["󰝚", "Music"],
+    "DiskUtility": ["󰋊", "Disks"]
   })
 
   readonly property var siteMap: ({

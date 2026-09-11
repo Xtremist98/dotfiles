@@ -12,8 +12,8 @@ function parse(raw) {
     if (!match || !ColorPattern.test(match[2])) continue
     values[String(match[1]).toLowerCase()] = match[2]
   }
-  // Extended palette: the 8 core slots + the full catpine blend palette
-  // (rose-pine accent/neutrals + catppuccin mocha spectrum). Each additional
+  // Extended palette: the 8 core slots + the full rose-pine blend palette.
+  // Each additional
   // slot maps to a named color.toml key so every bar module can hold a
   // distinct color from the whole palette.
   return {

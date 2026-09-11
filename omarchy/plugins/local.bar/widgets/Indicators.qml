@@ -93,7 +93,7 @@ BarWidget {
       if (entryId(entry) === id) return entry
     }
 
-    return { id: id }
+    return { id: id, color: root.settings && root.settings.color ? root.settings.color : undefined }
   }
 
   function activeModelIndex(id) {
@@ -414,9 +414,7 @@ BarWidget {
     readonly property var indicatorSettings: root.entrySettings(entry)
     readonly property var barRef: root.bar
     readonly property color glyphColor: root.bar && root.bar.widgetGlyphColor
-      ? root.bar.widgetGlyphColor(
-          indicatorBlock === "active" ? { color: "color01" } : root.indicatorSettings,
-          root.bar.barForeground)
+      ? root.bar.widgetGlyphColor(indicatorSlot.indicatorSettings, root.bar.barForeground)
       : (root.bar ? root.bar.barForeground : Color.foreground)
 
     implicitWidth: indicatorSource.item && indicatorSource.item.visible ? indicatorSource.item.implicitWidth : 0

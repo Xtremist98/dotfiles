@@ -40,7 +40,7 @@ Panel {
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
           text: "CPU · GPU"
-          color: panel.bar ? panel.bar.panelForeground : Commons.Color.foreground
+          color: panel.controlForeground
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 13
           font.letterSpacing: 2
@@ -74,8 +74,7 @@ Panel {
       Rectangle {
         width: parent.width
         height: 1
-        color: panel.bar ? Qt.rgba(panel.bar.panelForeground.r, panel.bar.panelForeground.g,
-          panel.bar.panelForeground.b, 0.18) : Commons.Color.popups.border
+        color: Commons.Util.alpha(panel.controlForeground, 0.18)
       }
 
       UsageRow {
@@ -101,8 +100,7 @@ Panel {
         Text {
           width: parent.width * 0.4
           text: "Temperature"
-          color: panel.bar ? Qt.rgba(panel.bar.panelForeground.r, panel.bar.panelForeground.g,
-            panel.bar.panelForeground.b, 0.65) : Commons.Color.foreground
+          color: Commons.Util.alpha(panel.controlForeground, 0.65)
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 11
           renderType: Text.NativeRendering
@@ -110,7 +108,7 @@ Panel {
         Text {
           width: parent.width * 0.3
           text: panel.gpuTelemetry ? panel.gpuTelemetry.temperatureC + "°C" : ""
-          color: panel.bar ? panel.bar.panelForeground : Commons.Color.foreground
+          color: panel.controlForeground
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 11
           renderType: Text.NativeRendering
@@ -124,8 +122,7 @@ Panel {
         Text {
           width: parent.width * 0.4
           text: "VRAM"
-          color: panel.bar ? Qt.rgba(panel.bar.panelForeground.r, panel.bar.panelForeground.g,
-            panel.bar.panelForeground.b, 0.65) : Commons.Color.foreground
+          color: Commons.Util.alpha(panel.controlForeground, 0.65)
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 11
           renderType: Text.NativeRendering
@@ -135,7 +132,7 @@ Panel {
           text: panel.gpuTelemetry
             ? panel.gpuTelemetry.memoryUsedMiB + " / " + panel.gpuTelemetry.memoryTotalMiB + " MiB"
             : ""
-          color: panel.bar ? panel.bar.panelForeground : Commons.Color.foreground
+          color: panel.controlForeground
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 11
           renderType: Text.NativeRendering
@@ -154,14 +151,14 @@ Panel {
         radius: panel.controlRadius
         color: monitorMouse.containsMouse
           ? panel.controlPrimaryHoverColor
-          : panel.bar ? panel.bar.urgent : Commons.Color.accent
+          : panel.controlAccent
 
         Behavior on color { ColorAnimation { duration: 120 } }
 
         Text {
           anchors.centerIn: parent
           text: "Open btop"
-          color: panel.bar ? panel.bar.background : Commons.Color.background
+          color: Commons.Color.background
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 11
           renderType: Text.NativeRendering
@@ -195,8 +192,7 @@ Panel {
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
       text: parent.label
-      color: parent.bar ? Qt.rgba(parent.bar.panelForeground.r, parent.bar.panelForeground.g,
-        parent.bar.panelForeground.b, 0.65) : Commons.Color.foreground
+      color: Commons.Util.alpha(panel.controlForeground, 0.65)
       font.family: parent.bar ? parent.bar.fontFamily : Commons.Style.font.family
       font.pixelSize: 11
       font.letterSpacing: 1
@@ -208,7 +204,7 @@ Panel {
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
       text: parent.value + "%"
-      color: parent.bar ? parent.bar.urgent : Commons.Color.accent
+      color: panel.controlAccent
       font.family: parent.bar ? parent.bar.fontFamily : Commons.Style.font.family
       font.pixelSize: 11
       font.weight: Font.Medium
@@ -229,7 +225,7 @@ Panel {
         width: parent.width * Math.max(0, Math.min(100, usageRow.value)) / 100
         height: parent.height
         radius: height / 2
-        color: usageRow.bar ? usageRow.bar.urgent : Commons.Color.accent
+        color: panel.controlAccent
         Behavior on width { NumberAnimation { duration: 300 } }
       }
     }

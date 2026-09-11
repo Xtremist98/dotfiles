@@ -866,8 +866,8 @@ Panel {
     implicitWidth: Commons.Style.space(28)
     implicitHeight: Commons.Style.space(28)
     radius: panel.controlRadius
-    foreground: panel.bar ? panel.bar.panelForeground : Commons.Color.foreground
-    accent: panel.bar ? panel.bar.urgent : Commons.Color.accent
+    foreground: panel.controlForeground
+    accent: panel.controlAccent
 
     IconText {
       anchors.centerIn: parent

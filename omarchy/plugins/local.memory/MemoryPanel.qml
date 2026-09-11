@@ -36,7 +36,7 @@ Panel {
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
           text: "Memory"
-          color: panel.bar ? panel.bar.panelForeground : Commons.Color.foreground
+          color: panel.controlForeground
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 13
           font.letterSpacing: 2
@@ -70,8 +70,7 @@ Panel {
       Rectangle {
         width: parent.width
         height: 1
-        color: panel.bar ? Qt.rgba(panel.bar.panelForeground.r, panel.bar.panelForeground.g,
-          panel.bar.panelForeground.b, 0.18) : Commons.Color.popups.border
+        color: Commons.Util.alpha(panel.controlForeground, 0.18)
       }
 
       Item {
@@ -82,7 +81,7 @@ Panel {
           anchors.horizontalCenter: parent.horizontalCenter
           anchors.top: parent.top
           text: panel.telemetry.memPercent + "%"
-          color: panel.bar ? panel.bar.urgent : Commons.Color.accent
+          color: panel.controlAccent
           font.family: panel.bar ? panel.bar.fontFamily
             : Commons.Style.font.family
           font.pixelSize: 11
@@ -101,7 +100,7 @@ Panel {
             width: parent.width * panel.telemetry.memPercent / 100
             height: parent.height
             radius: height / 2
-            color: panel.bar ? panel.bar.urgent : Commons.Color.accent
+            color: panel.controlAccent
             Behavior on width { NumberAnimation { duration: 300 } }
           }
         }
@@ -146,14 +145,14 @@ Panel {
         radius: panel.controlRadius
         color: monitorMouse.containsMouse
           ? panel.controlPrimaryHoverColor
-          : panel.bar ? panel.bar.urgent : Commons.Color.accent
+          : panel.controlAccent
 
         Behavior on color { ColorAnimation { duration: 120 } }
 
         Text {
           anchors.centerIn: parent
           text: "Open btop"
-          color: panel.bar ? panel.bar.background : Commons.Color.background
+          color: Commons.Color.background
           font.family: panel.bar ? panel.bar.fontFamily : Commons.Style.font.family
           font.pixelSize: 11
           renderType: Text.NativeRendering
@@ -183,8 +182,7 @@ Panel {
       id: labelText
       width: parent.width * 0.4
       text: parent.label
-      color: parent.bar ? Qt.rgba(parent.bar.panelForeground.r, parent.bar.panelForeground.g,
-        parent.bar.panelForeground.b, 0.65) : Commons.Color.foreground
+      color: Commons.Util.alpha(panel.controlForeground, 0.65)
       font.family: parent.bar ? parent.bar.fontFamily : Commons.Style.font.family
       font.pixelSize: 11
       renderType: Text.NativeRendering
@@ -193,7 +191,7 @@ Panel {
       id: valueText
       width: parent.width * 0.3
       text: parent.value
-      color: parent.bar ? parent.bar.panelForeground : Commons.Color.foreground
+      color: panel.controlForeground
       font.family: parent.bar ? parent.bar.fontFamily : Commons.Style.font.family
       font.pixelSize: 11
       renderType: Text.NativeRendering
@@ -202,8 +200,7 @@ Panel {
       id: detailText
       width: parent.width * 0.3
       text: parent.detail
-      color: parent.bar ? Qt.rgba(parent.bar.panelForeground.r, parent.bar.panelForeground.g,
-        parent.bar.panelForeground.b, 0.58) : Commons.Color.foreground
+      color: Commons.Util.alpha(panel.controlForeground, 0.58)
       font.family: parent.bar ? parent.bar.fontFamily : Commons.Style.font.family
       font.pixelSize: 11
       renderType: Text.NativeRendering

@@ -1,0 +1,154 @@
+# Rose Pine Dark — shell surfaces, controls, spacing, and typography.
+# Palette: base #191724, rose #ebbcba, love #eb6f92, foam #9ccfd8,
+# subtle #908caa, muted #6e6a86, fg #e0def4.
+#
+# 2026-09-11: [controls]/[spacing]/[font] reverted to the pre-sakura stock
+# shapings so panels are compact and each option is framed by a normal-state
+# border (the "lines between options"). background-alpha values are kept at
+# the translucent levels the user wants.
+
+[bar]
+background       = "#191724"
+background-alpha = 1.0
+text             = "#e0def4"
+active           = "#eb6f92"
+scale-with-font  = true
+size-horizontal  = 26
+size-vertical    = 28
+
+[hyprland]
+active-border            = "rgba(ebbcbaff) rgba(e0def4cc) rgba(9ccfd8aa) 35deg"
+active-border-foreground = "rgb(ebbcba) rgb(9ccfd8) 35deg"
+
+[controls]
+# Shared state tokens for interactive control chrome (buttons, dropdowns,
+# tab strips, etc). Border widths accept one CSS-style scalar/list. Stock
+# values outline bordered options so panel rows read as distinct options.
+
+normal-color        = "#e0def4"
+normal-fill-alpha   = 0.04
+normal-border       = "#e0def4"
+normal-border-width = 1
+normal-border-alpha = 0.4
+
+hover-cursor-color        = "#e0def4"
+hover-cursor-fill-alpha   = 0.08
+hover-cursor-border       = "#e0def4"
+hover-cursor-border-width = 1
+hover-cursor-border-alpha = 0.25
+
+focus-color        = "#e0def4"
+focus-fill-alpha   = 0.08
+focus-border       = "#e0def4"
+focus-border-width = 1
+focus-border-alpha = 0.25
+
+selected-color        = "#e0def4"
+selected-fill-alpha   = 0.18
+selected-border       = "#e0def4"
+selected-border-width = 0
+selected-border-alpha = 1.0
+
+pressed-fill-alpha   = 0.22
+selection-fill-alpha = 0.35
+
+[spacing]
+# `scale` multiplies shared margins, gaps, padding, controls, and panel
+# dimensions. Per-token defaults follow the stock template.
+scale = 1.0
+scale-with-font = true
+
+[font]
+# base-size is the rem root for the type scale. Per-token sizes derive
+# from it; no overrides so panels keep the stock compact typography.
+base-size = 12
+
+[popups]
+background       = "#191724"
+background-alpha = 0.90
+text             = "#e0def4"
+border           = "hyprland.active-border"
+border-alpha     = 0.72
+border-width     = 2
+
+[tooltip]
+background       = "#191724"
+background-alpha = 0.96
+text             = "#e0def4"
+border           = "#908caa"
+border-alpha     = 0.68
+
+[notifications]
+background       = "#191724"
+background-alpha = 0.92
+text             = "#e0def4"
+border           = "hyprland.active-border"
+border-alpha     = 0.78
+border-width     = 2
+countdown        = "#9ccfd8"
+
+[launcher]
+background                = "#191724"
+background-alpha          = 0.91
+text                      = "#908caa"
+border                    = "hyprland.active-border"
+border-alpha              = 0.78
+border-width              = 2
+scrim                     = "#0d0b12"
+scrim-alpha               = 0.60
+selected-background       = "#eb6f92"
+selected-background-alpha = 0.14
+selected-text             = "#e0def4"
+selected-border           = "hyprland.active-border-foreground"
+selected-border-alpha     = 0.78
+selected-border-width     = 1
+
+[menu]
+background                = "#191724"
+background-alpha          = 0.93
+text                      = "#908caa"
+border                    = "hyprland.active-border"
+border-alpha              = 0.76
+border-width              = 2
+scrim                     = "#0d0b12"
+scrim-alpha               = 0.56
+selected-background       = "#eb6f92"
+selected-background-alpha = 0.13
+selected-text             = "#e0def4"
+selected-border           = "hyprland.active-border-foreground"
+selected-border-alpha     = 0.74
+selected-border-width     = 1
+
+[polkit]
+background       = "#191724"
+background-alpha = 0.96
+text             = "#e0def4"
+text-error       = "#eb6f92"
+border           = "hyprland.active-border"
+border-error     = "#eb6f92"
+border-alpha     = 0.88
+scrim            = "#0d0b12"
+scrim-alpha      = 0.66
+accent           = "#ebbcba"
+
+[lock]
+background       = "#191724"
+background-alpha = 0.84
+text             = "#e0def4"
+placeholder      = "#908caa"
+text-error       = "#eb6f92"
+border           = "#908caa"
+border-active    = "hyprland.active-border"
+border-error     = "#eb6f92"
+border-alpha     = 0.88
+selection        = "#ebbcba"
+selection-alpha  = 0.40
+
+[image-picker]
+scrim                   = "#0d0b12"
+scrim-alpha             = 0.66
+text                    = "#e0def4"
+selected-border         = "hyprland.active-border"
+selected-border-alpha   = 1.0
+unselected-border       = "#908caa"
+unselected-border-alpha = 0.42
