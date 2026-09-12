@@ -2,8 +2,8 @@
 
 /* ---- GTK4 libadwaita named colors ---- */
 @define-color background #191724;
-@define-color surface #1f1d2e;
-@define-color raised_surface #1f1d2e;
+@define-color surface #191724;
+@define-color raised_surface #191724;
 @define-color selection #403d52;
 @define-color foreground #e0def4;
 
@@ -80,8 +80,8 @@ scale trough, scale slider { color: #ebbcba; }
 @define-color theme_selected_fg_color #e0def4;
 @define-color theme_unfocused_fg_color #908caa;
 @define-color theme_unfocused_text_color #908caa;
-@define-color theme_unfocused_bg_color #1f1d2e;
-@define-color theme_unfocused_base_color #1f1d2e;
+@define-color theme_unfocused_bg_color #191724;
+@define-color theme_unfocused_base_color #191724;
 @define-color theme_unfocused_selected_bg_color #524f67;
 @define-color theme_unfocused_selected_fg_color #e0def4;
 @define-color insensitive_bg_color #21202e;
@@ -99,7 +99,7 @@ scale trough, scale slider { color: #ebbcba; }
 @define-color headerbar_fg_color #e0def4;
 @define-color titlebar_bg_color #191724;
 @define-color titlebar_fg_color #e0def4;
-@define-color backdrop_bg_color #1f1d2e;
+@define-color backdrop_bg_color #191724;
 @define-color backdrop_fg_color #908caa;
 @define-color borders alpha(#e0def4, 0.1);
 @define-color link_color #9ccfd8;
@@ -150,7 +150,7 @@ scrolledwindow, scrolledwindow > viewport, viewport {
   background-image: none;
 }
 .toolbar, .inline-toolbar {
-  background-color: #1f1d2e;
+  background-color: #191724;
   background-image: none;
 }
 
