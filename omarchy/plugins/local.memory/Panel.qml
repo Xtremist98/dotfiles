@@ -23,8 +23,9 @@ PanelWindow {
   property bool centerOnBar: false
   property real centerOnBarOffset: 0
   property bool open: false
-  // Preserve the reference panel offset: V2 connected panels use 6 px.
-  property int gap: 6
+  // Follow the live Hyprland screen offset (general:gaps_out) like the
+  // stock keyboard panels, so the panel spacing matches the active theme.
+  property int gap: Commons.Style.gapsOut
   property bool popoutSwitching: false
   property bool popoutSwitchClosing: false
   property Item focusTarget: null
@@ -57,12 +58,9 @@ PanelWindow {
     && (open || popoutSwitching) ? 1 : 0
   readonly property int panelBorderWidth: surfaceOverrideEnabled
     && surfaceBorderWidthOverride >= 0
-    ? surfaceBorderWidthOverride : tokens
-      ? tokens.panelBorderWidth : 0
+    ? surfaceBorderWidthOverride : Math.max(1, Commons.Style.space(2))
   property var borderSpec: surfaceOverrideEnabled
     ? Commons.Border.flat(surfaceBorderColorOverride, panelBorderWidth)
-    : tokens
-    ? Commons.Border.flat(tokens.panelBorder, panelBorderWidth)
     : Commons.Border.surfaceSpec("popups", "border",
         Commons.Color.popups.border, Math.max(1, Commons.Style.space(2)))
 
@@ -73,9 +71,7 @@ PanelWindow {
   readonly property int renderedContentCount: panelContent.children.length
   readonly property int renderedSurfaceCount: 1
   readonly property real controlRadius: controlRadiusOverride >= 0
-    ? controlRadiusOverride : tokens
-    ? root.tokens.tileRadius
-    : Math.min(Commons.Style.space(6), Commons.Style.cornerRadius)
+    ? controlRadiusOverride : Commons.Style.cornerRadius
   readonly property color controlForeground: surfaceOverrideEnabled
     ? controlForegroundOverride : bar
     ? bar.panelForeground : Commons.Color.accent
@@ -398,8 +394,7 @@ PanelWindow {
     readonly property real resolvedScreenX: x + centerX
     readonly property real radius: root.surfaceOverrideEnabled
       && root.surfaceRadiusOverride >= 0 ? root.surfaceRadiusOverride
-      : root.tokens
-      ? root.tokens.panelRadius : Commons.Style.cornerRadius
+      : Commons.Style.cornerRadius
     readonly property real progress:
       Math.max(0, Math.min(1, root.connectionReveal))
     readonly property real maxCaretDepth: 5
@@ -416,7 +411,7 @@ PanelWindow {
       ? root.tokens.panelBackground : Commons.Color.popups.background
     readonly property color strokeColor: root.panelBorderWidth > 0
       ? root.surfaceOverrideEnabled ? root.surfaceBorderColorOverride
-        : root.tokens ? root.tokens.panelBorder : "transparent"
+        : Commons.Color.popups.border
       : "transparent"
 
     onResolvedScreenXChanged:
@@ -625,8 +620,7 @@ PanelWindow {
     bottomPadding: Math.max(0, root.padding - borderBottom)
     leftPadding: Math.max(0, root.padding - borderLeft)
     radius: root.surfaceOverrideEnabled && root.surfaceRadiusOverride >= 0
-      ? root.surfaceRadiusOverride : root.tokens
-      ? root.tokens.panelRadius : Commons.Style.cornerRadius
+      ? root.surfaceRadiusOverride : Commons.Style.cornerRadius
     opacity: root.open || root.popoutSwitching ? 1 : 0
 
     Behavior on opacity {

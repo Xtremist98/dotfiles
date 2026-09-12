@@ -46,8 +46,8 @@ Item {
   property bool requestedTransparent: false
   property bool useTransparentForeground: false
   property bool transparent: false
-  // 0 = transparent (no strip), 1 = semi-transparent pill color (#cc26233a),
-  // 2 = solid theme base (follows omarchy theme changes).
+  // 0 = transparent (floating pills, no strip), 2 = solid theme base
+  // (follows omarchy theme changes). Double-click cycles 0 -> 2 -> 0.
   property int barMode: 0
   property bool centerSectionHovered: false
   property bool centerSectionRevealHeld: false
@@ -78,9 +78,7 @@ Item {
       : themeForeground
   }
   property bool foregroundAnimationEnabled: true
-  property color background: barMode === 2
-    ? Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
-    : "#cc26233a"
+  property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
   property color urgent: Color.bar.active
   readonly property color shellBorderColor: Qt.rgba(
     Color.background.r * 0.78 + Color.foreground.r * 0.22,
@@ -423,7 +421,7 @@ Item {
   // Full bar (transparent=false, double-click) gets a normal bar height;
   // transparent pills mode stays thin.
   readonly property int barSize: vertical ? Style.bar.sizeVertical
-    : (transparent ? Style.space(38) : Style.space(36))
+    : (transparent ? Style.space(42) : Style.space(36))
 
   function normalizePosition(value) {
     return BarModel.normalizePosition(value)
@@ -454,8 +452,8 @@ Item {
     updateBoxConfig()
 
     position = normalizePosition(config.position)
-    var mode = (config.barMode !== undefined) ? Number(config.barMode) : (config.transparent === true ? 0 : 1)
-    barMode = (mode >= 0 && mode <= 2) ? mode : 0
+    var mode = (config.barMode !== undefined) ? Number(config.barMode) : (config.transparent === true ? 0 : 2)
+    barMode = (mode === 2) ? 2 : 0
     setRequestedTransparency(barMode === 0)
     centerAnchor = Util.canonicalWidgetId(config.centerAnchor || "")
     layoutConfig = normalizeLayout(config.layout)
@@ -757,7 +755,7 @@ Item {
   }
 
   function toggleTransparency() {
-    var nextMode = (root.barMode + 1) % 3
+    var nextMode = (root.barMode === 2) ? 0 : 2
     var nextTransparent = nextMode === 0
     if (root.shell && typeof root.shell.mutateShellConfig === "function") {
       root.shell.mutateShellConfig(function(config) {

@@ -5,9 +5,9 @@ selection = "#403d52"
 muted = "#6e6a86"
 
 background = "#191724"
-dark_background = "#13111b"
-darker_background = "#0d0b12"
-lighter_background = "#26233a"
+dark_background = "#191724"
+darker_background = "#191724"
+lighter_background = "#191724"
 
 foreground = "#e0def4"
 dark_foreground = "#6e6a86"

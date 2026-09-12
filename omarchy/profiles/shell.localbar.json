@@ -34,6 +34,7 @@
       "innerSpacing": 0,
       "moduleSpacing": 6,
       "outerMargin": 4,
+      "radius": 11,
       "color": "#cc26233a",
       "borderColor": "#19ebbcba",
       "unboxed": [
