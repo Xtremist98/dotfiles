@@ -1,8 +1,8 @@
 --rose-pine-dark
 
 local activeBorderColor = {
-  colors = { "rgba(ebbcbaff)", "rgba(c4a7e7ff)", "rgba(eb6f92ff)" },
-  angle = 35,
+    colors = { "rgba(ebbcbaff)", "rgba(31748fff)", "rgba(eb6f92ff)", "rgba(ebbcbaff)" },
+  angle = 41.8,
 }
 local inactiveBorderColor = "rgba(403d52ff)"
 local shadowColor = "rgba(000000b0)"
