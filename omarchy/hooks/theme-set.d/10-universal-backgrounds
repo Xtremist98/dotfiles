@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+# Universal background folder: every active theme's override dir
+# (~/.config/omarchy/backgrounds/<theme>) points here as a symlink, so any
+# image dropped into ~/.config/omarchy/backgrounds-universal/ is picked up by
+# the switcher and the background cycler regardless of which theme is active.
+# $1 = snake-cased name of the theme that was just set.
+
+UNIVERSAL="$HOME/.config/omarchy/backgrounds-universal"
+OVERRIDES="$HOME/.config/omarchy/backgrounds"
+THEME="$1"
+
+[[ -n $THEME ]] || exit 0
+mkdir -p "$UNIVERSAL" "$OVERRIDES"
+
+# Never clobber a theme that already has its own real override dir.
+if [[ -e "$OVERRIDES/$THEME" && ! -L "$OVERRIDES/$THEME" ]]; then
+  exit 0
+fi
+
+ln -sfn "$UNIVERSAL" "$OVERRIDES/$THEME"
