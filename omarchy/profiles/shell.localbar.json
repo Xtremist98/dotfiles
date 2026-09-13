@@ -209,8 +209,9 @@
     },
     {
       "id": "io.github.sirjul1337.lock-explorer",
-      "design": "rain",
-      "boot": "theme"
+      "boot": "theme",
+      "bootResync": false,
+      "design": "rain"
     }
   ],
   "version": 1,
