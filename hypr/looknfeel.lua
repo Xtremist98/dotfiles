@@ -1,5 +1,13 @@
 -- Change the default Omarchy look'n'feel.
 
+hl.config({
+  general = {
+    gaps_in = 3,
+    gaps_out = 8,
+    border_size = 2,
+  },
+})
+
 -- Make mpv always tile (overrides default floating-window tag).
 o.window("mpv", { tag = "-floating-window", tile = true })
 
