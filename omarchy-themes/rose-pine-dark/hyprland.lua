@@ -5,8 +5,6 @@ local activeBorderColor = {
   angle = 41.8,
 }
 local inactiveBorderColor = "rgba(403d52ff)"
-local shadowColor = "rgba(000000b0)"
-local shadowEnabled = false
 
 hl.config({
   general = {
@@ -14,9 +12,9 @@ hl.config({
       active_border = activeBorderColor,
       inactive_border = inactiveBorderColor,
     },
-    border_size = 2,
-    gaps_in = 3,
-    gaps_out = 10,
+    border_size = 1,
+    gaps_in = 2,
+    gaps_out = 6,
   },
   group = {
     col = {
@@ -27,7 +25,7 @@ hl.config({
   decoration = {
     active_opacity = 0.96,
     inactive_opacity = 0.93,
-    rounding = 10,
+    rounding = 0,
     blur = {
       enabled = true,
       size = 6,
@@ -44,12 +42,7 @@ hl.config({
       input_methods_ignorealpha = 0.5,
     },
     shadow = {
-      enabled = shadowEnabled,
-      range = 16,
-      render_power = 4,
-      color = shadowColor,
-      color_inactive = shadowColor,
-      offset = "0 0",
+      enabled = false,
     },
   },
 })
