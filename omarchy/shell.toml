@@ -1,13 +1,2 @@
-[font]
-base-size = 12
-body = 12
-
-# Bar-flyout surfaces (KeyboardPanel/PopupCard cards, dropdowns, OSD) render
-# at the same translucency as the bar and the cpu/ram panels instead of solid
-# black. User keys win over the theme's [popups] block.
-[popups]
-background-alpha = 0.94
-
-# Control chrome (toggle switches, buttons, dropdowns, focus rings) now follows
-# each theme's own [controls] block automatically, so it re-themes on switch.
-# No user override here — the theme drives it.
+# User overrides — the theme's shell.toml handles all styling.
+# Add per-key overrides here only to pin values across theme switches.

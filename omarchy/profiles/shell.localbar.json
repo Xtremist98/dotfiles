@@ -136,7 +136,7 @@
           "macAddress": "34:09:C9:96:82:0C"
         },
         {
-          "color": "color02",
+          "color": "color05",
           "id": "local.dropbox"
         },
         {
@@ -209,9 +209,9 @@
     },
     {
       "id": "io.github.sirjul1337.lock-explorer",
-      "boot": "theme",
       "bootResync": false,
-      "design": "rain"
+      "design": "rain",
+      "boot": "theme"
     }
   ],
   "version": 1,
