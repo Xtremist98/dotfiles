@@ -1,0 +1,4 @@
+# Prevent USB autosuspend of the Intel Bluetooth adapter (8087:07dc).
+# Autosuspend (2s) lets the adapter sleep during quiet gaps and re-init
+# mid-stream, which causes small audio skips on the Soundcore buds.
+ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="07dc", ATTR{power/control}="on"
