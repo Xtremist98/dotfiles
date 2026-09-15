@@ -136,7 +136,7 @@
           "macAddress": "34:09:C9:96:82:0C"
         },
         {
-          "color": "color05",
+          "color": "color02",
           "id": "local.dropbox"
         },
         {
@@ -157,13 +157,13 @@
           "type": "qml"
         },
         {
-          "color": "color04",
+          "color": "color06",
           "id": "omarchy.network",
           "source": "~/.config/omarchy/plugins/local.bar/panels/network/Panel.qml",
           "type": "qml"
         },
         {
-          "color": "color05",
+          "color": "color04",
           "id": "omarchy.bluetooth",
           "source": "~/.config/omarchy/plugins/local.bar/panels/bluetooth/Panel.qml",
           "type": "qml"
