@@ -74,29 +74,33 @@ countdown        = "#A7C080"
 background                = "#181B1B"
 background-alpha          = 0.90
 text                      = "#E7DECD"
-border                    = "hyprland.active-border-foreground"
+border                    = "hyprland.active-border"
 border-alpha              = 1.0
+border-width              = 2
 scrim                     = "#101212"
 scrim-alpha               = 0.55
 selected-background       = "#2D353B"
 selected-background-alpha = 0.8
 selected-text             = "#FAF4ED"
 selected-border           = "hyprland.active-border-foreground"
-selected-border-alpha     = 0.5
+selected-border-alpha     = 0.6
+selected-border-width     = 1
 
 [menu]
 background                = "#181B1B"
 background-alpha          = 0.92
 text                      = "#E7DECD"
-border                    = "hyprland.active-border-foreground"
+border                    = "hyprland.active-border"
 border-alpha              = 1.0
+border-width              = 2
 scrim                     = "#101212"
 scrim-alpha               = 0.55
 selected-background       = "#2D353B"
 selected-background-alpha = 0.8
 selected-text             = "#FAF4ED"
 selected-border           = "hyprland.active-border-foreground"
-selected-border-alpha     = 0.5
+selected-border-alpha     = 0.6
+selected-border-width     = 1
 
 [polkit]
 background       = "#181B1B"

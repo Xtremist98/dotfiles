@@ -35,8 +35,8 @@
       "moduleSpacing": 6,
       "outerMargin": 4,
       "radius": 11,
-      "color": "#cc26233a",
-      "borderColor": "#19ebbcba",
+      "color": "#cc232A2E",
+      "borderColor": "#19A7C080",
       "unboxed": [
         "omarchy.spacer",
         "omarchy.tray"
