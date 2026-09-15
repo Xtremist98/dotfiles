@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Switch Kvantum to a matching theme when the Omarchy theme changes.
+# $1 = snake-cased theme name. Themes without a Kvantum dir are skipped
+# (leaves the current Kvantum theme untouched).
+
+THEME="${1//_/-}"                      # snake_case -> kebab-case (dir names)
+KVANTUM="$HOME/.config/Kvantum"
+
+[[ -n $THEME ]] || exit 0
+[[ -f "$KVANTUM/kvantum.kvconfig" ]] || exit 0
+
+if [[ -d "$KVANTUM/$THEME" ]]; then
+  sed -i "s/^theme=.*/theme=$THEME/" "$KVANTUM/kvantum.kvconfig"
+fi
+exit 0

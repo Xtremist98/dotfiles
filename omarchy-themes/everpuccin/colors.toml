@@ -1,0 +1,62 @@
+mode = "dark"
+
+# Everpuccin palette — harmonious fusion of Everforest and Catppuccin
+accent = "#A7C080"
+focus_red = "#E67E80"
+selection = "#2D353B"
+selection_background = "#2D353B"
+selection_foreground = "#E7DECD"
+muted = "#7A8478"
+
+# Deep woodland surfaces — fully flat #181B1B
+background = "#181B1B"
+dark_background = "#181B1B"
+darker_background = "#181B1B"
+lighter_background = "#181B1B"
+
+# Creamy parchment typography
+foreground = "#E7DECD"
+dark_foreground = "#859289"
+light_foreground = "#F1E4C2"
+bright_foreground = "#FAF4ED"
+cursor = "#E7DECD"
+
+# Hyprland active border: Sage Green to Dusty Rose 90deg gradient
+hyprland_active_border = "rgba(A7C080ff) rgba(D699B6ff) 90deg"
+hyprland_inactive_border = "rgba(232A2Eaa)"
+
+# Syntax accents
+red = "#E67E80"
+green = "#A7C080"
+yellow = "#DBBC7F"
+blue = "#7FBBB3"
+magenta = "#D699B6"
+cyan = "#83C092"
+orange = "#E69875"
+brown = "#A19983"
+
+# Bright highlights
+bright_red = "#F18F91"
+bright_green = "#B7D090"
+bright_yellow = "#E7C78B"
+bright_blue = "#8FCAC2"
+bright_magenta = "#E3A8C3"
+bright_cyan = "#98D1A6"
+
+# Complete ANSI 16-color table for terminals
+color0 = "#232A2E"
+color1 = "#E67E80"
+color2 = "#A7C080"
+color3 = "#DBBC7F"
+color4 = "#7FBBB3"
+color5 = "#D699B6"
+color6 = "#83C092"
+color7 = "#E7DECD"
+color8 = "#56635F"
+color9 = "#F18F91"
+color10 = "#B7D090"
+color11 = "#E7C78B"
+color12 = "#8FCAC2"
+color13 = "#E3A8C3"
+color14 = "#98D1A6"
+color15 = "#FAF4ED"
