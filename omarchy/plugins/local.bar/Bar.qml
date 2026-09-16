@@ -65,18 +65,10 @@ Item {
   property color transparentForeground: Color.bar.text
   property color foreground: themeForeground
   property color barForeground: useTransparentForeground ? transparentForeground : themeForeground
-  // Panel text/icons resolve to the color04 swatch via the bar's visual
-  // tokens, so popup content matches the widget glyphs instead of white.
-  // Starts as themeForeground and re-resolves once the async token loader
-  // arrives, so panels bound during startup never see an undefined color.
-  property color panelForeground: themeForeground
-  onVisualTokensChanged: updatePanelForeground()
-  function updatePanelForeground() {
-    const tokens = visualTokens
-    panelForeground = tokens && typeof tokens.widgetGlyphColor === "function"
-      ? tokens.widgetGlyphColor({ color: "color04" }, themeForeground)
-      : themeForeground
-  }
+  // Panel text/icons/heroes resolve to the theme accent (Color.accent) so
+  // every popup is uniformly themed and re-themes live on theme switch.
+  // Kept as a distinct property so panels have one consistent color to bind.
+  property color panelForeground: Color.accent
   property bool foregroundAnimationEnabled: true
   property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
   property color urgent: Color.bar.active
@@ -723,7 +715,6 @@ Item {
 
   Component.onCompleted: {
     applyBarConfig()
-    updatePanelForeground()
   }
 
   Loader {

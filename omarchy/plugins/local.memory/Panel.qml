@@ -52,8 +52,7 @@ PanelWindow {
     ? String(screen.name || "") : ""
   readonly property var tokens: bar && "visualTokens" in bar
     ? bar.visualTokens : null
-  readonly property bool connectedSurfaceEnabled:
-    barPos === "top" || barPos === "bottom"
+  property bool connectedSurfaceEnabled: false
   property real connectionReveal: connectedSurfaceEnabled
     && (open || popoutSwitching) ? 1 : 0
   readonly property int panelBorderWidth: surfaceOverrideEnabled
