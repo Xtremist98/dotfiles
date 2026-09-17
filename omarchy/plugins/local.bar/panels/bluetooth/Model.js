@@ -68,10 +68,11 @@ function bluetoothSinkMatchesDevice(node, device) {
 
   var address = normalizedAddress(device.address)
   var text = nodeText(node)
-  if (address !== "" && normalizedAddress(text).indexOf(address) !== -1) return true
 
   var label = deviceLabel(device).toLowerCase()
-  return label !== "" && text.indexOf(label) !== -1
+  return address !== ""
+      && normalizedAddress(text).indexOf(address) !== -1
+      && (label === "" || text.indexOf(label) !== -1)
 }
 
 function sortedByLabel(devices) {

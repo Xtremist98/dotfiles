@@ -283,7 +283,6 @@ Panel {
       if (finishedConnecting
           || (action === "disconnecting" && found && !found.connected)
           || (action === "forgetting" && (!found || (!found.paired && !found.bonded && !found.trusted)))) {
-        if (finishedConnecting) scheduleAudioOutputSwitch(found)
         delete next[address]
         changed = true
       }
