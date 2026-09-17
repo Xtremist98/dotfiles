@@ -748,7 +748,7 @@ Panel {
         elide: Text.ElideRight
       }
 
-      ToggleSwitch {
+      ThemedToggle {
         id: toggleSwitch
         Layout.alignment: Qt.AlignVCenter
         trackHeight: Math.round(toggleLabel.font.pixelSize * 1.2)
