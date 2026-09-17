@@ -1,0 +1,10 @@
+# thpm:cliamp-use-native
+# Everpuccin — Everforest & Catppuccin fusion (flat #181B1B)
+# Owned by THPM: copied to ~/.config/cliamp/themes/omarchy.toml on theme set.
+bg = "#181B1B"
+accent = "#A7C080"
+bright_fg = "#E7DECD"
+fg = "#7A8478"
+green = "#A7C080"
+yellow = "#DBBC7F"
+red = "#E67E80"
