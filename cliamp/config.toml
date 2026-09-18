@@ -1,9 +1,0 @@
-theme = "omarchy"
-
-initial_directory = "/mnt/media/Music-Audio"
-
-eq_preset = "Flat"
-eq = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-repeat = "One"
-visualizer = "Bars"
-shuffle = false
