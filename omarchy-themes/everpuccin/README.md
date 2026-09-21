@@ -12,7 +12,7 @@ Featuring deep woodland slate surfaces, creamy parchment typography, signature s
 - **Sharp Modern Look**: Zero-rounding borders (`rounding = 0`) with minimal 1px gaps for a crisp, clean tiling window aesthetic.
 - **Clean Transparency**: Native `0.90` background transparency across terminals without compositor blur or haze.
 - **Deep Woodland Slate**: `#181B1B` base surfaces designed for aesthetic low-distraction workflows.
-- **Creamy Parchment Typography**: Warm `#E7DECD` text designed for soothing readability during late-night coding.
+- **Creamy Parchment Typography (two-tier)**: Warm `#d1c4a9` body text (10:1 contrast) with the brighter `#E7DECD` reserved for headings, titles, selections, cursor, and terminal white — soothing readability during late-night coding.
 - **Curated 4K Wallpapers**: Beautiful high-resolution 3840x2160 wallpapers included in `backgrounds/`.
 - **Discord / Vesktop Theme**: Complete Base16 Vencord theme matching Everpuccin with sage green and dusty rose accents, without forced font-size overrides.
 - **Quickshell & Omarchy 4**: Full `shell.toml` support for Omarchy bar, notifications, launcher, popups, and lockscreen.
@@ -24,7 +24,8 @@ Featuring deep woodland slate surfaces, creamy parchment typography, signature s
 | **Background** | Deep Woodland Slate | `#181B1B` |
 | **Dark Background** | Pine Dusk Mantle | `#141717` |
 | **Surface** | Moss Charcoal Card | `#232A2E` |
-| **Foreground** | Creamy Parchment | `#E7DECD` |
+| **Foreground (body)** | Warm Parchment | `#d1c4a9` |
+| **Foreground (bright)** | Creamy Parchment (headings/titles/selections/cursor) | `#E7DECD` |
 | **Muted Text** | Sage Slate | `#859289` |
 | **Selection** | Woodland Slate | `#2D353B` |
 | **Accent** | Everforest Sage Green | `#A7C080` |

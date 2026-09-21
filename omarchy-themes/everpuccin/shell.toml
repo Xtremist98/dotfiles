@@ -3,7 +3,7 @@
 [bar]
 background       = "#181B1B"
 background-alpha = 0.92
-text             = "#E7DECD"
+text             = "#d1c4a9"
 active           = "#A7C080"
 scale-with-font  = true
 size-horizontal  = 26
@@ -51,21 +51,21 @@ base-size = 12
 [popups]
 background       = "#181B1B"
 background-alpha = 0.94
-text             = "#E7DECD"
+text             = "#d1c4a9"
 border           = "hyprland.active-border"
 border-alpha     = 1.0
 
 [tooltip]
 background       = "#181B1B"
 background-alpha = 0.97
-text             = "#E7DECD"
+text             = "#d1c4a9"
 border           = "hyprland.active-border-foreground"
 border-alpha     = 1.0
 
 [notifications]
 background       = "#181B1B"
 background-alpha = 0.95
-text             = "#E7DECD"
+text             = "#d1c4a9"
 border           = "hyprland.active-border"
 border-alpha     = 1.0
 countdown        = "#A7C080"
@@ -73,7 +73,7 @@ countdown        = "#A7C080"
 [launcher]
 background                = "#181B1B"
 background-alpha          = 0.90
-text                      = "#E7DECD"
+text                      = "#d1c4a9"
 border                    = "hyprland.active-border"
 border-alpha              = 1.0
 border-width              = 2
@@ -89,7 +89,7 @@ selected-border-width     = 1
 [menu]
 background                = "#181B1B"
 background-alpha          = 0.92
-text                      = "#E7DECD"
+text                      = "#d1c4a9"
 border                    = "hyprland.active-border"
 border-alpha              = 1.0
 border-width              = 2
@@ -105,7 +105,7 @@ selected-border-width     = 1
 [polkit]
 background       = "#181B1B"
 background-alpha = 1.0
-text             = "#E7DECD"
+text             = "#d1c4a9"
 text-error       = "#E67E80"
 border           = "hyprland.active-border"
 border-error     = "#E67E80"
@@ -117,7 +117,7 @@ accent           = "#A7C080"
 [lock]
 background       = "#181B1B"
 background-alpha = 0.88
-text             = "#E7DECD"
+text             = "#d1c4a9"
 placeholder      = "#859289"
 text-error       = "#E67E80"
 border           = "hyprland.active-border"
@@ -130,7 +130,7 @@ selection-alpha  = 0.45
 [image-picker]
 scrim                   = "#101212"
 scrim-alpha             = 0.55
-text                    = "#E7DECD"
+text                    = "#d1c4a9"
 selected-border         = "#A7C080"
 selected-border-alpha   = 1.0
 unselected-border       = "#2D353B"

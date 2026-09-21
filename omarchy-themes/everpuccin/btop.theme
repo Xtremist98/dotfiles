@@ -7,7 +7,7 @@
 theme[main_bg]="#181B1B"
 
 # Main text color
-theme[main_fg]="#E7DECD"
+theme[main_fg]="#d1c4a9"
 
 # Title color for boxes
 theme[title]="#E7DECD"
@@ -25,7 +25,7 @@ theme[selected_fg]="#FAF4ED"
 theme[inactive_fg]="#56635F"  
 
 # Color of text appearing on top of graphs, i.e uptime and current network graph scaling
-theme[graph_text]="#E7DECD"
+theme[graph_text]="#d1c4a9"
 
 # Misc colors for processes box including mini cpu graphs, details memory graph and details status text
 theme[proc_misc]="#A7C080"

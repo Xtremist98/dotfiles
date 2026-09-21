@@ -14,8 +14,8 @@ dark_background = "#181B1B"
 darker_background = "#181B1B"
 lighter_background = "#181B1B"
 
-# Creamy parchment typography
-foreground = "#E7DECD"
+# Creamy parchment typography — two-tier: #d1c4a9 body text (10:1), #E7DECD kept as the brighter tier
+foreground = "#d1c4a9"
 dark_foreground = "#859289"
 light_foreground = "#F1E4C2"
 bright_foreground = "#FAF4ED"
