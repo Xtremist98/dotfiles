@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-scheme id="espressuccin" _name="Espressuccin" version="1.0">
+
+  <author>linuxer</author>
+  <_description>Espressuccin warm café-dark color scheme matching #1a1713</_description>
+
+  <!-- Espressuccin palette -->
+  <color name="fg"        value="#d1c4a9"/>
+  <color name="bg"        value="#1a1713"/>
+  <color name="surface"   value="#241f19"/>
+  <color name="muted"     value="#7c7468"/>
+  <color name="sage"      value="#A7C080"/>
+  <color name="red"       value="#E67E80"/>
+  <color name="blue"      value="#7FBBB3"/>
+  <color name="cyan"      value="#83C092"/>
+  <color name="yellow"    value="#DBBC7F"/>
+  <color name="magenta"   value="#D699B6"/>
+  <color name="orange"    value="#E69875"/>
+  <color name="selection" value="#2e2a24"/>
+
+  <!-- Global Settings -->
+  <style name="text"               foreground="fg" background="bg"/>
+  <style name="selection"          foreground="fg" background="selection"/>
+  <style name="cursor"             foreground="fg"/>
+  <style name="secondary-cursor"   foreground="muted"/>
+  <style name="current-line"       background="surface"/>
+  <style name="line-numbers"       foreground="muted" background="bg"/>
+  <style name="draw-spaces"        foreground="muted"/>
+  <style name="background-pattern" background="surface"/>
+
+  <!-- Bracket Matching -->
+  <style name="bracket-match"      foreground="magenta" bold="true"/>
+  <style name="bracket-mismatch"   foreground="bg" background="red" bold="true"/>
+
+  <!-- Right Margin -->
+  <style name="right-margin"       foreground="fg" background="muted"/>
+
+  <!-- Search Matching -->
+  <style name="search-match"       foreground="bg" background="yellow"/>
+
+  <!-- Comments -->
+  <style name="def:comment"            foreground="muted"/>
+  <style name="def:shebang"            foreground="muted" bold="true"/>
+  <style name="def:doc-comment-element" italic="true"/>
+
+  <!-- Constants -->
+  <style name="def:constant"           foreground="red"/>
+  <style name="def:string"             foreground="blue"/>
+  <style name="def:special-char"       foreground="red"/>
+  <style name="def:special-constant"   foreground="red"/>
+  <style name="def:floating-point"     foreground="red"/>
+
+  <!-- Identifiers -->
+  <style name="def:identifier"         foreground="fg"/>
+
+  <!-- Statements -->
+  <style name="def:statement"          foreground="sage" bold="true"/>
+
+  <!-- Types -->
+  <style name="def:type"               foreground="magenta" bold="true"/>
+
+  <!-- Markup -->
+  <style name="def:emphasis"           italic="true"/>
+  <style name="def:strong-emphasis"    foreground="fg" bold="true"/>
+  <style name="def:inline-code"        foreground="blue"/>
+  <style name="def:insertion"          underline="single"/>
+  <style name="def:deletion"           strikethrough="true"/>
+  <style name="def:link-text"          foreground="muted"/>
+  <style name="def:link-symbol"        foreground="muted" bold="true"/>
+  <style name="def:link-destination"   italic="true" underline="single"/>
+  <style name="def:heading"            foreground="magenta" bold="true"/>
+  <style name="def:thematic-break"     foreground="magenta" bold="true"/>
+  <style name="def:preformatted-section" foreground="blue"/>
+  <style name="def:list-marker"        foreground="fg" bold="true"/>
+
+  <!-- Others -->
+  <style name="def:preprocessor"       foreground="magenta"/>
+  <style name="def:error"              foreground="bg" background="red" bold="true"/>
+  <style name="def:warning"            foreground="bg" background="yellow" bold="true"/>
+  <style name="def:note"               background="magenta" foreground="bg" bold="true"/>
+  <style name="def:net-address"        italic="true" underline="single"/>
+
+  <!-- Language specific -->
+  <style name="diff:added-line"         foreground="cyan"/>
+  <style name="diff:removed-line"       foreground="red"/>
+  <style name="diff:changed-line"       foreground="yellow"/>
+  <style name="diff:diff-file"          foreground="magenta" bold="true"/>
+  <style name="diff:location"           foreground="magenta"/>
+  <style name="diff:special-case"       foreground="fg" bold="true"/>
+
+  <style name="latex:command"           foreground="magenta" bold="true"/>
+  <style name="latex:include"           use-style="def:preprocessor"/>
+
+</style-scheme>

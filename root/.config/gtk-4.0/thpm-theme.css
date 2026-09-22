@@ -1,29 +1,29 @@
-@define-color background #181B1B;
-@define-color foreground #E7DECD;
+@define-color background #1a1713;
+@define-color foreground #d1c4a9;
 
-@define-color black          #181B1B;
+@define-color black          #1a1713;
 @define-color red            #E67E80;
 @define-color green          #A7C080;
 @define-color yellow         #DBBC7F;
 @define-color blue           #7FBBB3;
 @define-color magenta        #D699B6;
 @define-color cyan           #83C092;
-@define-color white          #E7DECD;
-@define-color bright_black   #2D353B;
+@define-color white          #d1c4a9;
+@define-color bright_black   #2e2a24;
 @define-color bright_red     #F18F91;
 @define-color bright_green   #B7D090;
 @define-color bright_yellow  #E7C78B;
 @define-color bright_blue    #8FCAC2;
 @define-color bright_magenta #E3A8C3;
 @define-color bright_cyan    #98D1A6;
-@define-color bright_white   #FAF4ED;
+@define-color bright_white   #d1c4a9;
 
 /* Adwaita Color Overrides */
 @define-color accent_bg_color @green;
 @define-color accent_fg_color @background;
 @define-color accent_color @green;
 
-@define-color window_bg_color #181B1B;
+@define-color window_bg_color #1a1713;
 @define-color window_fg_color @foreground;
 
 /* Sidebar background and content */
@@ -66,8 +66,8 @@
 @define-color theme_text_color @foreground;
 @define-color theme_bg_color @background;
 @define-color theme_base_color @background;
-@define-color theme_selected_bg_color @green;
-@define-color theme_selected_fg_color @background;
+@define-color theme_selected_bg_color #2e2a24;
+@define-color theme_selected_fg_color #d1c4a9;
 @define-color insensitive_bg_color @background;
 @define-color insensitive_fg_color @bright_black;
 @define-color insensitive_base_color @background;
@@ -75,8 +75,8 @@
 @define-color theme_unfocused_text_color @foreground;
 @define-color theme_unfocused_bg_color @background;
 @define-color theme_unfocused_base_color @background;
-@define-color theme_unfocused_selected_bg_color @green;
-@define-color theme_unfocused_selected_fg_color @background;
+@define-color theme_unfocused_selected_bg_color #2e2a24;
+@define-color theme_unfocused_selected_fg_color #d1c4a9;
 @define-color unfocused_insensitive_color @bright_black;
 @define-color unfocused_borders alpha(@foreground, 0.1);
 @define-color warning_color @yellow;
@@ -165,4 +165,36 @@ toast {
 toast button.circular.flat.image-button:hover {
     color: @background;
     background-color: @red;
+}
+
+/* Solid muted selection (matches Kvantum/Dolphin #2e2a24) instead of the
+   default accent-tinted color-mix rows. Lives in the thpm user chain
+   (gtk-4.0/thpm-theme.css, GTK_THEME priority 800) so it beats libadwaita's
+   application-priority row:selected rules (#403e3c) that Nautilus inherits. */
+columnview row:selected,
+columnview row.activatable:selected:active,
+columnview row.activatable:selected.has-open-popup,
+listview row:selected,
+treeview.view row:selected,
+treeview.view:selected:focus,
+treeview.view:selected,
+gridview > child:selected,
+flowboxchild:selected,
+iconview:selected,
+filechooser columnview > listview row:selected,
+filechooser gridview > child:selected,
+.nautilus-grid-view child:selected,
+.nautilus-list-view row:selected {
+    background-color: #2e2a24;
+    color: #d1c4a9;
+}
+
+/* Nautilus view containers (grid + list) also force their own accent mix. */
+.nautilus-grid-view child:selected,
+.nautilus-list-view row:selected,
+listview.nautilus-list-view row:selected,
+columnview.nautilus-list-view row:selected,
+gridview.nautilus-grid-view > child:selected {
+    background-color: #2e2a24;
+    color: #d1c4a9;
 }

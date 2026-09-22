@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<style-scheme id="solitude" _name="Solitude" version="1.0">
+
+  <author>linuxer</author>
+  <_description>Solitude dark color scheme matching the Omarchy solitude palette</_description>
+
+  <!-- Solitude palette -->
+  <color name="fg"       value="#cacccc"/>
+  <color name="bg"       value="#101315"/>
+  <color name="dark"     value="#0c0e10"/>
+  <color name="darker"   value="#080a0b"/>
+  <color name="muted"    value="#4b4e55"/>
+  <color name="bright"   value="#a5aeb4"/>
+  <color name="accent"   value="#798186"/>
+  <color name="accent2"  value="#9fa5a9"/>
+  <color name="red"      value="#de6145"/>
+  <color name="red_dark" value="#b04a35"/>
+
+  <!-- Global Settings -->
+  <style name="text"               foreground="fg" background="bg"/>
+  <style name="selection"          foreground="dark" background="accent"/>
+  <style name="cursor"             foreground="fg"/>
+  <style name="secondary-cursor"   foreground="muted"/>
+  <style name="current-line"       background="dark"/>
+  <style name="line-numbers"       foreground="muted" background="bg"/>
+  <style name="draw-spaces"        foreground="muted"/>
+  <style name="background-pattern" background="dark"/>
+
+  <!-- Bracket Matching -->
+  <style name="bracket-match"      foreground="accent" bold="true"/>
+  <style name="bracket-mismatch"   foreground="fg" background="red" bold="true"/>
+
+  <!-- Right Margin -->
+  <style name="right-margin"       foreground="fg" background="muted"/>
+
+  <!-- Search Matching -->
+  <style name="search-match"       foreground="dark" background="accent"/>
+
+  <!-- Comments -->
+  <style name="def:comment"            foreground="muted"/>
+  <style name="def:shebang"            foreground="muted" bold="true"/>
+  <style name="def:doc-comment-element" italic="true"/>
+
+  <!-- Constants -->
+  <style name="def:constant"           foreground="accent"/>
+  <style name="def:string"             foreground="accent2"/>
+  <style name="def:special-char"       foreground="accent"/>
+  <style name="def:special-constant"   foreground="accent"/>
+  <style name="def:floating-point"     foreground="accent"/>
+
+  <!-- Identifiers -->
+  <style name="def:identifier"         foreground="fg"/>
+
+  <!-- Statements -->
+  <style name="def:statement"          foreground="bright" bold="true"/>
+
+  <!-- Types -->
+  <style name="def:type"               foreground="bright" bold="true"/>
+
+  <!-- Markup -->
+  <style name="def:emphasis"           italic="true"/>
+  <style name="def:strong-emphasis"    foreground="fg" bold="true"/>
+  <style name="def:inline-code"        foreground="bright"/>
+  <style name="def:insertion"          underline="single"/>
+  <style name="def:deletion"           strikethrough="true"/>
+  <style name="def:link-text"          foreground="muted"/>
+  <style name="def:link-symbol"        foreground="muted" bold="true"/>
+  <style name="def:link-destination"   italic="true" underline="single"/>
+  <style name="def:heading"            foreground="accent" bold="true"/>
+  <style name="def:thematic-break"     foreground="accent" bold="true"/>
+  <style name="def:preformatted-section" foreground="bright"/>
+  <style name="def:list-marker"        foreground="fg" bold="true"/>
+
+  <!-- Others -->
+  <style name="def:preprocessor"       foreground="bright"/>
+  <style name="def:error"              foreground="fg" background="red_dark" bold="true"/>
+  <style name="def:warning"            foreground="fg" background="muted" bold="true"/>
+  <style name="def:note"               background="bright" foreground="dark" bold="true"/>
+  <style name="def:net-address"        italic="true" underline="single"/>
+
+  <!-- Language specific -->
+  <style name="diff:added-line"         foreground="accent2"/>
+  <style name="diff:removed-line"       foreground="bright"/>
+  <style name="diff:changed-line"       foreground="bright"/>
+  <style name="diff:diff-file"          foreground="accent" bold="true"/>
+  <style name="diff:location"           foreground="accent"/>
+  <style name="diff:special-case"       foreground="fg" bold="true"/>
+
+  <style name="latex:command"           foreground="accent" bold="true"/>
+  <style name="latex:include"           use-style="def:preprocessor"/>
+
+</style-scheme>
