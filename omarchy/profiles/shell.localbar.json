@@ -35,7 +35,7 @@
       "moduleSpacing": 6,
       "outerMargin": 4,
       "radius": 11,
-      "color": "#cc232A2E",
+      "color": "#cc2e2a24",
       "borderColor": "#19A7C080",
       "unboxed": [
         "omarchy.spacer",
@@ -51,10 +51,6 @@
           "id": "omarchy.indicators",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Indicators.qml",
           "type": "qml"
-        },
-        {
-          "id": "omacom.elsewhen",
-          "zones": "Karachi|Asia/Karachi, Tokyo|Asia/Tokyo, Los Angeles|America/Los_Angeles, New York|America/New_York, London|Europe/London"
         },
         {
           "birthYear": 1991,
@@ -212,19 +208,7 @@
     },
     {
       "id": "mirador"
-    },
-    {
-      "id": "io.github.sirjul1337.lock-explorer",
-      "bootResync": false,
-      "design": "rain",
-      "boot": "theme"
     }
   ],
-  "version": 1,
-  "disabledPlugins": [
-    "omarchy.lock"
-  ],
-  "cloneSourceRestores": [
-    "io.github.sirjul1337.lock-explorer"
-  ]
+  "version": 1
 }

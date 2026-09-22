@@ -48,13 +48,15 @@ BarWidget {
   readonly property real revealExtent: drawerExtent * revealProgress
 
   // --- Custom "collapsed drawer + expanding single-pill" look ---
-  // Collapsed: only a bare rose chevron is shown (NO glassy pill — the bar
+  // Collapsed: only a bare chevron is shown (NO glassy pill — the bar
   // unboxes the tray via box.unboxed, so the bar draws nothing behind it).
-  // Hovering the tray area expands ALL tray icons into ONE glassy #26233a pill
-  // (icons tinted rose = root.foreground, from the tray entry color). Unhover
-  // collapses back. The collapsed state is fully INVISIBLE — a bare hit-area
-  // keeps the hover zone + right-click manage popup. Pills never show when
-  // collapsed.
+  // Hovering the tray area expands ALL tray icons into ONE glassy pill
+  // (icons tinted = root.foreground, from the tray entry color). The pill
+  // color/border come from root.bar.boxColor/boxBorderColor (shell.json
+  // `bar.box.color`/`borderColor`), so it matches the other bar pills on any
+  // theme, with a hardcoded espressuccin fallback. Unhover collapses back.
+  // The collapsed state is fully INVISIBLE — a bare hit-area keeps the hover
+  // zone + right-click manage popup. Pills never show when collapsed.
   readonly property int pillHeight: root.bar
     ? Math.max(1, root.bar.barSize - 2 * (root.bar.boxOuterMargin || 4))
     : Style.space(30)
@@ -320,8 +322,8 @@ BarWidget {
         width: horizontalTrayRoot.pillWidth
         height: root.pillHeight
         radius: root.pillRadius
-        color: "#cc26233a"
-        border.color: "#17ebbcba"
+        color: root.bar && root.bar.boxColor ? root.bar.boxColor : "#cc2e2a24"
+        border.color: root.bar && root.bar.boxBorderColor ? root.bar.boxBorderColor : "#19A7C080"
         border.width: 1
         anchors.verticalCenter: parent.verticalCenter
 
@@ -400,8 +402,8 @@ BarWidget {
         height: verticalTrayRoot.pillHeight
         width: root.barSize
         radius: root.pillRadius
-        color: "#cc26233a"
-        border.color: "#17ebbcba"
+        color: root.bar && root.bar.boxColor ? root.bar.boxColor : "#cc2e2a24"
+        border.color: root.bar && root.bar.boxBorderColor ? root.bar.boxBorderColor : "#19A7C080"
         border.width: 1
         anchors.horizontalCenter: parent.horizontalCenter
 

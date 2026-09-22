@@ -1,0 +1,10 @@
+# thpm:cliamp-use-native
+# Espressuccin — warm café-dark (flat #1a1713, single ink #d1c4a9)
+# Owned by THPM: copied to ~/.config/cliamp/themes/omarchy.toml on theme set.
+bg = "#1a1713"
+accent = "#A7C080"
+bright_fg = "#d1c4a9"
+fg = "#7c7468"
+green = "#A7C080"
+yellow = "#DBBC7F"
+red = "#E67E80"

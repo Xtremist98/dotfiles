@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Re-assert the GTK icon theme from the ACTIVE theme's icons.theme.
+# Fixes the GTK-vs-KDE drift: omarchy-theme-set-gnome copies the icon theme
+# into gsettings in parallel with theme staging, so a stale value (from a
+# previously applied theme) can win the race. Hooks run AFTER all
+# post-theme commands finish, so re-writing the gsettings value here makes
+# the GTK store (Nautilus) match the KDE store (Dolphin/kdeglobals).
+# $1 = theme name (unused; we read the live state pointer, which is already
+# updated to the new theme when this hook runs).
+
+[[ -n ${DBUS_SESSION_BUS_ADDRESS:-} ]] || exit 0
+
+ICONS_THEME_FILE="$HOME/.local/state/omarchy/current/theme/icons.theme"
+if [[ -f $ICONS_THEME_FILE ]]; then
+  val=$(<"$ICONS_THEME_FILE")
+  [[ -n $val ]] || exit 0
+  gsettings set org.gnome.desktop.interface icon-theme "$val"
+fi
+exit 0
