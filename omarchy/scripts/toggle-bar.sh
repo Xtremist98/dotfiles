@@ -12,17 +12,25 @@ fi
 current=$(python3 -c 'import json,sys
 try:
     d=json.load(open(sys.argv[1]))
-    print(d.get("bar",{}).get("id","") or "omarchy.bar")
+    bar=d.get("bar",{})
+    print(bar.get("variant","") or bar.get("id","") or "omarchy.bar")
 except Exception:
     print("omarchy.bar")' "$CONFIG")
 
-if [[ "$current" == "local.bar" ]]; then
-  src="$PROFILES/shell.omarchy.json"
-  next="omarchy.bar"
-else
-  src="$PROFILES/shell.localbar.json"
-  next="local.bar"
-fi
+case "$current" in
+  "local.bar-v1")
+    src="$PROFILES/shell.omarchy.json"
+    next="omarchy.bar"
+    ;;
+  "local.bar")
+    src="$PROFILES/shell.localbar-v1.json"
+    next="local.bar-v1"
+    ;;
+  *)
+    src="$PROFILES/shell.localbar.json"
+    next="local.bar"
+    ;;
+esac
 
 if [[ ! -f "$src" ]]; then
   echo "error: profile $src not found" >&2
