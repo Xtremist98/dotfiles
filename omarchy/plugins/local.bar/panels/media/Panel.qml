@@ -114,11 +114,12 @@ Panel {
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property var p: player
   readonly property bool isMpv: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("mpv") : false
+  readonly property bool isCliamp: p ? (p.identity + " " + p.desktopEntry + " " + p.uniqueId).toLowerCase().includes("cliamp") : false
   readonly property string name: p
-    ? (isMpv && p.trackTitle ? String(p.trackTitle).replace(/\n/g, " ").trim() : p.identity)
+    ? ((isMpv || isCliamp) && p.trackTitle ? String(p.trackTitle).replace(/\n/g, " ").trim() : p.identity)
     : ""
 
-  readonly property string playerName: p ? (p.identity || p.desktopEntry || "Media Player").replace(/^org\.mpris\.MediaPlayer2\./, "") : ""
+  readonly property string playerName: p ? (p.identity || p.desktopEntry || (isCliamp ? "cliamp" : "Media Player")).replace(/^org\.mpris\.MediaPlayer2\./, "") : ""
   readonly property bool playing: p ? p.isPlaying : false
 
   // --------------------------------------------------------- panel palette

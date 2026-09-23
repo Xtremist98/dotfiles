@@ -446,17 +446,6 @@ Panel {
     return null
   }
 
-  function cleanBrowserTitle(rawTitle, browserName) {
-    let suffixes = [" - Firefox", " - Brave", " - Google Chrome", " - Chromium", " - LibreWolf", " - Vivaldi", " - Thorium"]
-    let result = rawTitle
-    for (let s of suffixes) {
-      let idx = result.lastIndexOf(s)
-      if (idx > 0) { result = result.substring(0, idx).trim(); break }
-    }
-    result = result.replace(/^\(\d+\)\s*/, "")
-    return result
-  }
-
   function getInfo(info, termProc, rawTitle) {
     if (!info) return ["󱂬", "Desktop"]
 
@@ -467,41 +456,13 @@ Panel {
     rawTitle = rawTitle || ""
     let lowerTitle = rawTitle.toLowerCase()
 
-    // Browser tab detection
+    // Browser tab detection (name-only in bar-v1: never append page titles)
     if (isBrowser(id)) {
       let brIcon = getBrowserIcon(id)
       let brName = getBrowserName(id)
       let site = matchSite(lowerTitle)
-      let cleaned = cleanBrowserTitle(rawTitle, brName)
 
-      if (site) {
-        let siteName = site[1]
-        let title = rawTitle
-        let browserSuffixes = [" - Firefox", " - Brave", " - Google Chrome", " - Chromium", " - LibreWolf", " - Vivaldi", " - Thorium"]
-        for (let s of browserSuffixes) {
-          let idx = title.lastIndexOf(s)
-          if (idx > 0) { title = title.substring(0, idx).trim(); break }
-        }
-        title = title.replace(/^\(\d+\)\s*/, "")
-
-        let siteSuffixes = [" - " + siteName, " · " + siteName, " | " + siteName, " — " + siteName]
-        for (let suffix of siteSuffixes) {
-          if (title.endsWith(suffix)) {
-            title = title.substring(0, title.length - suffix.length).trim()
-            break
-          }
-        }
-
-        if (!title || title.toLowerCase() === siteName.toLowerCase())
-          return [site[0], siteName]
-
-        return [site[0], siteName + " | " + title]
-      }
-
-      if (cleaned && cleaned.length > 0 && cleaned.length < 50) {
-        return [brIcon, brName + ": " + cleaned]
-      }
-
+      if (site) return [site[0], site[1]]
       return [brIcon, brName]
     }
 
@@ -551,6 +512,9 @@ Panel {
     }
   }
 
+  readonly property bool isBrowserWindow: root.isBrowser(
+      root.activeInfo && root.activeInfo["class"] ? String(root.activeInfo["class"]).toLowerCase() : "")
+
   readonly property var details: [
     { key: "APP", value: root.win ? root.win.appId : "" },
     { key: "PROCESS", value: root.win ? root.win.pid : "" },
@@ -571,7 +535,8 @@ Panel {
   }
 
   function isMpvToplevel(t) {
-    return root.mpvAppIdOf(t).indexOf("mpv") !== -1
+    var id = root.mpvAppIdOf(t)
+    return id.indexOf("mpv") !== -1 || id.indexOf("cliamp") !== -1
   }
 
   function wsToplevels() {
@@ -759,7 +724,7 @@ Panel {
             }
 
             Text {
-              visible: root.win && root.win.title !== "" && root.win.title !== root.buttonInfo[1]
+              visible: !root.isBrowserWindow && root.win && root.win.title !== "" && root.win.title !== root.buttonInfo[1]
               text: root.win ? root.win.title : ""
               color: Qt.darker(root.bar.panelForeground, 1.4)
               font.family: root.bar.fontFamily
