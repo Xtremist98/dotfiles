@@ -148,8 +148,16 @@ Item {
       : Math.max(Style.space(16), Math.round((root.barSize - boxOuterMargin * 2) / 2)))
     boxInnerSpacing = Number((cfg && cfg.innerSpacing !== undefined) ? cfg.innerSpacing : 8)
     moduleSpacing = Number((cfg && cfg.moduleSpacing !== undefined) ? cfg.moduleSpacing : 6)
-    if (cfg && cfg.color) boxColor = cfg.color
-    if (cfg && cfg.borderColor) boxBorderColor = cfg.borderColor
+    // bar-v1 solid pills: follow the theme background exactly (opaque) instead
+    // of the glassy tint. Captured at config load like the box values.
+    if (cfg && cfg.solidTheme) {
+      boxColor = Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
+      // subtle accent touch: translucent accent over the solid pill
+      boxBorderColor = Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.17)
+    } else {
+      if (cfg && cfg.color) boxColor = cfg.color
+      if (cfg && cfg.borderColor) boxBorderColor = cfg.borderColor
+    }
     unboxedModules = (cfg && Array.isArray(cfg.unboxed)) ? cfg.unboxed : ["omarchy.menu", "omarchy.spacer"]
     boxGroups = (cfg && Array.isArray(cfg.groups)) ? cfg.groups : [["omarchy.network", "netspeed"]]
   }
@@ -413,7 +421,7 @@ Item {
   // Full bar (transparent=false, double-click) gets a normal bar height;
   // transparent pills mode stays thin.
   readonly property int barSize: vertical ? Style.bar.sizeVertical
-    : (transparent ? Style.space(42) : Style.space(36))
+    : (transparent ? Style.space(45) : Style.space(36))
 
   function normalizePosition(value) {
     return BarModel.normalizePosition(value)
