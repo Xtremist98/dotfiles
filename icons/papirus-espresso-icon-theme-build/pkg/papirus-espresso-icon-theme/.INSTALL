@@ -1,0 +1,11 @@
+post_install() {
+  gtk-update-icon-cache -qf --include-image-data /usr/share/icons/Papirus-espresso 2>/dev/null || true
+}
+
+post_upgrade() {
+  post_install
+}
+
+post_remove() {
+  rm -f /usr/share/icons/Papirus-espresso/icon-theme.cache
+}

@@ -1,0 +1,25 @@
+# Maintainer: linuxer
+# Papirus-espresso icon theme: Papirus-style folders in deep wartybrown-family
+# brown (front #8a6746, back #634a30, tab #a48260) matching the Espressuccin
+# warm café-dark Omarchy theme. Overrides ONLY the places/folder icons and
+# inherits everything else from the system Papirus theme (Inherits=Papirus).
+
+pkgname=papirus-espresso-icon-theme
+pkgver=1.0
+pkgrel=1
+pkgdesc="Espressuccin ink-brown Papirus folder recoloring (folders only, inherits system Papirus)"
+arch=('any')
+url="https://github.com/PapirusDevelopmentTeam/papirus-icon-theme"
+license=('GPL-3.0-or-later')
+depends=('papirus-icon-theme' 'gtk-update-icon-cache' 'hicolor-icon-theme')
+source=("papirus-espresso-icon-theme-1.0.tar.gz")
+sha256sums=('7e7bfa5b72285c61a4ad1eb95c3264910e2b268a738f9797223bc1246446eef8')
+install=papirus-espresso-icon-theme.install
+
+package() {
+  install -dm755 "$pkgdir/usr/share/icons/Papirus-espresso"
+  cp -a "$srcdir/papirus-espresso-icon-theme-1.0"/. \
+        "$pkgdir/usr/share/icons/Papirus-espresso/"
+  # index.theme must stay world-readable
+  chmod 644 "$pkgdir/usr/share/icons/Papirus-espresso/index.theme"
+}
