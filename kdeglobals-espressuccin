@@ -101,7 +101,7 @@ TerminalApplication=foot
 TerminalService=foot.desktop
 
 [Icons]
-Theme=Yaru-wartybrown
+Theme=Papirus-espresso
 
 [KDE]
 ShowDeleteCommand=true
