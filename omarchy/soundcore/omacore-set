@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Usage: omacore-set <mac-address> <settingId=value> [<settingId=value> ...]
+set -euo pipefail
+
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/omacore-env"
+
+if [ -z "$OMACORE_CTL" ]; then
+  echo "openscq30 / openscq30-cli not found on PATH; install OpenSCQ30 first." >&2
+  exit 1
+fi
+
+mac="$1"
+shift
+
+args=()
+for kv in "$@"; do
+  args+=(--set "$kv")
+done
+
+exec "$OMACORE_CTL" device --mac-address "$mac" setting "${args[@]}"
