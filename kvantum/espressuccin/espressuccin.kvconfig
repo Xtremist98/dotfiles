@@ -7,7 +7,7 @@
 #
 
 
-[%General]
+[General]
 author=Omarchy theme system
 comment=Warm café-dark variant of the combined fusion palette
 combo_focus_rect=true
