@@ -35,10 +35,9 @@ Panel {
   readonly property color foreground: bar ? bar.panelForeground : Color.foreground
   readonly property color urgent: bar ? bar.urgent : Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
-  readonly property color scrollbarColor: {
-    var c = foreground
-    return Qt.rgba(c.r, c.g, c.b, 0.45)
-  }
+  // Live theme accent, same source the toggles and hover/selected fills use,
+  // so the scrollbar reads as part of the theme rather than a grey bar.
+  readonly property color scrollbarColor: Color.accent
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property color iconColor: dropbox.authenticated && dropbox.active ? foreground : dim
   readonly property string toggleHint: dropbox.active ? "Pause syncing" : "Resume syncing"
@@ -371,18 +370,22 @@ Panel {
         anchors.top: panelFlick.top
         anchors.bottom: panelFlick.bottom
         anchors.right: panelFlick.right
-        // Slide into the popup's padding gutter, stopping ~6px short of the
-        // panel border so it hugs the edge without touching it. (popupPadding
-        // is 14 by default; the Card is inset by that plus its border width.)
+        // The PILL is parked in the popup's padding gutter, stopping ~6px
+        // short of the panel border so it hugs the edge without touching it.
+        // (popupPadding is 14 by default; the Card is inset by that plus its
+        // border width.) The ITEM is deliberately wider than the 2px pill: a
+        // plain Item takes no press grab, so the extra width is a slightly
+        // easier hit target and costs nothing in click-through.
         anchors.rightMargin: -(Style.spacing.popupPadding - 6)
         anchors.topMargin: 2
         anchors.bottomMargin: 2
-        width: Style.space(2)
+        width: Style.space(12)
         visible: panelFlick.contentHeight > panelFlick.height
 
         Rectangle {
           id: verticalScrollHandle
-          width: parent.width
+          width: Style.space(2)
+          anchors.right: parent.right
           radius: height / 2
           height: Math.max(18, panelFlick.height * panelFlick.height / Math.max(1, panelFlick.contentHeight))
           y: {
@@ -394,6 +397,7 @@ Panel {
 
           Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         }
+
       }
     }
   }

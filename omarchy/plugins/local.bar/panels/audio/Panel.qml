@@ -186,6 +186,9 @@ Panel {
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
     : (bar ? bar.panelForeground : Color.foreground)
+  // Live theme accent, same source the toggles and hover/selected fills use,
+  // so the scrollbar reads as part of the theme rather than a grey bar.
+  readonly property color scrollbarColor: Color.accent
 
   function sectionCount(section) {
     if (section === "output") return displayAudioSinks.length
@@ -358,29 +361,27 @@ Panel {
   // walk the selection off-screen — wifi uses ListView.positionViewAtIndex
   // for this; we don't have that affordance with a multi-section Column.
   function resetScroll() {
-    if (!scrollArea) return
-    var flick = scrollArea.contentItem
-    if (flick && flick.contentY !== undefined) flick.contentY = 0
+    if (!panelFlick) return
+    if (panelFlick.contentY !== undefined) panelFlick.contentY = 0
   }
 
   function ensureCursorVisible(item) {
-    if (!item || !scrollArea) return
-    var flick = scrollArea.contentItem
-    if (!flick || flick.contentY === undefined) return
+    if (!item || !panelFlick) return
+    if (panelFlick.contentY === undefined) return
     var margin = 6
-    var maxY = Math.max(0, (flick.contentHeight || 0) - flick.height)
+    var maxY = Math.max(0, (panelFlick.contentHeight || 0) - panelFlick.height)
     if (maxY <= Style.space(24) || (root.focusSection === "output" && root.selectedIndex === -1)) {
-      flick.contentY = 0
+      panelFlick.contentY = 0
       return
     }
-    var pt = item.mapToItem(flick.contentItem || flick, 0, 0)
+    var pt = item.mapToItem(panelFlick.contentItem || panelFlick, 0, 0)
     var top = pt.y
     var bottom = top + (item.height || 0)
-    var viewTop = flick.contentY
-    var viewBottom = viewTop + flick.height
-    if (top < viewTop + margin) flick.contentY = Math.max(0, Math.min(maxY, top - margin))
+    var viewTop = panelFlick.contentY
+    var viewBottom = viewTop + panelFlick.height
+    if (top < viewTop + margin) panelFlick.contentY = Math.max(0, Math.min(maxY, top - margin))
     else if (bottom > viewBottom - margin)
-      flick.contentY = Math.max(0, Math.min(maxY, bottom + margin - flick.height))
+      panelFlick.contentY = Math.max(0, Math.min(maxY, bottom + margin - panelFlick.height))
   }
 
   function clampCursor() {
@@ -706,21 +707,20 @@ Panel {
         }
       }
 
-      ScrollView {
-        id: scrollArea
+      Flickable {
+        id: panelFlick
         anchors.fill: parent
+        contentWidth: panelColumn.width
+        contentHeight: panelColumn.implicitHeight
         clip: true
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-        ScrollBar.vertical.policy: panelColumn.implicitHeight > height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-        Binding {
-          target: scrollArea.contentItem
-          property: "interactive"
-          value: panelColumn.implicitHeight > scrollArea.height
-        }
+        boundsBehavior: Flickable.StopAtBounds
+        flickableDirection: Flickable.VerticalFlick
+        interactive: contentHeight > height
+        // Column width is shrunk so content never runs under the scrollbar.
 
         Column {
           id: panelColumn
-          width: scrollArea.availableWidth
+          width: panelFlick.width - Style.space(4)
           spacing: Style.space(14)
 
           // ---------- Hero: speaker icon · title/status ----------
@@ -1023,6 +1023,45 @@ Panel {
               }
             }
           }
+        }
+      }
+
+      // Themed scrollbar: parked in the reserved right gutter so it never
+      // overlaps the toggle or rows, and colored from the panel foreground so
+      // it re-themes with the active theme instead of the white app-default
+      // scrollbar. A SIBLING of panelFlick, never a child of it — a child would
+      // land in the Flickable's contentData and scroll away with the content.
+      Item {
+        id: verticalScrollBar
+        anchors.top: panelFlick.top
+        anchors.bottom: panelFlick.bottom
+        anchors.right: panelFlick.right
+        // The PILL is parked in the popup's padding gutter, stopping ~6px
+        // short of the panel border so it hugs the edge without touching it.
+        // (popupPadding is 14 by default; the Card is inset by that plus its
+        // border width.) The ITEM is deliberately wider than the 2px pill: a
+        // plain Item takes no press grab, so the extra width is a slightly
+        // easier hit target and costs nothing in click-through.
+        anchors.rightMargin: -(Style.spacing.popupPadding - 6)
+        anchors.topMargin: 2
+        anchors.bottomMargin: 2
+        width: Style.space(12)
+        visible: panelFlick.contentHeight > panelFlick.height
+
+        Rectangle {
+          id: verticalScrollHandle
+          width: Style.space(2)
+          anchors.right: parent.right
+          radius: height / 2
+          height: Math.max(18, panelFlick.height * panelFlick.height / Math.max(1, panelFlick.contentHeight))
+          y: {
+            var spread = Math.max(1, panelFlick.contentHeight - panelFlick.height)
+            var travel = Math.max(0, parent.height - verticalScrollHandle.height)
+            return travel * panelFlick.contentY / spread
+          }
+          color: root.scrollbarColor
+
+          Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         }
       }
     }
