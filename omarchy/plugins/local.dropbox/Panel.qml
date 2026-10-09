@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
 
@@ -32,18 +33,18 @@ Panel {
     "Cataloging chaos"
   ]
   readonly property string heroPhraseText: activePhrases[phraseIndex % activePhrases.length]
-  readonly property color foreground: bar ? bar.panelForeground : Color.foreground
-  readonly property color urgent: bar ? bar.urgent : Color.urgent
+  readonly property color foreground: bar ? bar.panelForeground : Commons.Color.foreground
+  readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   // Live theme accent, same source the toggles and hover/selected fills use,
   // so the scrollbar reads as part of the theme rather than a grey bar.
-  readonly property color scrollbarColor: Color.accent
+  readonly property color scrollbarColor: Commons.Color.accent
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
   readonly property color iconColor: dropbox.authenticated && dropbox.active ? foreground : dim
   readonly property string toggleHint: dropbox.active ? "Pause syncing" : "Resume syncing"
   readonly property color barGlyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Color.foreground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
   readonly property int barIconSize: Math.round((Style.bar.iconFont - 1) * 0.8)
   readonly property color barIconColor: root.barGlyphColor
   // Only claim the header cursor when the switch is actually on screen —

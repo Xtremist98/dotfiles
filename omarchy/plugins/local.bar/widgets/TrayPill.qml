@@ -64,6 +64,11 @@ BarWidget {
   readonly property int pillRadius: root.bar ? root.bar.boxRadius : Style.space(15)
   readonly property int chevronSize: root.bar ? root.bar.barSize : Style.space(38)
   readonly property int traySlot: root.trayItemExtent
+  // bar-v1 "tray-in-pill" mode: the tray lives INSIDE the right ModuleBox
+  // pill, so it draws no pill of its own. Hidden = a hairline hover seam
+  // (no dead gap in the pill); hovering it expands the icons inline.
+  readonly property int seamWidth: Math.max(2,
+    typeof settings.seam === "number" ? settings.seam : Style.space(6))
 
 
   // Submenu drill-down state. QsMenuEntry.display() renders a *platform* menu,
@@ -279,28 +284,26 @@ BarWidget {
     Item {
       id: horizontalTrayRoot
 
-      // Collapsed = bare rose chevron (no pill). Expanded = one glassy pill
-      // wrapping ALL tray icons (rose). The bar has the tray UNBOXED, so no
-      // pill is drawn behind the collapsed chevron.
+      // bar-v1 "tray-in-pill": no self-drawn glassy pill, no chevron. The right
+      // ModuleBox pill is the backdrop and grows/shrinks with this widget's
+      // implicit width. Hidden = hairline hover seam (no dead gap). Hovering
+      // expands the icons inline; unhover collapses back.
       readonly property bool hasItems: root.allItems.length > 0
       readonly property int iconsExtent: root.allItems.length * root.traySlot
         + (root.allItems.length - 1) * root.trayItemGap
-      readonly property int pillInnerPad: Style.space(7)
-      readonly property int pillWidth: root.expanded && hasItems
-        ? iconsExtent + pillInnerPad * 2
-        : 0
 
       implicitWidth: root.bar && !root.bar.vertical
-        ? (root.expanded && hasItems ? pillWidth : (hasItems ? root.chevronSize : 0))
+        ? (hasItems ? (root.expanded ? iconsExtent : root.seamWidth) : 0)
         : 0
       implicitHeight: root.barSize
 
-      // Keep the drawer visible for ~7s after the cursor leaves (hovering
-      // again re-opens it instantly). Long enough to read/click the tray.
+      // Keep the icons visible long enough to move the cursor onto them and
+      // click after entering the seam (3s grace, like the original drawer's
+      // timing, so unhovering doesn't instantly collapse them).
       property bool hovered: false
       Timer {
         id: graceTimer
-        interval: 5000
+        interval: 3000
         onTriggered: root.expanded = false
       }
       onHoveredChanged: {
@@ -316,42 +319,29 @@ BarWidget {
         onHoveredChanged: horizontalTrayRoot.hovered = hovered
       }
 
-      // ---- Expanded state: one glassy pill with all tray icons ----
-      Rectangle {
-        id: trayPill
+      // ---- Expanded state: icons inline on the ModuleBox pill, no own pill ----
+      Row {
+        id: trayRow
         visible: root.expanded && hasItems
-        width: horizontalTrayRoot.pillWidth
-        height: root.pillHeight
-        radius: root.pillRadius
-        color: root.bar && root.bar.boxColor ? root.bar.boxColor : "#cc2e2a24"
-        border.color: root.bar && root.bar.boxBorderColor ? root.bar.boxBorderColor : "#19A7C080"
-        border.width: 1
         anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        spacing: root.trayItemGap
 
-        Row {
-          id: rowsRow
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: parent.left
-          anchors.leftMargin: horizontalTrayRoot.pillInnerPad
-          spacing: root.trayItemGap
-
-          Repeater {
-            model: root.allItems
-            TrayItem {}
-          }
+        Repeater {
+          model: root.allItems
+          TrayItem {}
         }
       }
 
-      // ---- Collapsed state: fully invisible. A bare hit-area (no glyph, no
-      // pill) keeps the hover zone + right-click manage popup alive. The bar
-      // has the tray UNBOXED, so nothing is drawn when collapsed.
+      // ---- Hidden state: hairline hover seam. A bare hit-area keeps the
+      // hover zone + right-click manage popup. Pills never show when hidden.
       BarIconButton {
-        id: closeChevron
+        id: seamHit
         visible: !root.expanded
         bar: root.bar
         anchors.verticalCenter: parent.verticalCenter
-        width: root.chevronSize
-        height: root.chevronSize
+        width: root.seamWidth
+        height: root.seamWidth
         onPressed: function(button) {
           if (button === Qt.RightButton) root.managePopupOpen = !root.managePopupOpen
         }

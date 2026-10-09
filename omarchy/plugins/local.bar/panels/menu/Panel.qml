@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 // Custom omarchy menu panel. The bar's omarchy button opens this dropdown
@@ -25,10 +26,10 @@ Panel {
 
   // ---------------------------------------------------------- palette
 
-  readonly property color ink: root.bar ? root.bar.panelForeground : Color.foreground
+  readonly property color ink: root.bar ? root.bar.panelForeground : Commons.Color.foreground
   readonly property color dim: Qt.darker(ink, 1.45)
   readonly property color sumi: Qt.darker(ink, 1.55)
-  readonly property color accent: Color.accent
+  readonly property color accent: Commons.Color.accent
   readonly property color rowHover: Qt.alpha(ink, 0.08)
   readonly property color rowCursor: Qt.alpha(ink, 0.16)
 

@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -10,7 +11,7 @@ BarWidget {
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.barForeground)
-    : (bar ? bar.barForeground : Color.foreground)
+    : (bar ? bar.barForeground : Commons.Color.foreground)
 
   property string curIface: ""
   property var prevRx: 0
@@ -118,7 +119,7 @@ BarWidget {
     anchors.rightMargin: Style.space(2)
     width: 1
     height: Math.min(parent.height - 14, 11)
-    color: bar ? bar.barForeground : Color.foreground
+    color: bar ? bar.barForeground : Commons.Color.foreground
     opacity: 0.16
   }
 }

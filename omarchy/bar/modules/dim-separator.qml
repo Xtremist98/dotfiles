@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 Item {
   id: root
@@ -17,7 +18,7 @@ Item {
     anchors.rightMargin: Style.space(0)
     width: 1
     height: Math.min(parent.height - 14, 12)
-    color: bar ? bar.barForeground : Color.foreground
+    color: bar ? bar.barForeground : Commons.Color.foreground
     opacity: 0.16
   }
 }

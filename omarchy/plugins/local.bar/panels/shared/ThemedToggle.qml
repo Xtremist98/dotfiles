@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 // ThemedToggle: local replacement for qs.Ui.ToggleSwitch used by the
@@ -26,8 +27,8 @@ Item {
 
   property bool cursorRing: interactive
   property int cursorPad: Style.space(6)
-  property color foreground: Color.foreground
-  property color accent: Color.accent
+  property color foreground: Commons.Color.foreground
+  property color accent: Commons.Color.accent
 
   signal toggled()
   signal hovered(bool isHovered)

@@ -1,11 +1,12 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // Small original line icons; colors follow the active Omarchy theme.
 Canvas {
   id: icon
   property string kind: "normal"
-  property color ink: Color.foreground
+  property color ink: Commons.Color.foreground
   implicitWidth: Style.space(26)
   implicitHeight: Style.space(26)
   onKindChanged: requestPaint()

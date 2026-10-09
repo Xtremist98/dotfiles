@@ -6,6 +6,7 @@ import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import qs.Ui
 import qs.Commons
+import qs.Commons as Commons
 import "Model.js" as Model
 import "../shared"
 
@@ -178,17 +179,17 @@ Panel {
   readonly property string toggleHint: anyAudible ? "Mute" : "Unmute"
 
   readonly property color hoverFill: bar
-    ? Style.hoverFillFor(bar.panelForeground, Color.accent)
+    ? Style.hoverFillFor(bar.panelForeground, Commons.Color.accent)
     : "transparent"
   readonly property color selectedFill: bar
-    ? Style.selectedFillFor(bar.panelForeground, Color.accent)
+    ? Style.selectedFillFor(bar.panelForeground, Commons.Color.accent)
     : "transparent"
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Color.foreground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
   // Live theme accent, same source the toggles and hover/selected fills use,
   // so the scrollbar reads as part of the theme rather than a grey bar.
-  readonly property color scrollbarColor: Color.accent
+  readonly property color scrollbarColor: Commons.Color.accent
 
   function sectionCount(section) {
     if (section === "output") return displayAudioSinks.length

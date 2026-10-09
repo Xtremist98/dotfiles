@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
 
@@ -8,7 +9,7 @@ Column {
   id: editor
   required property var service
   property string cursorRow: ""
-  property color foreground: Color.foreground
+  property color foreground: Commons.Color.foreground
   property string fontFamily: Style.font.family
   readonly property bool inputFocused: profileName.activeFocus
   readonly property bool popupOpen: savedProfiles.popupOpen

@@ -4,6 +4,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 // Bar active-window pill that opens a panel with the focused window's full
@@ -16,7 +17,7 @@ Panel {
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Color.foreground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
 
   readonly property var toplevel: Hyprland.activeToplevel
 

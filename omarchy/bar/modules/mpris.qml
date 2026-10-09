@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Services.Mpris
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -121,7 +122,7 @@ BarWidget {
       id: icon
       anchors.verticalCenter: parent.verticalCenter
       text: root.p ? (root.p.isPlaying ? "󰐊" : "󰏤") : ""
-      color: bar ? bar.barForeground : Color.foreground
+      color: bar ? bar.barForeground : Commons.Color.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering
@@ -136,7 +137,7 @@ BarWidget {
       lineHeight: fontMetrics.height
       lineHeightMode: Text.FixedHeight
       text: root.name
-      color: bar ? bar.barForeground : Color.foreground
+      color: bar ? bar.barForeground : Commons.Color.foreground
       font.family: root.fontFamily
       font.pixelSize: Style.font.body
       renderType: Text.NativeRendering

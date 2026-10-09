@@ -3,6 +3,7 @@ import Quickshell.Hyprland
 import Quickshell.Wayland
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -480,7 +481,7 @@ BarWidget {
       text: parent.glyphText
       color: root.bar
         ? root.bar.barForeground
-        : Color.foreground
+        : Commons.Color.foreground
       font.family: root.bar
         ? root.bar.fontFamily
         : Style.font.family
@@ -497,7 +498,7 @@ BarWidget {
       text: parent.titleText
       color: root.bar
         ? root.bar.barForeground
-        : Color.foreground
+        : Commons.Color.foreground
       font.family: root.bar
         ? root.bar.fontFamily
         : Style.font.family

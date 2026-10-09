@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Hyprland
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -13,7 +14,7 @@ BarWidget {
   readonly property string activeIcon: "\uee0d "
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.barForeground)
-    : (bar ? bar.barForeground : Color.foreground)
+    : (bar ? bar.barForeground : Commons.Color.foreground)
 
   function workspaceById(id) {
     var values = Hyprland.workspaces.values

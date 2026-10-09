@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 // Bar power button that opens the omarchy system menu as a panel: a hero,
@@ -15,7 +16,7 @@ Panel {
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Color.foreground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
 
   readonly property int actionColumns: 2
   // Destructive actions use the theme's bright_red: the Solitude palette maps

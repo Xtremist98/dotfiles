@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "BarModel.js" as BarModel
 
@@ -60,27 +61,27 @@ Item {
   property string fontFamily: Style.font.family
   // Bound to the central Color singleton so the bar tracks shell.toml's
   // [bar] section. Property names kept for the rest of this file's bindings.
-  property color themeForeground: Color.bar.text
-  property color themeContrastForeground: Color.background
-  property color transparentForeground: Color.bar.text
+  property color themeForeground: Commons.Color.bar.text
+  property color themeContrastForeground: Commons.Color.background
+  property color transparentForeground: Commons.Color.bar.text
   property color foreground: themeForeground
   property color barForeground: useTransparentForeground ? transparentForeground : themeForeground
-  // Panel text/icons/heroes resolve to the theme accent (Color.accent) so
+  // Panel text/icons/heroes resolve to the theme accent (Commons.Color.accent) so
   // every popup is uniformly themed and re-themes live on theme switch.
   // Kept as a distinct property so panels have one consistent color to bind.
-  property color panelForeground: Color.accent
+  property color panelForeground: Commons.Color.accent
   property bool foregroundAnimationEnabled: true
-  property color background: Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
-  property color urgent: Color.bar.active
+  property color background: Qt.rgba(Commons.Color.background.r, Commons.Color.background.g, Commons.Color.background.b, 1.0)
+  property color urgent: Commons.Color.bar.active
   readonly property color shellBorderColor: Qt.rgba(
-    Color.background.r * 0.78 + Color.foreground.r * 0.22,
-    Color.background.g * 0.78 + Color.foreground.g * 0.22,
-    Color.background.b * 0.78 + Color.foreground.b * 0.22, 1)
+    Commons.Color.background.r * 0.78 + Commons.Color.foreground.r * 0.22,
+    Commons.Color.background.g * 0.78 + Commons.Color.foreground.g * 0.22,
+    Commons.Color.background.b * 0.78 + Commons.Color.foreground.b * 0.22, 1)
   // Single flag for the 1px bar edge line; lives in VisualTokens presentation.
   readonly property bool edgeLineEnabled: visualTokens
     ? visualTokens.edgeLineEnabled !== false : true
   readonly property color pillColor: Qt.rgba(
-    Color.background.r, Color.background.g, Color.background.b, 0.18)
+    Commons.Color.background.r, Commons.Color.background.g, Commons.Color.background.b, 0.18)
   readonly property color pillBorderColor: "#20ffffff"
   // Visual tokens for the weather panel. Loaded from
   // local.bar/styles/VisualTokens.qml (bar-scoped so widgets can read
@@ -151,9 +152,9 @@ Item {
     // bar-v1 solid pills: follow the theme background exactly (opaque) instead
     // of the glassy tint. Captured at config load like the box values.
     if (cfg && cfg.solidTheme) {
-      boxColor = Qt.rgba(Color.background.r, Color.background.g, Color.background.b, 1.0)
+      boxColor = Qt.rgba(Commons.Color.background.r, Commons.Color.background.g, Commons.Color.background.b, 1.0)
       // subtle accent touch: translucent accent over the solid pill
-      boxBorderColor = Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.17)
+      boxBorderColor = Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.17)
     } else {
       if (cfg && cfg.color) boxColor = cfg.color
       if (cfg && cfg.borderColor) boxBorderColor = cfg.borderColor
@@ -1209,15 +1210,15 @@ Item {
         id: tooltipBubble
         implicitWidth: tooltipLabel.implicitWidth + 20
         implicitHeight: tooltipLabel.implicitHeight + 14
-        color: Color.tooltip.background
-        borderSpec: Border.surfaceSpec("tooltip", "border", Color.tooltip.border, 1)
+        color: Commons.Color.tooltip.background
+        borderSpec: Border.surfaceSpec("tooltip", "border", Commons.Color.tooltip.border, 1)
         radius: Style.cornerRadius
 
         Text {
           id: tooltipLabel
           anchors.centerIn: parent
           text: root.tooltipText
-          color: Color.tooltip.text
+          color: Commons.Color.tooltip.text
           font.family: root.fontFamily
           font.pixelSize: Style.font.body
           horizontalAlignment: Text.AlignHCenter
@@ -1336,7 +1337,7 @@ Item {
       y: targetRect ? Math.round(targetRect.y) : 0
       width: targetRect ? targetRect.width : 0
       height: targetRect ? targetRect.height : 0
-      color: Color.accent
+      color: Commons.Color.accent
       radius: Math.min(width, height) / 2
     }
   }
@@ -1941,7 +1942,7 @@ Item {
 
       visible: opacity > 0
       opacity: slot.panelOpen && !slot.dragSource ? 0.9 : 0
-      color: Color.accent
+      color: Commons.Color.accent
       radius: Math.min(width, height) / 2
       width: root.vertical ? Style.space(2) : slot.panelIndicatorExtent
       height: root.vertical ? slot.panelIndicatorExtent : Style.space(2)

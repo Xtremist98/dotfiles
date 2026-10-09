@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 // Bar media pill (play/pause icon + now-playing title) that opens a panel
@@ -124,11 +125,11 @@ Panel {
 
   // --------------------------------------------------------- panel palette
 
-  readonly property color ink: bar ? bar.panelForeground : Color.foreground
+  readonly property color ink: bar ? bar.panelForeground : Commons.Color.foreground
   readonly property color barInk: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, ink) : ink
   readonly property string mono: bar ? bar.fontFamily : Style.font.family
-  readonly property color seal: Color.accent
+  readonly property color seal: Commons.Color.accent
   readonly property color sumi: Qt.darker(ink, 1.55)
   readonly property color sumiHi: Qt.darker(ink, 1.35)
   readonly property color sep: Qt.alpha(ink, 0.18)

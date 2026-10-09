@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 
 BarWidget {
@@ -10,7 +11,7 @@ BarWidget {
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.barForeground)
-    : (bar ? bar.barForeground : Color.foreground)
+    : (bar ? bar.barForeground : Commons.Color.foreground)
 
   property bool updateAvailable: false
 

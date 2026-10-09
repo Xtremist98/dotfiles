@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Ui
 import qs.Commons
+import qs.Commons as Commons
 import "Model.js" as Model
 
 Panel {
@@ -14,7 +15,7 @@ Panel {
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Color.foreground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
 
   // manageIpc: false so this panel can own the single IpcHandler the target
   // permits — needed for the brightness + state methods below.
@@ -876,8 +877,8 @@ Panel {
     onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(monitorRow)
     current: isFocused
     foreground: root.bar.panelForeground
-    fill: Style.hoverFillFor(root.bar.panelForeground, Color.accent)
-    currentFill: Style.selectedFillFor(root.bar.panelForeground, Color.accent)
+    fill: Style.hoverFillFor(root.bar.panelForeground, Commons.Color.accent)
+    currentFill: Style.selectedFillFor(root.bar.panelForeground, Commons.Color.accent)
     implicitHeight: monitorInner.implicitHeight + Style.spacing.xl
     opacity: canToggle ? 1.0 : 0.45
 
