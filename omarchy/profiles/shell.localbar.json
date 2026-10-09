@@ -208,7 +208,13 @@
     },
     {
       "id": "mirador"
+    },
+    {
+      "id": "io.github.smoothpixels.cursor-accent"
     }
   ],
-  "version": 1
+  "version": 1,
+  "disabledPlugins": [
+    "omarchy.elsewhen"
+  ]
 }
