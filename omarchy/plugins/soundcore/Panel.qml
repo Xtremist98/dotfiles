@@ -435,7 +435,15 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     slotSize: root.barBatteryVisible ? (bar && bar.vertical ? Style.space(root.batteryDisplayMode === 2 ? 112 : 42) : batteryTextMetrics.width + Style.space(root.batteryDisplayMode === 2 ? 82 : 30)) : Style.bar.iconSlot
-    opticalSize: slotSize
+    // Keep the icon canvas at its normal size so the earbud renders at full
+    // iconSize. Widening opticalSize to fit the digits made BarIconContent
+    // scale the whole icon+text down to fit, shrinking the earbud to a dot.
+    opticalSize: root.batteryDisplayMode === 2 ? slotSize : Style.bar.iconCanvas
+    // Percentage rides as an unscaled sibling label next to the icon instead of
+    // inside iconComponent, so it never shrinks the earbud.
+    labelText: root.barBatteryVisible && root.batteryDisplayMode === 1 ? root.barBatteryText : ""
+    // Match the label to the earbud so the pair also turns urgent together.
+    foreground: root.barBatteryVisible && root.bar ? root.barIconColor : (root.bar ? root.bar.barForeground : undefined)
     tooltipText: ""
     iconComponent: Component {
       Item {
@@ -447,18 +455,8 @@ Panel {
           SoundcoreIcon {
             visible: !root.barBatteryVisible || root.batteryDisplayMode !== 2
             Layout.alignment: Qt.AlignCenter
-            // Align the drawing with the visible digits rather than the font's line box.
-            transform: Translate { y: root.barBatteryVisible && root.batteryDisplayMode === 1 ? -Style.space(1) : 0 }
             iconSize: Style.space(12)
             color: root.barIconColor
-          }
-          Text {
-            visible: root.barBatteryVisible && root.batteryDisplayMode === 1
-            Layout.alignment: Qt.AlignCenter
-            text: root.barBatteryText
-            color: root.barIconColor
-            font.family: root.fontFamily
-            font.pixelSize: Style.font.caption
           }
           GridLayout {
             visible: root.barBatteryVisible && root.batteryDisplayMode === 2

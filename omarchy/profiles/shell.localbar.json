@@ -132,7 +132,8 @@
         },
         {
           "color": "color02",
-          "id": "io.github.birajdotdev.omacore"
+          "id": "io.github.birajdotdev.omacore",
+          "batteryDisplayMode": 0
         },
         {
           "color": "color02",

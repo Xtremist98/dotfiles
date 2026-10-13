@@ -4,7 +4,7 @@
     "box": {
       "borderColor": "#19A7C080",
       "color": "#cc2e2a24",
-      "solidTheme": true,
+      "solidTheme": false,
       "outerMargin": 1,
       "groups": [
         [
@@ -37,10 +37,10 @@
         ]
       ],
       "innerPadding": 6,
-      "innerSpacing": 0,
+      "innerSpacing": 2,
       "moduleSpacing": 6,
       "outerMargin": 4,
-      "radius": 14,
+      "radius": 11,
       "unboxed": []
     },
     "edgeLine": false,
