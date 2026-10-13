@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Search-logic tests for EmojiSearch.js, run through Node (CommonJS).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+node <<'EOF'
+const assert = require("assert")
+const EmojiSearch = require("./EmojiSearch.js")
+
+const fixture = [
+  { e: "😀", k: "grinning face happy smile" },
+  { e: "\uf015", n: "nf-fa-home", k: "nf-fa-home fa-home home fa house fontawesome" },
+  { e: "\uf02d", n: "nf-md-home", k: "nf-md-home md-home home md house material" },
+]
+
+// parseEmojis: valid arrays pass through, anything else yields []
+assert.deepStrictEqual(EmojiSearch.parseEmojis("[]"), [])
+assert.deepStrictEqual(EmojiSearch.parseEmojis("not json"), [])
+assert.strictEqual(EmojiSearch.parseEmojis(JSON.stringify(fixture)).length, 3)
+
+// single-token search, input order preserved
+let out = EmojiSearch.filterEmojis(fixture, "house", 100)
+assert.strictEqual(out.length, 2)
+assert.strictEqual(out[0].n, "nf-fa-home")
+
+// token AND: every whitespace-separated word must match
+out = EmojiSearch.filterEmojis(fixture, "material home", 100)
+assert.strictEqual(out.length, 1)
+assert.strictEqual(out[0].n, "nf-md-home")
+assert.strictEqual(EmojiSearch.filterEmojis(fixture, "house nomatch", 100).length, 0)
+
+// case-insensitive, extra whitespace tolerated
+out = EmojiSearch.filterEmojis(fixture, "  MATERIAL   Home ", 100)
+assert.strictEqual(out.length, 1)
+
+// empty query matches everything; limit is honored
+assert.strictEqual(EmojiSearch.filterEmojis(fixture, "", 100).length, 3)
+assert.strictEqual(EmojiSearch.filterEmojis(fixture, "", 2).length, 2)
+assert.strictEqual(EmojiSearch.filterEmojis(fixture, "", 0).length, 0)
+
+// queryTokens
+assert.deepStrictEqual(EmojiSearch.queryTokens("  Material   Home "), ["material", "home"])
+assert.deepStrictEqual(EmojiSearch.queryTokens(""), [])
+
+// glyphFromHex: BMP, astral (surrogate pair), and invalid input
+assert.strictEqual(EmojiSearch.glyphFromHex("f015"), "\uf015")
+assert.strictEqual(EmojiSearch.glyphFromHex("f0986"), String.fromCodePoint(0xf0986))
+assert.strictEqual(EmojiSearch.glyphFromHex("zzz"), "")
+assert.strictEqual(EmojiSearch.glyphFromHex(""), "")
+
+// parseTsvLine: keywords <TAB> name <TAB> hex
+const row = EmojiSearch.parseTsvLine("home md-home nf-md-home\tnf-md-home\tf02dc")
+assert.strictEqual(row.n, "nf-md-home")
+assert.strictEqual(row.e, String.fromCodePoint(0xf02dc))
+assert.strictEqual(row.k, "home md-home nf-md-home")
+assert.strictEqual(EmojiSearch.parseTsvLine("garbage"), null)
+assert.strictEqual(EmojiSearch.parseTsvLine("a\tb"), null)
+
+// filterTsvRows: token AND over keyword field, limit honored
+const tsvRows = [
+  "home md-home nf-md-home\tnf-md-home\tf02dc",
+  "home house fa-home nf-fa-home\tnf-fa-home\tf015",
+]
+assert.deepStrictEqual(
+  EmojiSearch.filterTsvRows(tsvRows, ["md", "home"], 100).map(i => i.n),
+  ["nf-md-home"]
+)
+assert.deepStrictEqual(
+  EmojiSearch.filterTsvRows(tsvRows, ["home"], 1).map(i => i.n),
+  ["nf-md-home"]
+)
+assert.deepStrictEqual(EmojiSearch.filterTsvRows(tsvRows, ["nomatch"], 100), [])
+
+// parseKaomojiTsv: tags <TAB> string rows, junk tolerated
+const kaomojiTsv = [
+  "hide\t(⊃‿⊂)",
+  "hide wave\t川o･-･)ﾉ",
+  "table flip\t(╯°□°）╯︵ ┻━┻",
+  "",
+  "notabline",
+  "tags-without-string\t",
+]
+const kaomoji = EmojiSearch.parseKaomojiTsv(kaomojiTsv.join("\n"))
+assert.strictEqual(kaomoji.length, 3)
+assert.deepStrictEqual(kaomoji[1], { e: "川o･-･)ﾉ", k: "hide wave", tags: "hide wave" })
+assert.deepStrictEqual(EmojiSearch.parseKaomojiTsv(""), [])
+assert.deepStrictEqual(EmojiSearch.parseKaomojiTsv(null), [])
+
+// filterEmojis drives kaomoji search too: token-AND over tags
+let kout = EmojiSearch.filterEmojis(kaomoji, "hide", 100)
+assert.strictEqual(kout.length, 2)
+kout = EmojiSearch.filterEmojis(kaomoji, "hide wave", 100)
+assert.strictEqual(kout.length, 1)
+assert.strictEqual(kout[0].e, "川o･-･)ﾉ")
+assert.strictEqual(EmojiSearch.filterEmojis(kaomoji, "flip", 100).length, 1)
+assert.strictEqual(EmojiSearch.filterEmojis(kaomoji, "hide flip", 100).length, 0)
+
+// formatKaomojiTags: "[tag1, tag2]" for the centered tag column
+assert.strictEqual(EmojiSearch.formatKaomojiTags("hide wave"), "[hide, wave]")
+assert.strictEqual(EmojiSearch.formatKaomojiTags("hide"), "[hide]")
+
+// parseRecents / rememberRecent: MRU by glyph string, capped
+assert.deepStrictEqual(EmojiSearch.parseRecents("[]"), [])
+assert.deepStrictEqual(EmojiSearch.parseRecents("not json"), [])
+assert.deepStrictEqual(EmojiSearch.parseRecents(null), [])
+const recentsIn = [
+  { e: "😀", k: "grinning face" },
+  { e: "", k: "skip empty" },
+  { e: "🏠", n: "nf-md-home", k: "home house" },
+]
+const parsedRecents = EmojiSearch.parseRecents(JSON.stringify(recentsIn))
+assert.strictEqual(parsedRecents.length, 2)
+assert.strictEqual(parsedRecents[0].e, "😀")
+assert.ok(parsedRecents[1].k.indexOf("nf-md-home") >= 0)
+
+let recents = EmojiSearch.rememberRecent([], { e: "😀", k: "grin" }, 3)
+recents = EmojiSearch.rememberRecent(recents, { e: "🔥", k: "fire" }, 3)
+recents = EmojiSearch.rememberRecent(recents, { e: "😀", k: "grinning" }, 3)
+assert.deepStrictEqual(recents.map(r => r.e), ["😀", "🔥"])
+recents = EmojiSearch.rememberRecent(recents, { e: "✨", k: "sparkles" }, 3)
+recents = EmojiSearch.rememberRecent(recents, { e: "💡", k: "bulb" }, 3)
+assert.deepStrictEqual(recents.map(r => r.e), ["💡", "✨", "😀"])
+assert.deepStrictEqual(EmojiSearch.rememberRecent(recents, { e: "" }, 3).map(r => r.e), ["💡", "✨", "😀"])
+assert.deepStrictEqual(EmojiSearch.rememberRecent(recents, { e: "x" }, 0), [])
+assert.strictEqual(EmojiSearch.filterEmojis(recents, "spark", 10).length, 1)
+assert.strictEqual(EmojiSearch.formatKaomojiTags(undefined), "")
+assert.strictEqual(EmojiSearch.formatKaomojiTags(kaomoji[1].tags), "[hide, wave]")
+
+// Recents hint: nerd name, then kaomoji tags, then emoji keywords
+assert.strictEqual(EmojiSearch.recentHint({ e: "\uf015", n: "nf-fa-home", k: "home" }), "nf-fa-home")
+assert.strictEqual(EmojiSearch.recentHint({ e: "|_・)", tags: "hide wave", k: "hide wave" }), "[hide, wave]")
+assert.strictEqual(EmojiSearch.recentHint({ e: "🔥", k: "fire flame" }), "fire flame")
+assert.strictEqual(EmojiSearch.recentHint(null), "")
+
+// Alt+digit hotkeys: scan codes 10–19 are 1…0 whatever the layout or Shift
+assert.strictEqual(EmojiSearch.hotkeyIndex(0x21, 10), 0)   // Shift+1 arrives as "!"
+assert.strictEqual(EmojiSearch.hotkeyIndex(0, 18), 8)
+assert.strictEqual(EmojiSearch.hotkeyIndex(0, 19), 9)
+assert.strictEqual(EmojiSearch.hotkeyIndex(0x35, 0), 4)    // key-only fallback
+assert.strictEqual(EmojiSearch.hotkeyIndex(0x30, 0), 9)
+assert.strictEqual(EmojiSearch.hotkeyIndex(0x41, 38), -1)  // A
+assert.deepStrictEqual([0, 8, 9, 10].map(EmojiSearch.hotkeyLabel), ["1", "9", "0", ""])
+
+console.log("emoji-search-test: all assertions passed")
+EOF

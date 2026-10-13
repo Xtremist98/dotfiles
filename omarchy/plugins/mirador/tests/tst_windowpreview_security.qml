@@ -1,0 +1,74 @@
+import QtQuick 2.15
+import QtTest 1.3
+
+TestCase {
+  name: "WindowPreviewSecurity"
+  property var hostileTitles: [
+    "<b>Injected</b>",
+    "<i>Title</i>",
+    "<a href=\"https://example.invalid\">click</a>",
+    "<img src=\"https://example.invalid/x.png\">"
+  ]
+
+  Text {
+    id: defaultText
+  }
+
+  Text {
+    id: securedText
+    textFormat: Text.PlainText
+  }
+
+  function initTestCase() {
+    compare(defaultText.textFormat, Text.AutoText)
+  }
+
+  function windowPreviewSource() {
+    var request = new XMLHttpRequest()
+    request.open("GET", Qt.resolvedUrl("../WindowPreview.qml"), false)
+    request.send()
+    verify(request.status === 0 || request.status === 200)
+    return request.responseText
+  }
+
+  function test_windowTitleSinkExplicitlyUsesPlainText() {
+    var source = windowPreviewSource()
+    verify(/text\s*:\s*tabTitle\s*\n\s*textFormat\s*:\s*Text\.PlainText/.test(source))
+  }
+
+  function compactCycleViewSource() {
+    var request = new XMLHttpRequest()
+    request.open("GET", Qt.resolvedUrl("../CompactCycleView.qml"), false)
+    request.send()
+    verify(request.status === 0 || request.status === 200)
+    return request.responseText
+  }
+
+  function test_compactWindowTitleSinkExplicitlyUsesPlainText() {
+    var source = compactCycleViewSource()
+    var sink = source.match(/Text\s*\{[^{}]*text\s*:\s*root\.activeWindowFullTitle\b[^{}]*\}/)
+    verify(sink !== null, "CompactCycleView must render root.activeWindowFullTitle in a Text element")
+    verify(/textFormat\s*:\s*Text\.PlainText/.test(sink[0]),
+      "Compact window title must use Text.PlainText so page-controlled markup is not parsed")
+  }
+
+  function test_hiddenPreviewReleasesCaptureSource() {
+    var source = windowPreviewSource()
+    verify(/captureSource\s*:\s*root\.liveCaptureEnabled\s*\?\s*root\.waylandToplevel\s*:\s*null/.test(source))
+  }
+
+  function test_hostileTitlesRemainPlainText() {
+    compare(securedText.textFormat, Text.PlainText)
+
+    for (var i = 0; i < hostileTitles.length; i++) {
+      securedText.text = hostileTitles[i]
+      compare(securedText.text, hostileTitles[i])
+    }
+  }
+  function test_liveFramesKeepCaptureSourceReleaseGating() {
+    var source = windowPreviewSource()
+    verify(/live:\s*root.liveCaptureEnabled\s*\n/.test(source))
+    verify(!/liveFrameUpdates|refreshSnapshot/.test(source))
+    verify(/Behavior on opacity \{ enabled: root.animatedAffordances/.test(source))
+  }
+}
