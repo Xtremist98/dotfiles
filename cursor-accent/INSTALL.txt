@@ -1,0 +1,100 @@
+OMARCHY CURSOR SETUP — INSTALL INSTRUCTIONS
+============================================
+
+This folder contains a fully OFFLINE, self-contained installer that
+reproduces the full cursor setup on any (fresh) Omarchy install:
+
+    install.sh
+    plugin/            <- the cursor-accent plugin bundle (no .git)
+
+Both files must be kept together: install.sh copies the plugin out of the
+local plugin/ folder - NO internet, NO clone, NO GitHub are needed.
+
+What it does
+------------
+1. Installs the cursor-accent plugin (io.github.smoothpixels.cursor-accent)
+   from the bundled plugin/ folder if missing, rescans so the shell
+   discovers the copied folder, and enables it.
+2. Overwrites the plugin's recolor.py with the patched version embedded in
+   this script. The patches are:
+     - puts ~/.local/bin on PATH (so hooks can find xcursorgen),
+     - one-pass build: hyprcursor + XCursor (--hypr --x11 --x11-symlink),
+     - fingerprint cache (~/.local/state/cursor-accent/fingerprint) so the
+       per-login hook re-applies in ~0.3s instead of a ~52s rebuild,
+     - ATOMIC theme-dir install (build into .new, rename-swap). The old
+       rmtree-then-copytree could leave the theme dir empty mid-swap, which
+       made a running Hyprland read a NULL cairo surface and crash (SEGV).
+3. Restores the xcursorgen binary to ~/.local/bin (embedded), needed for the
+   X11 (XCursor) half of the build.
+4. Installs the theme-set + post-boot hooks so the cursor is re-applied on
+   every theme switch AND at every login/boot.
+5. Wires ~/.config/hypr/envs.lua: removes any HYPRCURSOR_THEME/XCURSOR_THEME
+   and sets HYPRCURSOR_SIZE + XCURSOR_SIZE (default 16). Removes any
+   `hyprctl setcursor` line from autostart.lua (the plugin owns the cursor).
+6. Sets gsettings cursor-theme 'Omarchy-Accent' + cursor-size.
+7. Builds + applies the current theme's cursor NOW (first run is slow ~50s,
+   later runs skip straight to the fingerprint cache).
+8. Prints a verification summary.
+
+Note on the plugin/ bundle: it is the plugin tree with .git stripped, so a
+machine installed with it has NO git metadata for the plugin -- `omarchy
+plugin update` will not be able to pull it (run `bash install.sh` to
+re-assert after updates instead). The live plugin on THIS box keeps its git
+clone; only the shipped bundle strips .git.
+
+Requirements
+------------
+- A working Omarchy desktop session (omarchy CLI, hyprctl, python3,
+  rsvg-convert from librsvg, gsettings).
+- NO internet needed -- everything ships inside install.sh + plugin/.
+
+How to install
+--------------
+Copy install.sh AND the plugin/ folder to the target machine, then:
+
+    bash install.sh
+
+  # or with a different cursor size
+  CURSOR_SIZE=16 bash install.sh
+
+After a fresh install, log out/in once (or reboot) so the post-boot hook and
+the log-in environment pick up the new size.
+
+Idempotency
+-----------
+Safe to re-run any time. Do it after `omarchy plugin update` or `omarchy
+plugin add` -- updates overwrite the tracked recolor.py, so re-run
+`bash install.sh` to re-assert the patches, hooks, and env.
+
+Default size: 16 (compact). Change with the CURSOR_SIZE env var.
+
+Expected end state
+------------------
+- Plugin:  io.github.smoothpixels.cursor-accent  enabled
+- Theme:   ~/.local/share/icons/Omarchy-Accent/
+             cursors/    88 entries (XCursor: GTK/Qt/X apps)
+             hyprcursors/ 56 entries (Hyprland)
+- Hooks:   ~/.config/omarchy/hooks/theme-set.d/cursor-accent.sh
+           ~/.config/omarchy/hooks/post-boot.d/cursor-accent.sh
+- envs.lua: no cursor THEME env, only HYPRCURSOR_SIZE/XCURSOR_SIZE = 16
+- gsettings: cursor-theme 'Omarchy-Accent'
+             cursor-size 16
+
+
+Command reference (manual)
+--------------------------
+  bash install.sh                       # offline: copies plugin/ bundle
+  omarchy plugin add https://github.com/SmoothPixels/cursor-accent.git --enable --yes   # ONLINE alternative (git clone, enables updates)
+  bash ~/.config/omarchy/plugins/io.github.smoothpixels.cursor-accent/tools/install-cursor-hook.sh
+  ~/.local/bin/cursor-accent status          # follow/fixed/shape + config
+  ~/.local/bin/cursor-accent follow           # drive by theme accent
+  ~/.local/bin/cursor-accent fixed '#RRGGBB'  # pin a color
+
+Troubleshooting
+---------------
+- Cursor stuck at wrong size after changing it: the post-boot hook reads
+  HYPRCURSOR_SIZE from the login env -- relogin/reboot once.
+- Cursor not themed after omarchy update: re-run `bash install.sh`.
+- Only Qt/X apps show a mismatched cursor: that is XCURSOR_THEME unset
+  (deliberate). The compositor theme + gsettings cover GTK; if a Qt app
+  still misbehaves, set XCURSOR_THEME=Omarchy-Accent for that app.

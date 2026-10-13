@@ -4,11 +4,11 @@ local require_optional = require("default.hypr.require_optional")
 -- GUM environment variables for styling purposes.
 require_optional.module("omarchy.current.theme.gum_env")
 
--- Cursor theme and size overrides.
-hl.env("HYPRCURSOR_THEME", "WinSur")
-hl.env("HYPRCURSOR_SIZE", "16")
-hl.env("XCURSOR_THEME", "WinSur")
-hl.env("XCURSOR_SIZE", "16")
+-- Cursor: hyprcursor is DISABLED (see hyprland.lua — v0.56.2 boot-time SEGV
+-- in CCursorBuffer/CCursorManager), so the compositor cursor is XCursor-only.
+-- XCURSOR_THEME is needed here so Omarchy's startup-cursor.lua restores
+-- Omarchy-Accent (the cursor-accent plugin's recolored Bibata) instead of the
+-- "default" alias on every boot. HYPRCURSOR_THEME deliberately stays unset.
 
 -- Desktop menu prefix.
 hl.env("XDG_MENU_PREFIX", "arch-")
@@ -55,3 +55,6 @@ hl.config({
     no_update_news = true,
   },
 })
+hl.env("HYPRCURSOR_SIZE", "16")
+hl.env("XCURSOR_SIZE", "16")
+hl.env("XCURSOR_THEME", "Omarchy-Accent")

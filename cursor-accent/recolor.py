@@ -161,14 +161,30 @@ def main():
         )
 
         install_dir = Path.home() / f".local/share/icons/{CURSOR_NAME}"
-        shutil.rmtree(install_dir, ignore_errors=True)
-        shutil.copytree(build_dir / "out" / target, install_dir)
-        (install_dir / "index.theme").write_text(
+        # Install ATOMICALLY. A running Hyprland reads this directory: it loads
+        # the cursor theme at startup and hyprcursor resolves shapes by name
+        # lazily. The old rmtree-then-copytree left a window where the theme
+        # existed but was empty/half-written; if a shape was requested then,
+        # Hyprland got a NULL cairo surface and segfaulted in CCursorBuffer
+        # (crash report 2026-10-09). Build the new tree fully in a sibling
+        # hidden dir, then swap it in with rename(2) - atomic on the same
+        # filesystem - so the theme directory is never absent or partial.
+        parent = install_dir.parent
+        stage_dir = parent / f".{CURSOR_NAME}.new"
+        old_dir = parent / f".{CURSOR_NAME}.old"
+        shutil.rmtree(stage_dir, ignore_errors=True)
+        shutil.rmtree(old_dir, ignore_errors=True)
+        shutil.copytree(build_dir / "out" / target, stage_dir)
+        (stage_dir / "index.theme").write_text(
             "[Icon Theme]\n"
             f"Name={CURSOR_NAME}\n"
             "Comment=Bibata cursor recolored to the active Omarchy theme\n"
             "Inherits=Adwaita\n"
         )
+        if install_dir.exists():
+            install_dir.rename(old_dir)
+        stage_dir.rename(install_dir)
+        shutil.rmtree(old_dir, ignore_errors=True)
         shutil.rmtree(build_dir, ignore_errors=True)
 
         # Runtime-only: Hyprland forgets this on restart, and with no

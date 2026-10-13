@@ -30,7 +30,7 @@
 
 -- Application bindings
 hl.bind("SUPER + ALT + RETURN", hl.dsp.exec_cmd("uwsm-app -- xdg-terminal-exec --dir=\"$(omarchy-cmd-terminal-cwd)\" tmux new"), { description = "Tmux" })
-hl.bind("SUPER + N", hl.dsp.exec_cmd("uwsm app -- nautilus --new-window"), { description = "File manager" })
+hl.bind("SUPER + N", hl.dsp.exec_cmd("uwsm app -- nautilus"), { description = "File manager" })
 hl.bind("SUPER + B", hl.dsp.exec_cmd("omarchy-launch-browser"), { description = "Browser" })
 hl.bind("SUPER + SHIFT + B", hl.dsp.exec_cmd("$browser --private"), { description = "Browser (private)" })
 hl.bind("SUPER + M", hl.dsp.exec_cmd("uwsm app -- /usr/bin/mpv --player-operation-mode=pseudo-gui --"), { description = "Mpv" })
@@ -60,3 +60,13 @@ hl.bind("SUPER + SHIFT + V", hl.dsp.exec_cmd("xdg-terminal-exec --app-id=omagrab
 hl.unbind("SUPER + SHIFT + M")
 hl.bind("SUPER + SHIFT + M", hl.dsp.exec_cmd("omarchy launch or focus tui cliamp /mnt/media/Music-Audio"), { description = "cliamp" })
 
+-- Use Strata instead of Nautilus for Omarchy's file-manager shortcuts.
+-- Source: https://github.com/lgse/strata (README, "Make Strata the Omarchy file manager")
+-- Markers kept so Strata's Desktop Integration wizard can still manage this block.
+-- strata-installer: file-manager start
+hl.unbind("SUPER + SHIFT + F")
+hl.unbind("SUPER + ALT + SHIFT + F")
+o.bind("SUPER + SHIFT + F", "File manager", { launch = "strata" })
+o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)",
+  "uwsm-app -- strata \"$(omarchy-cmd-terminal-cwd)\"")
+-- strata-installer: file-manager end

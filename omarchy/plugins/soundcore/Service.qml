@@ -133,7 +133,7 @@ Item {
   readonly property int settleHoldMs: 4000
   readonly property int actionStatusMs: 5000
 
-  readonly property string pluginDir: Quickshell.env("HOME") + "/.config/omarchy/plugins/io.github.birajdotdev.omacore"
+  readonly property string pluginDir: Qt.resolvedUrl(".").toString().replace("file://", "").replace(/\/\.?$/, "")
   readonly property string statusScript: pluginDir + "/omacore-status"
   readonly property string setScript: pluginDir + "/omacore-set"
   readonly property string codecScript: pluginDir + "/omacore-codec"
