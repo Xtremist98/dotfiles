@@ -45,7 +45,11 @@ Panel {
   readonly property color barGlyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
     : (bar ? bar.panelForeground : Commons.Color.foreground)
-  readonly property int barIconSize: Math.round((Style.bar.iconFont - 1) * 0.8)
+  // Height of the bar mark. Loaded through BarIconContent this was rescaled up to
+  // Style.bar.iconSize anyway, so barIconSize only bites now that the icon is
+  // drawn outside it: 9 renders 10.6x9, one step under the 12x10.2 it used to
+  // normalise to.
+  readonly property int barIconSize: Style.space(9)
   readonly property color barIconColor: root.barGlyphColor
   // Only claim the header cursor when the switch is actually on screen —
   // "header" stays navigable, but an absent CLI leaves nothing to highlight.
@@ -179,21 +183,24 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    iconComponent: Component {
-      Item {
-        DropboxIcon {
-          anchors.centerIn: parent
-          iconSize: root.barIconSize
-          color: root.barIconColor
-          opacity: dropbox.active ? 1.0 : 0.6
-        }
-      }
-    }
+    // Deliberately empty. BarIconContent rescales whatever it loads by
+    // Style.bar.iconSize over its largest side (BarIconContent.qml:11), which
+    // pins this icon to the full 12 regardless of barIconSize. The mark is drawn
+    // below instead, outside that path, at its own size.
+    iconComponent: Component { Item {} }
     onPressed: function(buttonCode) {
       if (buttonCode === Qt.RightButton) dropbox.refresh()
       else if (buttonCode === Qt.MiddleButton) dropbox.login()
       else root.toggle()
     }
+  }
+
+  DropboxIcon {
+    id: barDropboxMark
+    anchors.centerIn: parent
+    iconSize: root.barIconSize
+    color: root.barIconColor
+    opacity: dropbox.active ? 1.0 : 0.6
   }
 
   KeyboardPanel {

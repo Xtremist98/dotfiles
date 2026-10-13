@@ -155,7 +155,7 @@ Panel {
   readonly property int batteryDisplayMode: pendingBatteryDisplay >= 0 ? pendingBatteryDisplay : Model.batteryDisplayMode(setting("batteryDisplayMode", showBatteryPercent ? 1 : 0))
   readonly property bool barBatteryVisible: batteryDisplayMode !== 0 && pods.hasEarbuds
   readonly property string barBatteryText: Model.barBatteryText(batteryDisplayMode, pods.leftLevel, pods.rightLevel, pods.caseLevel)
-  TextMetrics { id: batteryTextMetrics; text: root.batteryDisplayMode === 2 ? [pods.leftLevel, pods.rightLevel, pods.caseLevel].map(function (level) { return level < 0 ? "—" : level + "%" }).join("") : root.barBatteryText; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+  TextMetrics { id: batteryTextMetrics; text: root.batteryDisplayMode === 2 ? [pods.leftLevel, pods.rightLevel, pods.caseLevel].map(function (level) { return level < 0 ? "—" : level + "%" }).join("") : root.barBatteryText; font.family: root.fontFamily; font.pixelSize: Style.bar.iconFont }
 
   readonly property color foreground: bar ? bar.panelForeground : Commons.Color.foreground
   readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
@@ -435,66 +435,103 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     slotSize: root.barBatteryVisible ? (bar && bar.vertical ? Style.space(root.batteryDisplayMode === 2 ? 112 : 42) : batteryTextMetrics.width + Style.space(root.batteryDisplayMode === 2 ? 82 : 30)) : Style.bar.iconSlot
-    // Keep the icon canvas at its normal size so the earbud renders at full
-    // iconSize. Widening opticalSize to fit the digits made BarIconContent
-    // scale the whole icon+text down to fit, shrinking the earbud to a dot.
+    // Unused for drawing now that the icon component is empty; kept so mode 2 still
+    // gets a canvas wide enough to centre its row against.
     opticalSize: root.batteryDisplayMode === 2 ? slotSize : Style.bar.iconCanvas
-    // Percentage rides as an unscaled sibling label next to the icon instead of
-    // inside iconComponent, so it never shrinks the earbud.
-    labelText: root.barBatteryVisible && root.batteryDisplayMode === 1 ? root.barBatteryText : ""
+    // Percentage is drawn by barBatteryGroup below, alongside the earbud, so the
+    // pair can be spaced explicitly instead of relying on the canvas gap.
+    labelText: ""
     // Match the label to the earbud so the pair also turns urgent together.
     foreground: root.barBatteryVisible && root.bar ? root.barIconColor : (root.bar ? root.bar.barForeground : undefined)
     tooltipText: ""
-    iconComponent: Component {
-      Item {
-        GridLayout {
-          anchors.centerIn: parent
-          columns: bar && bar.vertical ? 1 : 2
-          rowSpacing: Style.space(4)
-          columnSpacing: Style.space(4)
-          SoundcoreIcon {
-            visible: !root.barBatteryVisible || root.batteryDisplayMode !== 2
-            Layout.alignment: Qt.AlignCenter
-            iconSize: Style.space(12)
-            color: root.barIconColor
-          }
-          GridLayout {
-            visible: root.barBatteryVisible && root.batteryDisplayMode === 2
-            Layout.alignment: Qt.AlignCenter
-            columns: bar && bar.vertical ? 1 : 3
-            columnSpacing: Style.space(8)
-            rowSpacing: Style.space(4)
-            Repeater {
-              model: [{kind: "left", level: pods.leftLevel}, {kind: "right", level: pods.rightLevel}, {kind: "case", level: pods.caseLevel}]
-              GridLayout {
-                required property var modelData
-                Layout.alignment: Qt.AlignCenter
-                columns: bar && bar.vertical ? 1 : 2
-                columnSpacing: Style.space(3)
-                rowSpacing: Style.space(2)
-                ControlIcon {
-                  Layout.alignment: Qt.AlignVCenter
-                  Layout.preferredWidth: Style.space(16)
-                  Layout.preferredHeight: Style.space(16)
-                  kind: modelData.kind
-                  ink: root.barIconColor
-                }
-                Text {
-                  Layout.alignment: Qt.AlignVCenter
-                  text: modelData.level < 0 ? "—" : modelData.level + "%"
-                  color: root.barIconColor
-                  font.family: root.fontFamily
-                  font.pixelSize: Style.font.caption
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Deliberately empty. BarIconContent rescales whatever it loads by
+    // Style.bar.iconSize / its largest side (BarIconContent.qml:11), and both of
+    // this widget's marks are wider than they are tall -- so normalising them
+    // against that token is what crushed them. The earbud and the mode 2 battery
+    // row are drawn as siblings below, outside that path, at natural size. The
+    // component stays bound so the button keeps its slot, hover and hit area.
+    iconComponent: Component { Item {} }
     onPressed: function (buttonCode) {
       if (buttonCode === Qt.RightButton) root.cycleBatteryDisplay()
       else root.toggle()
+    }
+  }
+
+  // Both the percentage and the earbud are drawn here, outside BarIconContent.
+  // That loader rescales whatever it is given by Style.bar.iconSize over the
+  // component's largest side, and because the two-earbud mark is 3:2 it was
+  // normalised by its width into 12x8 -- squat beside the 12px-tall glyphs
+  // around it. Unrescaled it is 18x12: the same optical height as its
+  // neighbours, with the width the mark actually needs. Sizing the label here
+  // too keeps the gap between them an explicit space rather than whatever slack
+  // the 16px icon canvas happened to leave.
+  Item {
+    id: barBatteryGroup
+    readonly property bool showText: root.barBatteryVisible && root.batteryDisplayMode === 1
+    readonly property color ink: root.barBatteryVisible && root.bar ? root.barIconColor
+      : (root.bar ? root.bar.barForeground : undefined)
+
+    visible: !root.barBatteryVisible || root.batteryDisplayMode !== 2
+    anchors.centerIn: parent
+    width: showText ? barBatteryText.width + Style.space(4) + barEarbud.width : barEarbud.width
+    height: Math.max(barEarbud.height, showText ? barBatteryText.height : 0)
+
+    Text {
+      id: barBatteryText
+      visible: barBatteryGroup.showText
+      text: root.barBatteryText
+      color: barBatteryGroup.ink
+      font.family: root.fontFamily
+      font.pixelSize: Style.bar.iconFont
+      renderType: Text.NativeRendering
+      anchors.left: parent.left
+      anchors.verticalCenter: parent.verticalCenter
+    }
+
+    SoundcoreIcon {
+      id: barEarbud
+      iconSize: Style.space(12)
+      color: barBatteryGroup.ink
+      anchors.right: parent.right
+      anchors.verticalCenter: parent.verticalCenter
+    }
+  }
+
+  // Mode 2's per-pod row, likewise outside BarIconContent. Loaded through it
+  // this measured ~140px wide, so the normaliser divided 12 by 140 and shrank
+  // every battery icon to about a pixel -- the "invisible" mode 2. At natural
+  // size the row is exactly the width slotSize already reserves for it.
+  GridLayout {
+    id: barBatteryRow
+    visible: root.barBatteryVisible && root.batteryDisplayMode === 2
+    columns: bar && bar.vertical ? 1 : 3
+    columnSpacing: Style.space(8)
+    rowSpacing: Style.space(4)
+    anchors.centerIn: parent
+
+    Repeater {
+      model: [{kind: "left", level: pods.leftLevel}, {kind: "right", level: pods.rightLevel}, {kind: "case", level: pods.caseLevel}]
+      GridLayout {
+        required property var modelData
+        Layout.alignment: Qt.AlignCenter
+        columns: bar && bar.vertical ? 1 : 2
+        columnSpacing: Style.space(3)
+        rowSpacing: Style.space(2)
+        ControlIcon {
+          Layout.alignment: Qt.AlignVCenter
+          Layout.preferredWidth: Style.space(16)
+          Layout.preferredHeight: Style.space(16)
+          kind: modelData.kind
+          ink: root.barIconColor
+        }
+        Text {
+          Layout.alignment: Qt.AlignVCenter
+          text: modelData.level < 0 ? "—" : modelData.level + "%"
+          color: root.barIconColor
+          font.family: root.fontFamily
+          font.pixelSize: Style.font.caption
+        }
+      }
     }
   }
 
