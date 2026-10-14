@@ -44,7 +44,7 @@ BarWidget {
   }
 
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(1.5)
-  readonly property real contentWidth: (Style.space(20) + Style.space(1)) * root.workspaceIds().length - Style.space(1)
+  readonly property real contentWidth: (Style.space(18) + Style.space(1)) * root.workspaceIds().length - Style.space(1)
 
   implicitWidth: contentWidth + trailingGap
   implicitHeight: root.barSize
@@ -67,9 +67,9 @@ BarWidget {
         readonly property bool occupied: workspace !== null && workspace.toplevels.values.length > 0
         readonly property bool focused: Hyprland.focusedWorkspace !== null && Hyprland.focusedWorkspace.id === modelData
 
-        width: root.vertical ? root.barSize : Style.space(20)
-        height: root.vertical ? Style.space(20) : root.barSize
-        x: index * (Style.space(20) + Style.space(1))
+        width: root.vertical ? root.barSize : Style.space(18)
+        height: root.vertical ? Style.space(18) : root.barSize
+        x: index * (Style.space(18) + Style.space(1))
         anchors.verticalCenter: parent.verticalCenter
 
         WidgetButton {

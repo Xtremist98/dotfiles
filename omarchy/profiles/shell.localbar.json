@@ -26,8 +26,7 @@
         ],
         [
           "wian47.removable-drives",
-          "io.github.birajdotdev.omacore",
-          "local.dropbox"
+          "io.github.birajdotdev.omacore"
         ]
       ],
       "innerPadding": 6,
@@ -61,7 +60,7 @@
           "lifeExpectancy": 90,
           "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
           "type": "qml",
-          "verticalFormat": "HH\n—\nmm"
+          "verticalFormat": "HH\n\u2014\nmm"
         },
         {
           "color": "color02",
@@ -120,7 +119,8 @@
             "qbittorrent",
             "discord",
             "vesktop",
-            "chatgpt"
+            "chatgpt",
+            "dropbox"
           ],
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
@@ -133,11 +133,7 @@
         {
           "color": "color02",
           "id": "io.github.birajdotdev.omacore",
-          "batteryDisplayMode": 0
-        },
-        {
-          "color": "color02",
-          "id": "local.dropbox"
+          "batteryDisplayMode": 1
         },
         {
           "color": "color02",

@@ -11,11 +11,12 @@ Panel {
   id: root
   moduleName: "omarchy.monitor"
   ipcTarget: "omarchy.monitor"
-  manageIpc: false
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
     : (bar ? bar.panelForeground : Commons.Color.foreground)
+
+  manageIpc: false
 
   // manageIpc: false so this panel can own the single IpcHandler the target
   // permits — needed for the brightness + state methods below.
@@ -192,6 +193,7 @@ Panel {
   // taller than its allotted height (lots of displays). Mirrors audio's
   // ensureCursorVisible helper.
   function ensureCursorVisible(item) {
+    var scrollArea = panel.loadedContent ? panel.loadedContent.scrollArea : null
     if (!item || !scrollArea) return
     var flick = scrollArea.contentItem
     if (!flick || flick.contentY === undefined) return
@@ -222,7 +224,7 @@ Panel {
     })
   }
 
-  IpcHandler {
+  ShellIpc {
     target: "omarchy.monitor"
 
     function brightness(percent: string): string { return root.brightnessIpc(percent) }
@@ -249,7 +251,7 @@ Panel {
     }
 
     root.brightnessSetQueued = false
-    setBrightnessProc.command = ["bash", "-c", "omarchy-brightness-display --no-osd " + percent + "%"]
+    setBrightnessProc.command = ["omarchy-brightness-display", "--no-osd", "--monitor", root.focusedMonitor, percent + "%"]
     setBrightnessProc.running = true
   }
 
@@ -305,7 +307,13 @@ Panel {
     if (!name) return
     if (enabled && root.enabledDisplayCount <= 1) return
 
-    actionProc.command = ["hyprctl", "keyword", "monitor", name + (enabled ? ",disable" : ",preferred,auto,auto")]
+    // hyprctl keyword is rejected under the Lua config ("non-legacy parsers"),
+    // so drive the monitor through the hl.monitor eval API instead.
+    var output = '"' + name.replace(/[\\"]/g, "\\$&") + '"'
+    var expr = enabled
+      ? 'hl.monitor({ output = ' + output + ', disabled = true })'
+      : 'hl.monitor({ output = ' + output + ', disabled = false, mode = "preferred", position = "auto", scale = "auto" })'
+    actionProc.command = ["hyprctl", "eval", expr]
     if (!actionProc.running) actionProc.running = true
   }
 
@@ -356,9 +364,9 @@ Panel {
 
   Component.onCompleted: refresh()
 
-  // KeyboardPanel takes Exclusive focus at map-time, so SUPER-bound IPC
-  // summons land with j/k ready to navigate. Keep a default landing point,
-  // but don't paint the cursor until hover or the first navigation key.
+  // KeyboardPanel primes focus at open-time, so SUPER-bound IPC summons land
+  // with j/k ready to navigate. Keep a default landing point, but don't paint
+  // the cursor until hover or the first navigation key.
   onOpenedChanged: {
     if (opened) {
       refresh()
@@ -474,8 +482,8 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    foreground: root.glyphColor
     slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
+    foreground: root.glyphColor
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
     text: Quickshell.screens.length > 1 ? "󰍺" : "󰍹"
@@ -496,12 +504,14 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened
-    focusTarget: keyCatcher
+    focusTarget: panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(panelColumn.implicitHeight, Style.space(560))
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight, Style.space(560))
 
-    PanelKeyCatcher {
+    content: PanelKeyCatcher {
       id: keyCatcher
+      property alias scrollArea: scrollArea
+      implicitHeight: panelColumn.implicitHeight
       anchors.fill: parent
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive) { root.cursorActive = true; return }
@@ -540,6 +550,7 @@ Panel {
 
             Text {
               id: heroIcon
+              textFormat: Text.PlainText
               text: root.displays.length > 1 ? "󰍺" : "󰍹"
               color: root.bar.panelForeground
               font.family: root.bar.fontFamily
@@ -568,6 +579,7 @@ Panel {
 
               Text {
                 id: heroLabel
+                textFormat: Text.PlainText
                 text: {
                   if (root.brightnessAvailable) {
                     return root.brightnessName(brightnessSlider.dragging ? brightnessSlider.liveValue : root.brightnessPercent).toUpperCase()
@@ -611,6 +623,7 @@ Panel {
 
               Text {
                 id: brightnessPercent
+                textFormat: Text.PlainText
                 text: Math.round(brightnessSlider.dragging ? brightnessSlider.liveValue : root.brightnessPercent) + "%"
                 color: Qt.darker(root.bar.panelForeground, 1.4)
                 font.family: root.bar.fontFamily
@@ -686,6 +699,7 @@ Panel {
 
               Text {
                 id: textSizePx
+                textFormat: Text.PlainText
                 text: (textSizeSlider.dragging
                        ? root.textSizeStops[Math.round(textSizeSlider.liveValue)]
                        : root.displayedTextPx()) + "px"
@@ -762,6 +776,7 @@ Panel {
               // focused one.
               Text {
                 id: scaleMonitor
+                textFormat: Text.PlainText
                 text: root.focusedMonitor
                 // Only worth naming when more than one display is in play.
                 visible: root.focusedMonitor !== "" && root.enabledDisplayCount > 1
@@ -902,6 +917,7 @@ Panel {
       }
 
       Text {
+        textFormat: Text.PlainText
         text: monitorRow.display.name + (monitorRow.display.focused ? " · focused" : "")
         color: root.bar.panelForeground
         font.family: root.bar.fontFamily
@@ -912,6 +928,7 @@ Panel {
       }
 
       Text {
+        textFormat: Text.PlainText
         text: monitorRow.display.enabled ? "󰄬" : ""
         color: root.bar.panelForeground
         font.family: root.bar.fontFamily

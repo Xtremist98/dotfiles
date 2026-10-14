@@ -155,7 +155,9 @@ Panel {
   readonly property int batteryDisplayMode: pendingBatteryDisplay >= 0 ? pendingBatteryDisplay : Model.batteryDisplayMode(setting("batteryDisplayMode", showBatteryPercent ? 1 : 0))
   readonly property bool barBatteryVisible: batteryDisplayMode !== 0 && pods.hasEarbuds
   readonly property string barBatteryText: Model.barBatteryText(batteryDisplayMode, pods.leftLevel, pods.rightLevel, pods.caseLevel)
-  TextMetrics { id: batteryTextMetrics; text: root.batteryDisplayMode === 2 ? [pods.leftLevel, pods.rightLevel, pods.caseLevel].map(function (level) { return level < 0 ? "—" : level + "%" }).join("") : root.barBatteryText; font.family: root.fontFamily; font.pixelSize: Style.bar.iconFont }
+  // Two points under the bar's icon-font token: this mark is 3:2, so at the
+  // full font it reads wider and heavier than the single-glyph neighbours.
+  TextMetrics { id: batteryTextMetrics; text: root.batteryDisplayMode === 2 ? [pods.leftLevel, pods.rightLevel, pods.caseLevel].map(function (level) { return level < 0 ? "—" : level + "%" }).join("") : root.barBatteryText; font.family: root.fontFamily; font.pixelSize: Math.max(8, Style.bar.iconFont - 1) }
 
   readonly property color foreground: bar ? bar.panelForeground : Commons.Color.foreground
   readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
@@ -434,7 +436,7 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    slotSize: root.barBatteryVisible ? (bar && bar.vertical ? Style.space(root.batteryDisplayMode === 2 ? 112 : 42) : batteryTextMetrics.width + Style.space(root.batteryDisplayMode === 2 ? 82 : 30)) : Style.bar.iconSlot
+    slotSize: root.barBatteryVisible ? (bar && bar.vertical ? Style.space(root.batteryDisplayMode === 2 ? 112 : 38) : batteryTextMetrics.width + Style.space(root.batteryDisplayMode === 2 ? 82 : 26)) : Style.bar.iconSlot
     // Unused for drawing now that the icon component is empty; kept so mode 2 still
     // gets a canvas wide enough to centre its row against.
     opticalSize: root.batteryDisplayMode === 2 ? slotSize : Style.bar.iconCanvas
@@ -461,10 +463,12 @@ Panel {
   // That loader rescales whatever it is given by Style.bar.iconSize over the
   // component's largest side, and because the two-earbud mark is 3:2 it was
   // normalised by its width into 12x8 -- squat beside the 12px-tall glyphs
-  // around it. Unrescaled it is 18x12: the same optical height as its
-  // neighbours, with the width the mark actually needs. Sizing the label here
-  // too keeps the gap between them an explicit space rather than whatever slack
-  // the 16px icon canvas happened to leave.
+  // around it. Unrescaled it draws at its own Style.space(12) (18x12), which
+  // is the size every other bar glyph resolves to. The label sits one point
+  // under icon-font (12px) so it matches the other bar labels rather than the
+  // icon-font default, and slotSize reserves the matching padding. Sizing the
+  // label here keeps the gap between them an explicit space rather than
+  // whatever slack the 16px icon canvas happened to leave.
   Item {
     id: barBatteryGroup
     readonly property bool showText: root.barBatteryVisible && root.batteryDisplayMode === 1
@@ -482,7 +486,7 @@ Panel {
       text: root.barBatteryText
       color: barBatteryGroup.ink
       font.family: root.fontFamily
-      font.pixelSize: Style.bar.iconFont
+      font.pixelSize: Math.max(8, Style.bar.iconFont - 1)
       renderType: Text.NativeRendering
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter

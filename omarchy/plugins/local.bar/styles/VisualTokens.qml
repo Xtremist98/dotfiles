@@ -42,7 +42,7 @@ Item {
   readonly property int pillPaddingX: Commons.Style.space(9)
   readonly property int labelSize: Commons.Style.font.body
   readonly property int captionSize: Commons.Style.font.caption
-  readonly property int iconSize: Commons.Style.space(17)
+  readonly property int iconSize: Commons.Style.space(14)
   readonly property int contentGap: Commons.Style.space(5)
   readonly property int compactGap: Commons.Style.space(4)
   readonly property int groupGap: Commons.Style.space(6)

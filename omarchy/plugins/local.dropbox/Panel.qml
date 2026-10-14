@@ -49,7 +49,7 @@ Panel {
   // Style.bar.iconSize anyway, so barIconSize only bites now that the icon is
   // drawn outside it: 9 renders 10.6x9, one step under the 12x10.2 it used to
   // normalise to.
-  readonly property int barIconSize: Style.space(9)
+  readonly property int barIconSize: Style.space(12)
   readonly property color barIconColor: root.barGlyphColor
   // Only claim the header cursor when the switch is actually on screen —
   // "header" stays navigable, but an absent CLI leaves nothing to highlight.

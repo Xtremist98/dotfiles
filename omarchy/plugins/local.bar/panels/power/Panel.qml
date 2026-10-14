@@ -11,15 +11,25 @@ Panel {
   id: root
   moduleName: "omarchy.power"
   ipcTarget: "omarchy.power"
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, bar.panelForeground)
     : (bar ? bar.panelForeground : Commons.Color.foreground)
+
+  // manageIpc: false so this panel can own the single IpcHandler the target
+  // permits — needed for the togglePercentage method below.
+  manageIpc: false
   property var batteryInfo: ({})
   property var systemInfo: ({})
   property var profiles: []
   property string activeProfile: ""
   property int profileIndex: 0
   property bool cursorActive: false
+  readonly property bool showPercentage: setting("showPercentage", false) === true
+  // With the percentage shown the button paints a text block wider than an
+  // icon, so the open-panel mark takes the painted width instead of the
+  // icon-sized fraction of the slot the fallback assumes.
+  readonly property real openPanelIndicatorWidth: showPercentage && !button.vertical ? button.glyphPaintedWidth : 0
   readonly property bool batteryPresent: {
     var device = UPower.displayDevice
     return !!(device && device.isPresent)
@@ -165,6 +175,22 @@ Panel {
     actionProc.running = true
   }
 
+  function togglePercentage() {
+    root.settings = Object.assign({}, root.settings, { showPercentage: !root.showPercentage })
+    if (root.bar && root.bar.shell) root.bar.shell.updateEntryInline(root.moduleName, root.settings)
+  }
+
+  ShellIpc {
+    target: "omarchy.power"
+
+    function open() { root.open() }
+    function close() { root.close() }
+    function show() { root.open() }
+    function hide() { root.close() }
+    function toggle() { root.toggle() }
+    function togglePercentage() { root.togglePercentage() }
+  }
+
   onOpenedChanged: {
     if (opened) {
       if (!batteryPresent) {
@@ -225,8 +251,8 @@ Panel {
   SequentialAnimation {
     id: phraseSwap
     PropertyAnimation {
-      target: heroStatus; property: "opacity"
-      to: 0.0; duration: 180; easing.type: Easing.OutQuad
+      target: panel.loadedContent ? panel.loadedContent.heroStatus : null; property: "opacity"
+      to: 0.0; duration: Style.duration(180); easing.type: Easing.OutQuad
     }
     ScriptAction {
       script: {
@@ -235,8 +261,8 @@ Panel {
       }
     }
     PropertyAnimation {
-      target: heroStatus; property: "opacity"
-      to: 1.0; duration: 260; easing.type: Easing.InQuad
+      target: panel.loadedContent ? panel.loadedContent.heroStatus : null; property: "opacity"
+      to: 1.0; duration: Style.duration(260); easing.type: Easing.InQuad
     }
   }
 
@@ -248,7 +274,7 @@ Panel {
     function onRotatingPhrasesChanged() {
       if (!root.rotatingPhrases) {
         phraseSwap.stop()
-        heroStatus.opacity = 1.0
+        if (panel.loadedContent) panel.loadedContent.heroStatus.opacity = 1.0
       }
     }
   }
@@ -258,12 +284,17 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     foreground: root.glyphColor
-    slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
     text: root.batteryIcon()
+    labelText: root.showPercentage && !vertical ? Math.round(root.batteryFraction * 100) + "%" : ""
+    slotSize: Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
     tooltipText: ""
-    onPressed: function(b) { if (root.batteryPresent) root.toggle() }
+    onPressed: function(b) {
+      if (!root.batteryPresent) return
+      if (b === Qt.RightButton) root.togglePercentage()
+      else root.toggle()
+    }
   }
 
   KeyboardPanel {
@@ -272,13 +303,15 @@ Panel {
     owner: root
     bar: root.bar
     open: root.opened && root.batteryPresent
-    focusTarget: keyCatcher
+    focusTarget: panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(380))
-    contentHeight: panel.fittedContentHeight(column.implicitHeight)
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight)
 
-    PanelKeyCatcher {
+    content: PanelKeyCatcher {
       id: keyCatcher
+      property alias heroStatus: heroStatus
       anchors.fill: parent
+      implicitHeight: column.implicitHeight
       onMoveRequested: function(dx, dy) {
         if (!root.cursorActive) { root.cursorActive = true; return }
         if (dx !== 0) root.selectProfileByDelta(dx)
@@ -302,6 +335,7 @@ Panel {
 
           Text {
             id: heroIcon
+            textFormat: Text.PlainText
             text: root.batteryIcon()
             color: root.bar.panelForeground
             font.family: root.bar.fontFamily
@@ -309,7 +343,7 @@ Panel {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
 
-            Behavior on color { ColorAnimation { duration: 200 } }
+            Behavior on color { ColorAnimation { duration: Style.duration(200) } }
           }
 
           Column {
@@ -333,6 +367,7 @@ Panel {
 
             Text {
               id: heroStatus
+              textFormat: Text.PlainText
               text: root.heroStatusText.toUpperCase()
               color: Qt.darker(root.bar.panelForeground, 1.4)
               font.family: root.bar.fontFamily
@@ -346,6 +381,7 @@ Panel {
 
           Text {
             id: heroPercent
+            textFormat: Text.PlainText
             text: root.batteryInfo.percentage || "—"
             color: root.bar.panelForeground
             font.family: root.bar.fontFamily
@@ -354,7 +390,7 @@ Panel {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
 
-            Behavior on color { ColorAnimation { duration: 200 } }
+            Behavior on color { ColorAnimation { duration: Style.duration(200) } }
           }
         }
 
@@ -379,12 +415,12 @@ Panel {
             color: root.batteryFillColor
             width: Math.max(barTrack.height, barTrack.width * root.batteryFraction)
 
-            Behavior on width { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
-            Behavior on color { ColorAnimation { duration: 220 } }
+            Behavior on width { NumberAnimation { duration: Style.duration(320); easing.type: Easing.OutCubic } }
+            Behavior on color { ColorAnimation { duration: Style.duration(220) } }
 
             // Subtle pulse while charging — visible signal that energy is flowing in.
             SequentialAnimation on opacity {
-              running: root.charging && !root.fullyCharged && root.opened
+              running: root.charging && !root.fullyCharged && root.opened && !Style.reduceMotion
               loops: Animation.Infinite
               alwaysRunToEnd: true
               NumberAnimation { from: 1.0; to: 0.55; duration: 950; easing.type: Easing.InOutSine }
@@ -494,6 +530,7 @@ Panel {
   }
 
   component InfoLabel: Text {
+    textFormat: Text.PlainText
     color: root.bar.panelForeground
     opacity: 0.6
     font.family: root.bar.fontFamily
@@ -501,6 +538,7 @@ Panel {
   }
 
   component InfoValue: Text {
+    textFormat: Text.PlainText
     color: root.bar.panelForeground
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall

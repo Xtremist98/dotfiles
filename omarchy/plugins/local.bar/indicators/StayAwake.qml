@@ -5,8 +5,17 @@ import qs.Ui
 BarIndicator {
   id: root
 
-  fontSize: Style.bar.iconFont - 1
+  fontSize: 12
   fixedWidth: Style.bar.statusSlot
+
+  // Draw the mark at pixelSize instead of the 12px global cap. See
+  // IndicatorGlyph.qml for why `fontSize` alone cannot do this.
+  iconComponent: Component { Item {} }
+
+  IndicatorGlyph {
+    text: root.text
+    font.family: root.fontFamily
+  }
   transform: Translate { x: -Style.spaceReal(1) }
 
   readonly property var idleService: bar?.shell?.firstPartyServiceFor("omarchy.idle")
