@@ -21,8 +21,8 @@ BarIndicator {
   readonly property var idleService: bar?.shell?.firstPartyServiceFor("omarchy.idle")
 
   active: idleService ? idleService.stayAwake : false
-  activeText: "󰅶"
-  inactiveText: "󰅶"
+  activeText: ""
+  inactiveText: ""
   activeTooltipText: "Allow Idle Lock & Screensaver"
   inactiveTooltipText: "Stay Awake"
 

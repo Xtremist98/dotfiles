@@ -31,9 +31,10 @@ Panel {
     { icon: "", label: "Lock", command: ["omarchy-system-lock"] },
     { icon: "󰒲", label: "Suspend", command: ["systemctl", "suspend"] },
     { icon: "󰤁", label: "Hibernate", command: ["systemctl", "hibernate"] },
-    { icon: "󰍃", label: "Logout", command: ["omarchy-system-logout"] },
-    { icon: "󰜉", label: "Reboot", command: ["omarchy-system-reboot"] },
-    { icon: "󰐥", label: "Shutdown", command: ["omarchy-system-shutdown"], urgent: true }
+    { icon: "󰍃", label: "Logout", command: ["omarchy-system", "logout"] },
+    { icon: "󰜉", label: "Reboot", command: ["omarchy-system", "reboot"] },
+    { icon: "󰜉", label: "Reboot to Boot Menu", command: ["omarchy-system", "reboot-boot-menu"] },
+    { icon: "󰐥", label: "Shutdown", command: ["omarchy-system", "shutdown"], urgent: true }
   ]
 
   property var quotes: [

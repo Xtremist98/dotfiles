@@ -10,8 +10,8 @@ BarWidget {
   moduleName: "netspeed"
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.barForeground)
-    : (bar ? bar.barForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, bar.panelForeground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
 
   property string curIface: ""
   property var prevRx: 0
@@ -119,7 +119,7 @@ BarWidget {
     anchors.rightMargin: Style.space(2)
     width: 1
     height: Math.min(parent.height - 14, 11)
-    color: bar ? bar.barForeground : Commons.Color.foreground
+    color: bar ? bar.panelForeground : Commons.Color.foreground
     opacity: 0.16
   }
 }

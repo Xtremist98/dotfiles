@@ -19,7 +19,7 @@ function entryId(entry) {
 }
 
 function layoutHasWidget(layout, id) {
-  var sections = ["left", "center", "right"]
+  var sections = ["left", "center", "right", "tray"]
   for (var s = 0; s < sections.length; s++) {
     var entries = layout && layout[sections[s]]
     if (!Array.isArray(entries)) continue
@@ -30,6 +30,13 @@ function layoutHasWidget(layout, id) {
   return false
 }
 
+// A bar widget that stands in for an app's tray item takes its place: the app's
+// own icon would only show the same thing twice.
+var widgetsForTrayItems = [
+  { widget: "omarchy.dropbox", item: "dropbox" },
+  { widget: "superwhisper.panel", item: "superwhisper" }
+]
+
 function ownedByOmarchy(item, layout) {
   // LocalSend's item shows no state, offers only Open and Quit, and its primary
   // click is a no-op, so Share > Receive is the whole surface. Hiding it by hand
@@ -38,6 +45,10 @@ function ownedByOmarchy(item, layout) {
   // The dedicated Dropbox widget (local.dropbox) now owns the surface — Open,
   // pause/resume, recent files — so the redundant tray item is dropped.
   if ((layoutHasWidget(layout, "local.dropbox") || layoutHasWidget(layout, "omarchy.dropbox")) && itemNamed(item, "dropbox")) return true
+  for (var i = 0; i < widgetsForTrayItems.length; i++) {
+    var owner = widgetsForTrayItems[i]
+    if (itemNamed(item, owner.item) && layoutHasWidget(layout, owner.widget)) return true
+  }
   return false
 }
 

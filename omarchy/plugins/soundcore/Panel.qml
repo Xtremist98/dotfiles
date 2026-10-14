@@ -155,9 +155,31 @@ Panel {
   readonly property int batteryDisplayMode: pendingBatteryDisplay >= 0 ? pendingBatteryDisplay : Model.batteryDisplayMode(setting("batteryDisplayMode", showBatteryPercent ? 1 : 0))
   readonly property bool barBatteryVisible: batteryDisplayMode !== 0 && pods.hasEarbuds
   readonly property string barBatteryText: Model.barBatteryText(batteryDisplayMode, pods.leftLevel, pods.rightLevel, pods.caseLevel)
+
+  // The percentage sits half a pixel under the bar icon size and one weight step
+  // up, so it reads solid instead of spindly at that size -- the buds beside it
+  // are drawn as filled shapes, and plain 12px Regular digits next to them look
+  // thin. Two notes: font.pixelSize is an integer, so the half pixel needs
+  // font.pointSize; and only Regular and Bold of the bar font are installed
+  // here, so Font.Bold is the only step up that exists. The 72/96 converts
+  // pixels to points at Qt's default logical DPI -- revisit if the display
+  // scale ever changes, since pointSize follows DPI and pixelSize does not.
+  // Target size for the percentage, in pixels: the bar icon size, a hair under.
+  readonly property real barBatteryFontPixels: Style.bar.iconFont - 1 - 0.3
+  readonly property real barBatteryFontPointSize: barBatteryFontPixels * 72 / 96
+
+  // The two-earbud mark is 12px tall, but its ink is not: the round heads carry
+  // rows 19-21 (3833/3697/3535 units) while rows 24-28 are only the thin stems,
+  // so its ink-weighted optical centre sits at 21.6 - well above the 22.5 that
+  // its 17..28 bounding box suggests. The digits are aligned to that optical
+  // centre, not to the bounding box, or they ride up level with the tips and
+  // leave the stems hanging below. Nudge 0 lands them within 0.22px; any
+  // non-zero nudge is quantised away or overshoots, because NativeRendering
+  // snaps glyphs to whole pixels.
+  readonly property real barBatteryTextNudge: 0
   // Two points under the bar's icon-font token: this mark is 3:2, so at the
   // full font it reads wider and heavier than the single-glyph neighbours.
-  TextMetrics { id: batteryTextMetrics; text: root.batteryDisplayMode === 2 ? [pods.leftLevel, pods.rightLevel, pods.caseLevel].map(function (level) { return level < 0 ? "—" : level + "%" }).join("") : root.barBatteryText; font.family: root.fontFamily; font.pixelSize: Math.max(8, Style.bar.iconFont - 1) }
+  TextMetrics { id: batteryTextMetrics; text: root.batteryDisplayMode === 2 ? [pods.leftLevel, pods.rightLevel, pods.caseLevel].map(function (level) { return level < 0 ? "—" : level + "%" }).join("") : root.barBatteryText; font.family: root.fontFamily; font.pointSize: root.barBatteryFontPointSize; font.weight: Font.Bold }
 
   readonly property color foreground: bar ? bar.panelForeground : Commons.Color.foreground
   readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
@@ -386,7 +408,20 @@ Panel {
   onSettingsChanged: pendingBatteryDisplay = -1
 
   visible: !hideWhenDisconnected || pods.hasEarbuds || pods.cliMissing || pods.registeredMissing || pods.statusStale || pods.availableDevices.length > 0
-  implicitWidth: button.implicitWidth
+  // Trailing breathing room inside the bar pill. This used to mirror the button
+  // with anchors.fill, so the pill width came straight from the content and the
+  // earbuds sat flush against the pill's right border — unlike widgets that add
+  // symmetric padding (local.memory: content + 2 * pillPaddingX). Giving the
+  // panel trailing space and keeping the button at its natural width, anchored
+  // left, puts that space after the content instead of around it.
+  // Trailing breathing room inside the bar pill. barBatteryGroup below is a
+  // sibling of `button`, so it centres in this panel (anchors.centerIn) and the
+  // earbuds sat half the padding away from the pill's right border — unlike
+  // widgets that add symmetric padding (local.memory: content + 2 * pillPaddingX).
+  // The panel grows by this much and the group shifts left by half of it, so the
+  // whole amount lands after the earbuds.
+  readonly property real barBatteryTrailingPad: Style.space(6)
+  implicitWidth: button.implicitWidth + barBatteryTrailingPad
   implicitHeight: button.implicitHeight
 
   onOpenedChanged: if (opened) {
@@ -477,6 +512,7 @@ Panel {
 
     visible: !root.barBatteryVisible || root.batteryDisplayMode !== 2
     anchors.centerIn: parent
+    anchors.horizontalCenterOffset: -root.barBatteryTrailingPad / 2
     width: showText ? barBatteryText.width + Style.space(4) + barEarbud.width : barEarbud.width
     height: Math.max(barEarbud.height, showText ? barBatteryText.height : 0)
 
@@ -486,10 +522,12 @@ Panel {
       text: root.barBatteryText
       color: barBatteryGroup.ink
       font.family: root.fontFamily
-      font.pixelSize: Math.max(8, Style.bar.iconFont - 1)
+      font.pointSize: root.barBatteryFontPointSize
+      font.weight: Font.Bold
       renderType: Text.NativeRendering
       anchors.left: parent.left
       anchors.verticalCenter: parent.verticalCenter
+      anchors.verticalCenterOffset: root.barBatteryTextNudge
     }
 
     SoundcoreIcon {

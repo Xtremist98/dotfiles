@@ -42,10 +42,23 @@ BarWidget {
   readonly property int trayItemExtent: Style.bar.iconSlot
   readonly property int trayItemGap: 0
   readonly property int trayJoinGap: 0
-  readonly property int drawerExtent: drawerCount > 0 ? drawerCount * trayItemExtent + (drawerCount - 1) * trayItemGap : 0
+  readonly property int drawerExtent: drawerCount * trayItemExtent + Math.max(0, drawerCount - 1) * trayItemGap + sectionExtent
+  // Bar widgets dragged into the tray section sit in the drawer after the
+  // app icons. The bar draws them into sectionHost, and its dropSpace is the
+  // empty place offered to drop the first one.
+  property Item sectionHost: null
+  readonly property int sectionCount: bar && bar.layoutConfig && Array.isArray(bar.layoutConfig.tray) ? bar.layoutConfig.tray.length : 0
+  readonly property real sectionExtent: sectionHost ? (vertical ? sectionHost.implicitHeight : sectionHost.implicitWidth) : 0
+  // A widget being dragged along the bar opens the drawer, to show where it
+  // can go, and so does any panel open from the tray or the tray section.
+  readonly property bool barDragging: !!bar && bar.traySectionDragActive === true
+  readonly property bool holdOpen: trayMenuOpen || managePopupOpen || barDragging || (!!bar && bar.traySectionPopoutOpen === true)
+  // The mark under the bar sits under the icon whose menu is open.
+  readonly property Item openPanelIndicatorItem: trayMenuOpen ? activeTrayAnchor : null
+  readonly property bool hasDrawer: allItems.length > 0 || sectionCount > 0 || barDragging
   // Match Waybar's group/tray-expander drawer transition-duration.
   readonly property int animationDuration: 600
-  property real revealProgress: expanded ? 1 : 0
+  property real revealProgress: expanded || holdOpen ? 1 : 0
   readonly property real revealExtent: drawerExtent * revealProgress
 
   // --- Custom "collapsed drawer + expanding single-pill" look ---
@@ -64,6 +77,7 @@ BarWidget {
   readonly property int pillRadius: root.bar ? root.bar.boxRadius : Style.space(15)
   readonly property int chevronSize: root.bar ? root.bar.barSize : Style.space(38)
   readonly property int traySlot: root.trayItemExtent
+
 
 
   // Submenu drill-down state. QsMenuEntry.display() renders a *platform* menu,
@@ -258,7 +272,7 @@ BarWidget {
     persistTrayState(p, h)
   }
 
-  visible: root.allItems.length > 0
+  visible: root.pinnedItems.length > 0 || root.hasDrawer
   clip: false
   implicitWidth: root.vertical ? root.barSize : trayContent.implicitWidth
   implicitHeight: root.vertical ? trayContent.implicitHeight : root.barSize
@@ -282,16 +296,18 @@ BarWidget {
       // Collapsed = bare rose chevron (no pill). Expanded = one glassy pill
       // wrapping ALL tray icons (rose). The bar has the tray UNBOXED, so no
       // pill is drawn behind the collapsed chevron.
-      readonly property bool hasItems: root.allItems.length > 0
+      readonly property bool hasItems: root.allItems.length > 0 || root.sectionCount > 0
       readonly property int iconsExtent: root.allItems.length * root.traySlot
         + (root.allItems.length - 1) * root.trayItemGap
       readonly property int pillInnerPad: Style.space(7)
-      readonly property int pillWidth: root.expanded && hasItems
-        ? iconsExtent + pillInnerPad * 2
+      readonly property int pillWidth: (root.expanded || root.sectionCount > 0) && hasItems
+        ? iconsExtent + root.sectionExtent + pillInnerPad * 2
         : 0
 
       implicitWidth: root.bar && !root.bar.vertical
-        ? (root.expanded && hasItems ? pillWidth : (hasItems ? root.chevronSize : 0))
+        ? ((root.expanded || root.sectionCount > 0) && hasItems
+            ? pillWidth
+            : (hasItems ? root.chevronSize : 0))
         : 0
       implicitHeight: root.barSize
 
@@ -319,7 +335,10 @@ BarWidget {
       // ---- Expanded state: one glassy pill with all tray icons ----
       Rectangle {
         id: trayPill
-        visible: root.expanded && hasItems
+        // A populated tray section must stay realised even while collapsed:
+        // a hidden zero-size host can never resolve its ModuleList's width,
+        // so the section's widgets would silently fail to build.
+        visible: (root.expanded || root.sectionCount > 0) && hasItems
         width: horizontalTrayRoot.pillWidth
         height: root.pillHeight
         radius: root.pillRadius
@@ -339,6 +358,15 @@ BarWidget {
             model: root.allItems
             TrayItem {}
           }
+
+          // Bar widgets parked in the tray section, drawn by the bar itself.
+          Item {
+            visible: root.sectionCount > 0 || root.barDragging
+            width: visible ? Style.space(5) : 0
+            height: 0
+          }
+
+          SectionArea {}
         }
       }
 
@@ -365,17 +393,19 @@ BarWidget {
     Item {
       id: verticalTrayRoot
 
-      readonly property bool hasItems: root.allItems.length > 0
+      readonly property bool hasItems: root.allItems.length > 0 || root.sectionCount > 0
       readonly property int iconsExtent: root.allItems.length * root.traySlot
         + (root.allItems.length - 1) * root.trayItemGap
       readonly property int pillInnerPad: Style.space(7)
-      readonly property int pillHeight: root.expanded && hasItems
-        ? iconsExtent + pillInnerPad * 2
+      readonly property int pillHeight: (root.expanded || root.sectionCount > 0) && hasItems
+        ? iconsExtent + root.sectionExtent + pillInnerPad * 2
         : 0
 
       implicitWidth: root.barSize
       implicitHeight: root.bar && root.bar.vertical
-        ? (root.expanded && hasItems ? pillHeight : (hasItems ? root.chevronSize : 0))
+        ? ((root.expanded || root.sectionCount > 0) && hasItems
+            ? pillHeight
+            : (hasItems ? root.chevronSize : 0))
         : 0
 
       property bool hovered: false
@@ -399,7 +429,10 @@ BarWidget {
 
       Rectangle {
         id: trayPill
-        visible: root.expanded && hasItems
+        // A populated tray section must stay realised even while collapsed:
+        // a hidden zero-size host can never resolve its ModuleList's width,
+        // so the section's widgets would silently fail to build.
+        visible: (root.expanded || root.sectionCount > 0) && hasItems
         height: verticalTrayRoot.pillHeight
         width: root.barSize
         radius: root.pillRadius
@@ -419,6 +452,15 @@ BarWidget {
             model: root.allItems
             TrayItem {}
           }
+
+          // Bar widgets parked in the tray section, drawn by the bar itself.
+          Item {
+            visible: root.sectionCount > 0 || root.barDragging
+            width: visible ? Style.space(5) : 0
+            height: 0
+          }
+
+          SectionArea {}
         }
       }
 
@@ -832,6 +874,58 @@ BarWidget {
     }
   }
 
+  // The tray section's place in the drawer: the bar parents its widgets here,
+  // and while a widget is dragged with none here yet, an empty slot shows
+  // where to drop it.
+  component SectionArea: Item {
+    id: sectionArea
+    // The bar's widgets and the drop slot never show together, so both sit at
+    // the origin and the area takes the size of whichever is there.
+    implicitWidth: childrenRect.width
+    implicitHeight: childrenRect.height
+    // A ModuleList sizes itself from its own implicit width; give the area a
+    // floor so a section that has not laid out yet still occupies one slot.
+    readonly property int floor: root.trayItemExtent
+    width: Math.max(implicitWidth, visible && root.sectionCount > 0 ? floor : 0)
+    height: implicitHeight
+    // What the section's widgets take up. One hiding itself (an update badge
+    // with nothing to update) offers nowhere to drop, so that counts as empty.
+    readonly property real widgetsExtent: {
+      var size = 0
+      for (var i = 0; i < children.length; i++) {
+        var child = children[i]
+        if (child !== dropSpace && child.visible) size += root.vertical ? child.height : child.width
+      }
+      return size
+    }
+
+    property alias dropSpace: dropSpace
+
+    Component.onCompleted: root.sectionHost = sectionArea
+    // The bar can tear this area down after the widget itself is gone
+    // (a plugin rescan destroys them in its own order), so unregister
+    // only while the widget is still there to unregister from.
+    Component.onDestruction: if (root && root.sectionHost === sectionArea) root.sectionHost = null
+
+    Item {
+      id: dropSpace
+      readonly property string region: "tray"
+      readonly property string moduleName: ""
+      visible: root.barDragging && sectionArea.widgetsExtent === 0
+      width: visible ? root.trayItemExtent : 0
+      height: visible ? root.trayItemExtent : 0
+
+      Rectangle {
+        anchors.fill: parent
+        anchors.margins: Style.space(4)
+        radius: Style.space(4)
+        color: "transparent"
+        border.width: 1
+        border.color: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.45)
+      }
+    }
+  }
+
   component TrayItem: Item {
     id: trayItemRoot
 
@@ -840,6 +934,11 @@ BarWidget {
     visible: modelData.status !== Status.Passive
     implicitWidth: visible ? root.trayItemExtent : 0
     implicitHeight: visible ? root.trayItemExtent : 0
+    // A Row positions its children but never sizes or centres them, so an
+    // item left at zero height pins its 12px icon to the pill's top edge.
+    // Fill the row's own height instead, and the icon centres in the pill.
+    width: visible ? implicitWidth : 0
+    height: root.vertical ? implicitHeight : root.pillHeight
 
     function displayMenu(mouse) {
       root.openTrayMenu(trayItemRoot.modelData, trayItemRoot, mouse)

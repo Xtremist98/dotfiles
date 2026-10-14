@@ -20,10 +20,18 @@ Panel {
   ipcTarget: "removable-drives"
   manageIpc: false
 
-  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
+  // Resolve the per-entry swatch (shell.json's "color": "color02") the way every
+  // other widget here does, via the bar's palette lookup. bar.foreground is the
+  // bar's global ink, so before this the icon ignored its layout colour and the
+  // panel - which paints everything from root.foreground - ignored it too.
+  // Ui.Panel already declares `settings`, so injectProps fills it in for us.
+  readonly property color foreground: bar && bar.widgetGlyphColor && settings
+    ? bar.widgetGlyphColor(settings, bar.foreground)
+    : (bar ? bar.foreground : Commons.Color.foreground)
   readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
+
 
   readonly property bool alwaysShow: setting("alwaysShow", false) === true
   readonly property bool openOnMount: setting("openOnMount", true) === true
@@ -446,6 +454,9 @@ Panel {
     BarIconButton {
       anchors.fill: parent
       bar: root.bar
+      // WidgetButton.foreground defaults to bar.barForeground - the bar's global
+      // ink - so the glyph rendered cream whatever this entry's colour was.
+      foreground: root.foreground
       text: Model.barGlyph(root.devices)
       // The icon turns urgent while the kernel still has I/O in flight. That
       // is the whole warning: if it is lit, the drive is not safe to pull yet.
@@ -461,6 +472,7 @@ Panel {
     WidgetButton {
       anchors.fill: parent
       bar: root.bar
+      foreground: root.foreground
       text: Model.barGlyph(root.devices) + "  " + root.barLabel
       tooltipText: root.barTooltip
       active: drives.anyBusy

@@ -18,7 +18,7 @@ Item {
     anchors.rightMargin: Style.space(0)
     width: 1
     height: Math.min(parent.height - 14, 12)
-    color: bar ? bar.barForeground : Commons.Color.foreground
+    color: bar ? bar.panelForeground : Commons.Color.foreground
     opacity: 0.16
   }
 }

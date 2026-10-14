@@ -41,7 +41,7 @@
         "omarchy.tray"
       ]
     },
-    "centerAnchor": "omarchy.clock",
+    "centerAnchor": "local.clock",
     "id": "local.bar",
     "layout": {
       "center": [
@@ -56,7 +56,7 @@
           "color": "color02",
           "format": "dddd hh:mm A",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "id": "omarchy.clock",
+          "id": "local.clock",
           "lifeExpectancy": 90,
           "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
           "type": "qml",
@@ -119,7 +119,6 @@
             "qbittorrent",
             "discord",
             "vesktop",
-            "chatgpt",
             "dropbox"
           ],
           "id": "omarchy.tray",
@@ -133,7 +132,7 @@
         {
           "color": "color02",
           "id": "io.github.birajdotdev.omacore",
-          "batteryDisplayMode": 1
+          "batteryDisplayMode": "1"
         },
         {
           "color": "color02",
@@ -188,7 +187,8 @@
           "source": "~/.config/omarchy/plugins/local.bar/panels/system/Panel.qml",
           "type": "qml"
         }
-      ]
+      ],
+      "tray": []
     },
     "position": "top"
   },

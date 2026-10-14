@@ -43,6 +43,28 @@ BarWidget {
     root.bar.run("hyprctl dispatch " + Util.shellQuote("hl.dsp.focus({ workspace = \"" + id + "\" })"))
   }
 
+  // A wheel notch moves one entry along the row, and a touchpad adds up its
+  // smaller deltas until they make a notch's worth.
+  property real wheelAccumulator: 0
+
+  function focusedWorkspaceId() {
+    return Hyprland.focusedWorkspace !== null ? Hyprland.focusedWorkspace.id : -1
+  }
+
+  function scrollWorkspaces(delta) {
+    var wheel = Util.wheelSteps(root.wheelAccumulator, delta)
+    root.wheelAccumulator = wheel.remainder
+    if (wheel.steps === 0) return
+
+    // Holds at either end rather than wrapping, so a touchpad swipe that runs
+    // long stops on the last workspace.
+    var ids = root.workspaceIds()
+    var index = ids.indexOf(root.focusedWorkspaceId())
+    if (index === -1) return
+    var target = ids[Util.clamp(index - wheel.steps, 0, ids.length - 1)]
+    if (target !== ids[index]) root.focusWorkspace(target)
+  }
+
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(1.5)
   readonly property real contentWidth: (Style.space(18) + Style.space(1)) * root.workspaceIds().length - Style.space(1)
 
@@ -84,6 +106,7 @@ BarWidget {
           horizontalMargin: 0
           verticalPadding: 0
           onPressed: function() { root.focusWorkspace(modelData) }
+          onWheelMoved: function(delta) { root.scrollWorkspaces(delta) }
         }
       }
     }

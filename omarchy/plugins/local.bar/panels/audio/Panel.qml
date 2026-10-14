@@ -746,8 +746,8 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     foreground: root.glyphColor
+    slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
     text: ""
@@ -1184,7 +1184,6 @@ Panel {
     Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
     }
     }
-      
     }
   }
 
@@ -1399,6 +1398,13 @@ Panel {
 
       PanelSlider {
         bar: root.bar
+        // PanelSlider defaults its track/fill/knob off bar.foreground - the
+        // bar's global ink - so this slider was the only one in the panel
+        // painting cream. The output and input sliders already override all
+        // three with panelForeground; match them.
+        trackColor: Qt.rgba(root.bar.panelForeground.r, root.bar.panelForeground.g, root.bar.panelForeground.b, 0.22)
+        fillColor: root.bar.panelForeground
+        knobColor: root.bar.panelForeground
         width: parent.width
         minimum: 0
         maximum: 1.5

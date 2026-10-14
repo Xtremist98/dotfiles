@@ -10,8 +10,8 @@ BarWidget {
   moduleName: "omarchy.system-update"
 
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.barForeground)
-    : (bar ? bar.barForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, bar.panelForeground)
+    : (bar ? bar.panelForeground : Commons.Color.foreground)
 
   property bool updateAvailable: false
 
@@ -29,7 +29,7 @@ BarWidget {
   implicitWidth: button.implicitWidth
   implicitHeight: button.implicitHeight
 
-  IpcHandler {
+  ShellIpc {
     target: "omarchy.system-update"
 
     function refresh(): void {
