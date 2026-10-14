@@ -1,0 +1,285 @@
+#!/usr/bin/env python3
+"""
+lutgen-espressuccin — grade a real photo into the espressuccin palette.
+
+espressuccin is flat, warm and dark: every surface is #1a1713 (espresso),
+there is a single cream ink #d1c4a9, and the accent is sage #A7C080.
+So the job here is NOT to repaint the photo — it is to sink the darks into
+espresso and cool the sky down, then get out of the way.
+
+WHAT IS ALWAYS ON
+  -- shadow grade : dark, low-saturation areas blend toward the theme's
+                    `background` (#1a1713). A saturation gate protects
+                    colourful subjects, so a red car or a flower keeps its
+                    own colour instead of being flattened into the background.
+  -- sky grade    : hues in the azure band are darkened but KEEP THEIR OWN
+                    HUE (espressuccin has no blue in the palette, so mixing
+                    in a theme colour would look wrong -- a black sky does
+                    not).
+
+WHAT IS OFF BY DEFAULT, AND WHY
+  Colour remapping (reds / yellows / whites) is what made the old
+  everpuccin script produce heavy, artificial results -- flat red stickers on
+  bright objects, and every white highlight dragged to a saturated green.
+  espressuccin is a calm, flat theme, so none of that is on unless asked:
+    --red  HEX        map bright reds to HEX
+    --accent-warm     map bright yellows to the theme accent (sage)
+    --highlight HEX  map achromatic highlights to HEX (usually unwanted)
+
+Everything is theme-driven: colours are read from the live theme's
+colors.toml, so this follows espressuccin without hardcoding a palette.
+
+Examples
+  lutgen-espressuccin ~/Pictures/shot.jpg
+  lutgen-espressuccin *.jpg -o ~/Pictures/graded
+  lutgen-espressuccin shot.jpg --red '#7a3229' --accent-warm
+  lutgen-espressuccin shot.jpg --power 1.0 --chroma 1.0     # visibly stronger
+
+STRENGTH (both knobs point the same way -- DOWN power / UP chroma = more grade):
+  --power   mask = (1-lum)**power     so LOWER  = steeper = MORE grading
+  --chroma  gate = (1-sat/chroma)    so HIGHER = weaker protection = MORE grading
+  These are easy to get backwards because --chroma is a denominator, not a
+  threshold. Getting it wrong is silent: at --chroma 0.20 any pixel more
+  saturated than 0.20 gets mask 0 and the photo is left completely alone,
+  which looks like the script "did nothing".
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import re
+import sys
+
+try:
+    import numpy as np
+    from PIL import Image
+except ImportError:
+    sys.exit("lutgen-espressuccin needs numpy and Pillow: pip install numpy pillow")
+
+DESCRIPTION = __doc__          # module docstring, for --help
+DEFAULT_THEME = "espressuccin"
+DEFAULT_MAX = 2560          # this machine's monitor is 1920x1080; 6K is wasted work
+
+# fallbacks are espressuccin's, used only if a key is missing from colors.toml
+FALLBACK = {
+    "background": "1a1713", "accent": "A7C080", "red": "E67E80",
+    "yellow": "DBBC7F", "cyan": "83C092", "foreground": "d1c4a9",
+    "muted": "7c7468", "selection": "2e2a24",
+}
+
+
+def hex_to_rgb(h: str) -> np.ndarray:
+    h = h.strip().lstrip("#")
+    if not re.fullmatch(r"[0-9a-fA-F]{6}", h):
+        raise ValueError(f"bad hex colour: {h!r}")
+    return np.array([int(h[i:i + 2], 16) for i in (0, 2, 4)], dtype=np.float64) / 255.0
+
+
+def theme_name(explicit: str | None) -> str:
+    if explicit:
+        return explicit
+    f = os.path.expanduser("~/.local/state/omarchy/current/theme.name")
+    if os.path.isfile(f):
+        with open(f) as fh:
+            name = fh.read().strip().lower()
+        if name:
+            return name
+    return DEFAULT_THEME
+
+
+def load_palette(theme: str) -> dict[str, np.ndarray]:
+    """Read colors.toml. Parsed with re.match in Python, so there is no
+    shell-quoting trap here (the bash version of this silently never matched)."""
+    path = os.path.expanduser(f"~/.config/omarchy/themes/{theme}/colors.toml")
+    vals: dict[str, str] = {}
+    try:
+        with open(path) as fh:
+            for line in fh:
+                m = re.match(r'\s*([A-Za-z0-9_]+)\s*=\s*"#([0-9a-fA-F]{6})"', line)
+                if m:
+                    vals[m.group(1).lower()] = m.group(2)
+    except FileNotFoundError:
+        print(f"  ! no colors.toml for '{theme}', using espressuccin fallbacks",
+              file=sys.stderr)
+    pal = {k: hex_to_rgb(vals.get(k, dv)) for k, dv in FALLBACK.items()}
+    pal["_name"] = theme
+    return pal
+
+
+def rgb_to_hsv(a: np.ndarray):
+    mx = a.max(axis=-1)
+    mn = a.min(axis=-1)
+    d = mx - mn
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    nz = d > 1e-9
+    h = np.zeros_like(mx)
+    safe = np.maximum(d, 1e-9)
+    i = nz & (mx == r)
+    h[i] = ((g - b)[i] / safe[i]) % 6.0
+    i = nz & (mx == g)
+    h[i] = ((b - r)[i] / safe[i]) + 2.0
+    i = nz & (mx == b)
+    h[i] = ((r - g)[i] / safe[i]) + 4.0
+    h *= 60.0
+    s = np.where(mx > 1e-9, d / np.maximum(mx, 1e-9), 0.0)
+    return h, s, mx
+
+
+def band(h, lo, hi):
+    """inclusive hue band that wraps correctly around 360"""
+    return ((h >= lo) & (h <= hi)) if lo <= hi else ((h >= lo) | (h <= hi))
+
+
+def map_hue_luminance(a, mask, target_rgb, pull_lightness):
+    """Shift hue toward the target while preserving per-pixel lightness, so
+    shading and gradients survive. Avoids the flat 'sticker blob' look you get
+    from a hard blend."""
+    h, s, mx = rgb_to_hsv(a)
+    h, s = h.copy(), s.copy()
+    th, ts, _ = rgb_to_hsv(np.broadcast_to(target_rgb, (1, 3)))
+    th, ts = float(th[0]), float(ts[0])
+    # shortest path around the hue circle
+    diff = ((th - h + 180.0) % 360.0) - 180.0
+    strength = np.clip(mask * (0.35 + 0.65 * np.clip(mx / 0.7, 0, 1)), 0, 1)
+    h = (h + diff * strength) % 360.0
+    s = s + (ts - s) * strength
+    if pull_lightness is not None:
+        want = float(np.linalg.norm(target_rgb))
+        lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+        newlum = lum + (want - lum) * strength
+        scale = np.where(lum > 1e-6, newlum / np.maximum(lum, 1e-6), 1.0)
+        out = a * scale[..., None]
+    else:
+        out = a
+    i = mx <= 1e-9
+    hh = np.where(i, 0.0, h) / 60.0
+    c = (1 - np.abs((hh % 2) - 1)) * s
+    x = c * (1 - np.abs((hh % 2) - 1))
+    zz = np.zeros_like(c)
+    seg = np.floor(hh).astype(int) % 6
+    r = np.select([seg == i0 for i0 in range(6)],
+                  [c, c, zz, zz, x, c], default=zz)
+    g = np.select([seg == i0 for i0 in range(6)],
+                  [x, c, c, zz, zz, c], default=zz)
+    b = np.select([seg == i0 for i0 in range(6)],
+                  [zz, zz, x, c, c, c], default=zz)
+    m = mx - c
+    res = np.stack([r, g, b], axis=-1) + m[..., None]
+    return np.where(i[..., None], out, res)
+
+
+def grade(img: Image.Image, pal, args) -> Image.Image:
+    if args.max_size and max(img.size) > args.max_size:
+        img = img.copy()
+        img.thumbnail((args.max_size, args.max_size), Image.LANCZOS)
+    a = np.asarray(img.convert("RGB"), dtype=np.float64) / 255.0
+    lum = 0.2126 * a[..., 0] + 0.7152 * a[..., 1] + 0.0722 * a[..., 2]
+    _, sat, mx = rgb_to_hsv(a)
+    out = a
+
+    # 1. shadows -> theme background, protected by a saturation gate
+    prot = np.clip(sat / max(args.chroma, 1e-6), 0, 1)
+    m = np.clip(1.0 - lum, 0, 1) ** max(args.power, 0.01) * (1.0 - prot)
+    out = out * (1 - m[..., None]) + pal["background"] * m[..., None]
+
+    # 2. sky -> darkened, keeping its own hue
+    if not args.no_sky:
+        h, _, _ = rgb_to_hsv(out)
+        sky = band(h, args.sky_lo, args.sky_hi) & (sat > 0.10) & (mx > 0.12)
+        b = sky.astype(np.float64)
+        out = out * (1 - b[..., None]) + (out * (1.0 - args.bluedark)) * b[..., None]
+
+    # 3. optional, off unless explicitly requested
+    if args.accent_warm:
+        h, _, _ = rgb_to_hsv(out)
+        m = band(h, args.yellow_lo, args.yellow_hi) & (sat > 0.15) * \
+            np.clip((mx - 0.35) / 0.40, 0, 1)
+        out = map_hue_luminance(out, m, pal["accent"], False)
+    if args.red:
+        h, _, _ = rgb_to_hsv(out)
+        m = band(h, 345, 360) | band(h, 0, args.red_hi)
+        m = m & (sat > 0.15) * np.clip((mx - 0.35) / 0.40, 0, 1)
+        out = map_hue_luminance(out, m, hex_to_rgb(args.red), True)
+    if args.highlight:
+        h, s, mx = rgb_to_hsv(out)
+        m = (s < 0.08) & (mx > 0.60)
+        t = hex_to_rgb(args.highlight)
+        mm = m.astype(np.float64)
+        out = out * (1 - mm[..., None]) + t * mm[..., None]
+
+    return Image.fromarray((np.clip(out, 0, 1) * 255).round().astype(np.uint8))
+
+
+def main():
+    p = argparse.ArgumentParser(
+        prog="lutgen-espressuccin", description=DESCRIPTION,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("images", nargs="+")
+    p.add_argument("-o", "--outdir", help="output directory (default: beside each input)")
+    p.add_argument("--suffix", default="_espressuccin", help="filename suffix")
+    p.add_argument("--theme", help="theme to read colors from (default: the live theme)")
+    p.add_argument("--max-size", type=int, default=DEFAULT_MAX,
+                   help=f"cap the long edge (default {DEFAULT_MAX}; 0 = keep native)")
+    p.add_argument("--power", type=float, default=3.0,
+                   help="shadow curve: LOWER grades more, HIGHER keeps more midtone "
+                        "(mask = (1-lum)**power) (default 3.0)")
+    p.add_argument("--chroma", type=float, default=0.30,
+                   help="colour protection: HIGHER grades more, LOWER protects "
+                        "colourful subjects more. It is the DENOMINATOR of "
+                        "(1 - clip(sat/chroma)), so a LOW value pins the gate to 0 "
+                        "for any pixel above that saturation and the photo is left "
+                        "untouched (default 0.30)")
+    p.add_argument("--bluedark", type=float, default=0.6,
+                   help="how much sky is darkened; sky keeps 1-N brightness (default 0.6)")
+    p.add_argument("--no-sky", action="store_true", help="skip the sky grade")
+    p.add_argument("--sky-lo", type=float, default=190.0)
+    p.add_argument("--sky-hi", type=float, default=258.0)
+    p.add_argument("--red", metavar="HEX", help="map bright reds to HEX (off by default)")
+    p.add_argument("--red-hi", type=float, default=15.0)
+    p.add_argument("--accent-warm", action="store_true",
+                   help="map bright yellows to the theme accent (off by default)")
+    p.add_argument("--yellow-lo", type=float, default=40.0)
+    p.add_argument("--yellow-hi", type=float, default=75.0)
+    p.add_argument("--highlight", metavar="HEX",
+                   help="map achromatic highlights to HEX (off by default)")
+    args = p.parse_args()
+
+    pal = load_palette(theme_name(args.theme))
+    print(f"theme={pal['_name']}  bg=#{_hex(pal['background'])}  "
+          f"accent=#{_hex(pal['accent'])}  "
+          f"extras: {'red' if args.red else ''}{' accent-warm' if args.accent_warm else ''}"
+          f"{' highlight' if args.highlight else ''}")
+
+    files = []
+    for pat in args.images:
+        if any(ch in pat for ch in "*?["):
+            import glob
+            files += sorted(glob.glob(os.path.expanduser(pat)))
+        else:
+            files.append(os.path.expanduser(pat))
+    if not files:
+        sys.exit("no input files matched")
+
+    for src in files:
+        if not os.path.isfile(src):
+            print(f"  skip {src} (not a file)", file=sys.stderr)
+            continue
+        base = os.path.splitext(os.path.basename(src))[0]
+        dst_dir = args.outdir or os.path.dirname(src) or "."
+        os.makedirs(dst_dir, exist_ok=True)
+        dst = os.path.join(dst_dir, base + args.suffix + ".png")
+        try:
+            with Image.open(src) as im:
+                grade(im, pal, args).save(dst, optimize=True)
+        except Exception as exc:                      # noqa: BLE001
+            print(f"  FAIL {src}: {exc}", file=sys.stderr)
+            continue
+        print(f"  OK {src} -> {dst}")
+
+
+def _hex(rgb: np.ndarray) -> str:
+    return "".join(f"{int(round(v * 255)):02X}" for v in rgb)
+
+
+if __name__ == "__main__":
+    main()

@@ -319,7 +319,16 @@ Panel {
       if (finishedConnecting
           || (action === "disconnecting" && found && !found.connected)
           || (action === "forgetting" && (!found || (!found.paired && !found.bonded && !found.trusted)))) {
-        if (finishedConnecting) scheduleAudioOutputSwitch(found)
+        // The panel must NEVER change the default sink on connect. That switch
+        // used to be invoked here and regressed on 2026-10-14: it picked
+        // `eq_input`, because bluetoothSinkMatchesDevice() still matches it --
+        // that node's description is literally "Soundcore R60i NC EQ Sink" and
+        // the matcher falls back to a LABEL SUBSTRING test the description
+        // satisfies. The default belongs to the HeSuVi capture sink (head of
+        // virtual-surround -> parametric EQ -> device); pointing it at any other
+        // sink sends new streams past one or both stages. Guarding this call
+        // site is the only fix: hardening the matcher cannot work, the
+        // filter-chain node is named after the device.
         delete next[address]
         changed = true
       }
