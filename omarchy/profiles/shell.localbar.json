@@ -25,6 +25,10 @@
           "omarchy.power"
         ],
         [
+          "flux",
+          "omarchy.tailscale"
+        ],
+        [
           "wian47.removable-drives",
           "io.github.birajdotdev.omacore"
         ]
@@ -60,7 +64,7 @@
           "lifeExpectancy": 90,
           "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
           "type": "qml",
-          "verticalFormat": "HH\n\u2014\nmm"
+          "verticalFormat": "HH\n—\nmm"
         },
         {
           "color": "color02",
@@ -126,6 +130,12 @@
           "type": "qml"
         },
         {
+          "id": "flux"
+        },
+        {
+          "id": "omarchy.tailscale"
+        },
+        {
           "color": "color02",
           "id": "wian47.removable-drives"
         },
@@ -188,7 +198,9 @@
           "type": "qml"
         }
       ],
-      "tray": []
+      "tray": [],
+      "centerBegin": [],
+      "centerEnd": []
     },
     "position": "top"
   },
