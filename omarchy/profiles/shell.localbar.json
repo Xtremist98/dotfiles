@@ -130,12 +130,6 @@
           "type": "qml"
         },
         {
-          "id": "flux"
-        },
-        {
-          "id": "omarchy.tailscale"
-        },
-        {
           "color": "color02",
           "id": "wian47.removable-drives"
         },
@@ -143,6 +137,12 @@
           "color": "color02",
           "id": "io.github.birajdotdev.omacore",
           "batteryDisplayMode": "1"
+        },
+        {
+          "id": "flux"
+        },
+        {
+          "id": "omarchy.tailscale"
         },
         {
           "color": "color02",
