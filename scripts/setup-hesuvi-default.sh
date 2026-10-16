@@ -6,25 +6,29 @@
 # HeSuVi the persistent default output in WirePlumber.
 #
 # WHY THIS EXISTS
-#   The chain files under Dots/pipewire/ used to be stale: they were missing
-#   the priority guards and the quantum locks. A fresh machine restored from
-#   them would let `eq_input` (a filter stage) win the default sink, because
-#   nothing stopped it. That is the same regression that bit us on 2026-10-16.
+#   An earlier version of this script wrongly sourced Dots/pipewire/ (the wired
+#   3.5mm profile) and pushed soundcore-only files into it. pipewire-soundcore/
+#   is the correct source and has been left untouched.
+#
 #
 #   This script is deliberately hardware-agnostic. It never hardcodes a
 #   Bluetooth MAC or an ALSA device id; it resolves both at runtime and
 #   patches them in.
 #
 # USAGE
-#   bash setup-hesuvi-default.sh
-#   DOTS=/path/to/pipewire bash setup-hesuvi-default.sh    # override source
+#   bash setup-hesuvi-default.sh     # uses Dots/pipewire-soundcore
+#   DOTS=/path/to/pipewire-soundcore bash setup-hesuvi-default.sh   # override source
 #
 # IDEMPOTENT
 #   Safe to re-run any number of times.
 #
 set -uo pipefail
 
-DOTS="${DOTS:-/mnt/media/Dots/pipewire}"
+# SOURCE: pipewire-soundcore is the Bluetooth-buds profile (it carries the
+# priority guards, the 2048/48000 quantum locks, the memlock config and the
+# soundcore*.txt EQ presets). The sibling pipewire/ folder is the simpler
+# 3.5mm-jack wired variant and must NOT be used here.
+DOTS="${DOTS:-/mnt/media/Dots/pipewire-soundcore}"
 PIPECONFDIR="$HOME/.config/pipewire/pipewire.conf.d"
 PIPEDIR="$HOME/.config/pipewire"
 STATEDIR="$HOME/.local/state/wireplumber"
