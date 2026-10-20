@@ -1,0 +1,548 @@
+#!/usr/bin/env python3
+# videodl-host - native messaging host for the Video Grabber extension.
+#
+# Protocol (Chrome native messaging): 4-byte little-endian length + UTF-8 JSON.
+#   {"action":"formats","url":...}     -> {"ok":true,"heights":[...],"audio":[...],...}
+#   {"action":"download", "url":...,   -> {"ok":true,...} (worker runs detached)
+#     "mode":"video","height":1080}
+#   {"action":"download", "url":...,
+#     "mode":"audio","format_id":"251","convert":"mp3"}
+#
+# The download itself is detached (setsid) so the browser's port is released
+# immediately; progress is shown through the Quickshell OSD, like Omarchy does.
+
+import json
+import os
+import re
+import struct
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+HOST_NAME = "com.linuxer.videodl"
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "videodl"
+LOG_PATH = STATE_DIR / "host.log"
+DEFAULT_DIR = Path.home() / "Videos"
+
+PATH_PREFIX = ["/usr/share/omarchy/bin", "/usr/local/bin", "/usr/bin", "/bin"]
+URL_RE = re.compile(r"^https?://[^\s\"'<>]{4,2048}$")
+
+
+# Video codecs yt-dlp reports, normalised into a small set the panel can offer.
+VIDEO_CODEC_LABELS = {
+    "h264": "H.264",
+    "vp9": "VP9",
+    "av1": "AV1",
+    "hevc": "HEVC",
+    "vp8": "VP8",
+}
+VIDEO_CODEC_ORDER = ["h264", "vp9", "av1", "hevc", "vp8"]
+
+
+def video_codec_key(codec):
+    c = (codec or "").lower()
+    if c.startswith(("avc1", "avc3", "h264")):
+        return "h264"
+    if c.startswith(("vp09", "vp9")):
+        return "vp9"
+    if c.startswith("av01"):
+        return "av1"
+    if c.startswith(("hev1", "hvc1", "hevc")):
+        return "hevc"
+    if c.startswith("vp8"):
+        return "vp8"
+    return ""
+
+
+# --------------------------------------------------------------------------- log
+def log(msg):
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        if LOG_PATH.exists() and LOG_PATH.stat().st_size > 256 * 1024:
+            LOG_PATH.write_text("")
+        with LOG_PATH.open("a", encoding="utf-8", errors="replace") as fh:
+            fh.write(time.strftime("%Y-%m-%d %H:%M:%S ") + str(msg) + "\n")
+    except Exception:
+        pass
+
+
+def env():
+    e = dict(os.environ)
+    parts = [p for p in e.get("PATH", "").split(":") if p]
+    for p in reversed(PATH_PREFIX):
+        if p not in parts:
+            parts.insert(0, p)
+    e["PATH"] = ":".join(parts)
+    e.setdefault("PYTHONUNBUFFERED", "1")
+    return e
+
+
+def run(cmd, timeout=90, capture=True):
+    return subprocess.run(
+        cmd,
+        env=env(),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
+        stderr=subprocess.PIPE if capture else subprocess.DEVNULL,
+        text=True,
+        timeout=timeout,
+    )
+
+
+def notify(glyph, title, body, urgency=None, image=None, exec_args=None, timeout=None):
+    cmd = ["omarchy-notification-send"]
+    if urgency:
+        cmd += ["-u", urgency]
+    cmd += ["-g", glyph, title, body]
+    if timeout:
+        cmd += ["-t", str(timeout)]
+    if image:
+        cmd += ["--image", image]
+    if exec_args:
+        cmd += ["--exec"] + exec_args
+    try:
+        run(cmd, timeout=15)
+    except Exception as exc:
+        log("notify failed: %s" % exc)
+
+
+def i18n(key, fallback):
+    try:
+        out = run(["omarchy-i18n", key], timeout=5)
+        val = (out.stdout or "").strip()
+        return val or fallback
+    except Exception:
+        return fallback
+
+
+def osd_progress(pct):
+    try:
+        run(["omarchy-osd", "-i", "\U000f01d9", "-p", str(pct), "-d", "8000"], timeout=5)
+    except Exception:
+        pass
+
+
+def osd_close():
+    try:
+        run(["omarchy-shell", "-q", "osd", "close"], timeout=5)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------- formats
+def extract_formats(url):
+    res = run(["yt-dlp", "-J", "--no-playlist", "--no-warnings", "--", url], timeout=120)
+    if res.returncode != 0:
+        err = (res.stderr or "").strip().splitlines()
+        return {"ok": False, "error": (err[-1] if err else "yt-dlp could not read this page")[:300]}
+
+    try:
+        info = json.loads(res.stdout or "{}")
+    except Exception as exc:
+        return {"ok": False, "error": "bad yt-dlp output: %s" % exc}
+
+    if info.get("_type") == "playlist":
+        entries = [e for e in (info.get("entries") or []) if e]
+        if not entries:
+            return {"ok": False, "error": "empty playlist"}
+        info = entries[0]
+
+    formats = info.get("formats") or []
+
+    heights = set()
+    video = {}  # height -> {codec key -> entry}
+    for f in formats:
+        if f.get("vcodec") in (None, "none"):
+            continue
+        h = f.get("height")
+        if not isinstance(h, int) or not (0 < h <= 4320):
+            continue
+        heights.add(h)
+        key = video_codec_key(f.get("vcodec"))
+        if not key:
+            continue
+        try:
+            size = int(f.get("filesize") or f.get("filesize_approx") or 0)
+        except Exception:
+            size = 0
+        entry = {
+            "key": key,
+            "label": VIDEO_CODEC_LABELS.get(key, key.upper()),
+            "ext": (f.get("ext") or "").lower(),
+            "size": size,
+            "fps": f.get("fps") or 0,
+        }
+        bucket = video.setdefault(h, {})
+        cur = bucket.get(key)
+        # Keep the biggest rendition per codec (usually the best quality).
+        if cur is None or (entry["size"] or 0) > (cur["size"] or 0):
+            bucket[key] = entry
+
+    video_list = [
+        {
+            "height": h,
+            "codecs": sorted(
+                bucket.values(),
+                key=lambda c: (VIDEO_CODEC_ORDER.index(c["key"])
+                               if c["key"] in VIDEO_CODEC_ORDER else 99,
+                               -(c["size"] or 0)),
+            ),
+        }
+        for h, bucket in sorted(video.items(), key=lambda kv: kv[0], reverse=True)
+    ]
+
+    audio = {}
+    for f in formats:
+        if f.get("acodec") in (None, "none"):
+            continue
+        if f.get("vcodec") not in (None, "none"):
+            continue
+        ext = (f.get("ext") or "").lower()
+        if ext not in ("m4a", "mp4", "webm", "opus", "ogg", "mp3", "aac", "flac", "wav"):
+            continue
+        fid = str(f.get("format_id") or "")
+        if not fid:
+            continue
+        abr = f.get("abr") or 0
+        try:
+            abr = float(abr)
+        except Exception:
+            abr = 0.0
+        tbr = f.get("tbr") or 0
+        try:
+            tbr = float(tbr)
+        except Exception:
+            tbr = 0.0
+        codec = (f.get("acodec") or "").split(".")[0]
+        key = (ext, round(abr or tbr))
+        entry = {
+            "id": fid,
+            "ext": ext,
+            "abr": round(abr or tbr),
+            "codec": codec,
+            "size": f.get("filesize") or f.get("filesize_approx") or 0,
+            "label": "%s \u00b7 %dk" % (ext, round(abr or tbr)),
+        }
+        cur = audio.get(key)
+        if not cur or (entry["size"] or 0) > (cur["size"] or 0):
+            audio[key] = entry
+
+    audio_list = sorted(audio.values(), key=lambda a: a["abr"], reverse=True)
+
+    return {
+        "ok": True,
+        "title": info.get("title") or "video",
+        "duration": info.get("duration") or 0,
+        "site": info.get("extractor_key") or info.get("extractor") or "",
+        "webpage_url": info.get("webpage_url") or url,
+        "heights": sorted(heights, reverse=True),
+        "video": video_list,
+        "audio": audio_list[:12],
+        "has_video": bool(heights),
+    }
+
+
+# --------------------------------------------------------------------- download
+def build_command(payload, out_dir):
+    url = payload["url"]
+    mode = payload.get("mode") or "video"
+    outtmpl = "%(title)s.%(ext)s"
+
+    cmd = [
+        "yt-dlp",
+        "--no-playlist",
+        "--no-simulate",
+        "--newline",
+        "--progress",
+        "--no-warnings",
+        "--no-exec",
+        "--no-exec-before-download",
+        "--progress-template", "download:VIDEODL_PROG\t%(progress._percent_str)s",
+        "--print", "after_move:VIDEODL_FILE\t%(filepath)s",
+        "--print", "after_move:VIDEODL_TITLE\t%(title)j",
+        "--paths", str(out_dir),
+    ]
+
+    if mode == "audio":
+        fid = payload.get("format_id") or ""
+        cmd += ["-f", fid if fid else "ba/b"]
+        cmd += ["-x"]
+        convert = (payload.get("convert") or "").lower()
+        if convert == "mp3":
+            # Keep the UI label ("MP3 320k") honest: CBR 320 rather than best VBR.
+            cmd += ["--audio-format", "mp3", "--audio-quality", "320K"]
+        elif convert in ("m4a", "aac"):
+            cmd += ["--audio-format", "m4a"]
+        elif convert == "flac":
+            cmd += ["--audio-format", "flac"]
+        elif convert in ("wav", "opus", "ogg"):
+            cmd += ["--audio-format", convert if convert != "ogg" else "vorbis"]
+        else:
+            cmd += ["--audio-format", "best"]
+        cmd += ["--embed-metadata"]
+        cmd += ["-o", outtmpl]
+    else:
+        try:
+            height = int(payload.get("height") or 0)
+        except Exception:
+            height = 0
+        codec = (payload.get("codec") or "").strip().lower()
+
+        # yt-dlp format filters per codec family ('' = let yt-dlp choose).
+        codec_filter = {
+            "h264": "[vcodec^=avc1]",
+            "vp9": "[vcodec^=vp9]",
+            "vp8": "[vcodec^=vp8]",
+            "av1": "[vcodec^=av01]",
+            "hevc": "[vcodec~='^(hev1|hvc1)']",
+        }.get(codec, "")
+
+        hfilter = "[height<=%d]" % height if height > 0 else ""
+
+        if codec_filter:
+            # Prefer the requested codec, then degrade gracefully so a pick that
+            # is not offered at this height still downloads something.
+            sel = (
+                "bv*%s%s+ba[ext=m4a]/bv*%s%s+ba/"
+                "bv*%s+ba/b%s/b" % (hfilter, codec_filter, hfilter, codec_filter, hfilter, hfilter)
+            )
+        elif height > 0:
+            sel = (
+                "bv*[height<=%d][ext=mp4]+ba[ext=m4a]/"
+                "bv*[height<=%d]+ba/b[height<=%d]/b" % (height, height, height)
+            )
+        else:
+            sel = "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b"
+
+        # VP9/AV1/VP8 do not belong in an mp4 container in practice: merge those
+        # into mkv so the file plays everywhere (mpv, VLC, players on other OSes).
+        merge = "mkv" if codec in ("vp9", "av1", "vp8") else "mp4"
+
+        if height > 0 and codec:
+            outtmpl = "%%(title)s [%dp %s].%%(ext)s" % (
+                height, VIDEO_CODEC_LABELS.get(codec, codec.upper())
+            )
+        elif height > 0:
+            outtmpl = "%%(title)s [%dp].%%(ext)s" % height
+        elif codec:
+            outtmpl = "%%(title)s [%s].%%(ext)s" % VIDEO_CODEC_LABELS.get(codec, codec.upper())
+
+        cmd += ["-f", sel, "--merge-output-format", merge, "-o", outtmpl]
+
+    cmd += ["--", url]
+    return cmd
+
+
+def worker(payload_path):
+    try:
+        payload = json.loads(Path(payload_path).read_text())
+    except Exception as exc:
+        log("worker: bad payload %s" % exc)
+        return 1
+    finally:
+        try:
+            os.unlink(payload_path)
+        except Exception:
+            pass
+
+    url = payload.get("url", "")
+    out_dir = Path(os.environ.get("VIDEODL_DIR") or DEFAULT_DIR)
+    try:
+        out_dir.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        out_dir = DEFAULT_DIR
+
+    cmd = build_command(payload, out_dir)
+    log("worker: %s" % " ".join(cmd))
+
+    osd_progress(0)
+
+    last_pct = None
+    last_ms = 0
+    filepath = ""
+    title = ""
+
+    proc = subprocess.Popen(
+        cmd,
+        env=env(),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        start_new_session=True,
+    )
+    try:
+        for line in proc.stdout:
+            line = line.rstrip("\n")
+            if line.startswith("VIDEODL_PROG\t"):
+                raw = line.split("\t", 1)[1]
+                digits = re.sub(r"[^0-9]", "", raw.split(".")[0])
+                if not digits:
+                    continue
+                pct = int(digits)
+                if pct == last_pct:
+                    continue
+                now = int(time.time() * 1000)
+                if now - last_ms < 250:
+                    continue
+                last_pct, last_ms = pct, now
+                osd_progress(pct)
+            elif line.startswith("VIDEODL_FILE\t"):
+                filepath = line.split("\t", 1)[1].strip()
+            elif line.startswith("VIDEODL_TITLE\t"):
+                try:
+                    title = json.loads(line.split("\t", 1)[1])
+                except Exception:
+                    title = ""
+            elif line:
+                log("yt-dlp: " + line[:400])
+        proc.wait(timeout=30)
+    except Exception as exc:
+        log("worker loop: %s" % exc)
+
+    osd_close()
+
+    if proc.returncode == 0 and filepath and Path(filepath).exists():
+        if not title:
+            title = Path(filepath).stem
+        shown = title if len(title) <= 50 else title[:50] + "\u2026"
+        preview = None
+        try:
+            fd, preview = tempfile.mkstemp(suffix=".jpg")
+            os.close(fd)
+            r = run(
+                [
+                    "ffmpeg", "-y", "-i", filepath, "-ss", "00:00:00.1", "-vframes", "1",
+                    "-vf", "crop='min(iw,ih)':'min(iw,ih)',scale=256:256", "-q:v", "2",
+                    preview, "-loglevel", "quiet",
+                ],
+                timeout=30,
+            )
+            if r.returncode != 0 or not Path(preview).stat().st_size:
+                raise RuntimeError("no preview")
+        except Exception:
+            preview = None
+
+        notify(
+            "\U000f012c",
+            i18n("download.complete", "Download complete"),
+            shown,
+            image=preview or filepath,
+            exec_args=["mpv", "--", filepath],
+            timeout=10000,
+        )
+
+        if preview:
+            def _clean():
+                time.sleep(2)
+                try:
+                    os.unlink(preview)
+                except Exception:
+                    pass
+
+            import threading
+            threading.Thread(target=_clean, daemon=True).start()
+        return 0
+
+    notify(
+        "\U000f0156",
+        i18n("download.failed", "Download failed"),
+        url,
+        urgency="critical",
+    )
+    return 1
+
+
+# ------------------------------------------------------------------------ main
+def read_message():
+    head = sys.stdin.buffer.read(4)
+    if len(head) < 4:
+        return None
+    (length,) = struct.unpack("<I", head)
+    if not length or length > 32 * 1024 * 1024:
+        return None
+    body = sys.stdin.buffer.read(length)
+    if len(body) < length:
+        return None
+    return json.loads(body.decode("utf-8", "replace"))
+
+
+def reply(obj):
+    data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+    sys.stdout.buffer.write(struct.pack("<I", len(data)))
+    sys.stdout.buffer.write(data)
+    sys.stdout.buffer.flush()
+
+
+def detach_worker(payload):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    fd, path = tempfile.mkstemp(prefix="videodl-", suffix=".json", dir=str(STATE_DIR))
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload))
+    os.chmod(path, 0o600)
+    subprocess.Popen(
+        [sys.executable, os.path.abspath(__file__), "--worker", path],
+        env=env(),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+        close_fds=True,
+    )
+
+
+def main():
+    if len(sys.argv) > 2 and sys.argv[1] == "--worker":
+        sys.exit(worker(sys.argv[2]))
+
+    try:
+        msg = read_message()
+    except Exception as exc:
+        log("bad frame: %s" % exc)
+        return
+
+    if not isinstance(msg, dict):
+        return
+
+    action = msg.get("action")
+    url = (msg.get("url") or "").strip()
+
+    if action not in ("formats", "download"):
+        reply({"ok": False, "error": "unknown action"})
+        return
+    if not URL_RE.match(url):
+        reply({"ok": False, "error": "invalid url"})
+        return
+
+    if action == "formats":
+        try:
+            reply(extract_formats(url))
+        except subprocess.TimeoutExpired:
+            reply({"ok": False, "error": "timed out reading the page"})
+        except Exception as exc:
+            log("formats: %s" % exc)
+            reply({"ok": False, "error": str(exc)[:300]})
+        return
+
+    payload = {
+        "url": url,
+        "mode": "audio" if msg.get("mode") == "audio" else "video",
+        "height": msg.get("height") or 0,
+        "codec": str(msg.get("codec") or ""),
+        "format_id": str(msg.get("format_id") or ""),
+        "convert": str(msg.get("convert") or ""),
+    }
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        detach_worker(payload)
+        reply({"ok": True, "queued": True, "mode": payload["mode"]})
+    except Exception as exc:
+        log("download: %s" % exc)
+        reply({"ok": False, "error": str(exc)[:300]})
+
+
+if __name__ == "__main__":
+    main()

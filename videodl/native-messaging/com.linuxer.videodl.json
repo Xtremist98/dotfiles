@@ -1,0 +1,9 @@
+{
+  "name": "com.linuxer.videodl",
+  "description": "Video Grabber download host (yt-dlp)",
+  "path": "/home/linuxer/.local/share/videodl/host/videodl-host",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://ckoadpikjppjggoenpjgiaoodfhjnclo/"
+  ]
+}
