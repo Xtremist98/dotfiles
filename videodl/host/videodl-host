@@ -7,6 +7,8 @@
 #     "mode":"video","height":1080}
 #   {"action":"download", "url":...,
 #     "mode":"audio","format_id":"251","convert":"mp3"}
+#   {"action":"config"}                -> {"ok":true,"dir":"/home/u/Videos",...}
+#   {"action":"setdir","dir":"/mnt/media/Downloads"} -> {"ok":true,"dir":"..."}
 #
 # The download itself is detached (setsid) so the browser's port is released
 # immediately; progress is shown through the Quickshell OSD, like Omarchy does.
@@ -24,6 +26,8 @@ from pathlib import Path
 HOST_NAME = "com.linuxer.videodl"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "videodl"
 LOG_PATH = STATE_DIR / "host.log"
+CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "videodl"
+CONFIG_PATH = CONFIG_DIR / "config.json"
 DEFAULT_DIR = Path.home() / "Videos"
 
 PATH_PREFIX = ["/usr/share/omarchy/bin", "/usr/local/bin", "/usr/bin", "/bin"]
@@ -66,6 +70,84 @@ def log(msg):
             fh.write(time.strftime("%Y-%m-%d %H:%M:%S ") + str(msg) + "\n")
     except Exception:
         pass
+
+
+# -------------------------------------------------------------------- saving to
+def load_config():
+    try:
+        data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except Exception as exc:
+        log("config read: %s" % exc)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_config(cfg):
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = CONFIG_PATH.with_name(CONFIG_PATH.name + ".tmp")
+    with tmp.open("w", encoding="utf-8") as fh:
+        json.dump(cfg, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+    os.replace(tmp, CONFIG_PATH)
+
+
+def expand_dir(raw):
+    """Turn user input into a Path. ~ and $VARS are expanded; '' -> None."""
+    text = (raw or "").strip()
+    if not text:
+        return None
+    return Path(os.path.expandvars(os.path.expanduser(text)))
+
+
+def env_override():
+    return (os.environ.get("VIDEODL_DIR") or "").strip()
+
+
+def target_dir():
+    """VIDEODL_DIR env > config.json "dir" > ~/Videos. Any absolute path works."""
+    override = expand_dir(env_override())
+    if override is not None:
+        return override
+    return expand_dir(load_config().get("dir")) or DEFAULT_DIR
+
+
+def ensure_dir(path):
+    """Create `path` and prove it is writable. -> (Path, "") or (None, error)."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:
+        log("ensure_dir mkdir %s: %s" % (path, exc))
+        return None, "cannot create %s: %s" % (path, getattr(exc, "strerror", None) or exc)
+    if not path.is_dir():
+        return None, "%s is not a folder" % path
+    probe = None
+    try:
+        fd, probe = tempfile.mkstemp(prefix=".videodl-write-test-", dir=str(path))
+        os.close(fd)
+    except Exception as exc:
+        log("ensure_dir probe %s: %s" % (path, exc))
+        return None, "%s is not writable" % path
+    finally:
+        if probe:
+            try:
+                os.unlink(probe)
+            except Exception:
+                pass
+    return path, ""
+
+
+def config_reply():
+    path = target_dir()
+    return {
+        "ok": True,
+        "dir": str(path),
+        "exists": path.is_dir(),
+        "writable": os.access(path, os.W_OK) if path.is_dir() else False,
+        "override": env_override(),
+        "default": str(DEFAULT_DIR),
+    }
 
 
 def env():
@@ -348,11 +430,18 @@ def worker(payload_path):
             pass
 
     url = payload.get("url", "")
-    out_dir = Path(os.environ.get("VIDEODL_DIR") or DEFAULT_DIR)
-    try:
-        out_dir.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        out_dir = DEFAULT_DIR
+    out_dir, dir_err = ensure_dir(target_dir())
+    if dir_err:
+        # Never silently fall back to another disk: a full root partition is
+        # worse than a clear failure.
+        log("worker: %s" % dir_err)
+        notify(
+            "\U000f0156",
+            i18n("download.failed", "Download failed"),
+            dir_err,
+            urgency="critical",
+        )
+        return 1
 
     cmd = build_command(payload, out_dir)
     log("worker: %s" % " ".join(cmd))
@@ -510,6 +599,39 @@ def main():
     action = msg.get("action")
     url = (msg.get("url") or "").strip()
 
+    if action == "config":
+        reply(config_reply())
+        return
+
+    if action == "setdir":
+        path = expand_dir(msg.get("dir"))
+        if path is None:
+            reply({"ok": False, "error": "enter a folder path"})
+            return
+        if not path.is_absolute():
+            reply({
+                "ok": False,
+                "error": "use an absolute path, e.g. /mnt/media/Downloads",
+            })
+            return
+        path, dir_err = ensure_dir(path)
+        if dir_err:
+            reply({"ok": False, "error": dir_err})
+            return
+        cfg = load_config()
+        cfg["dir"] = str(path)
+        try:
+            save_config(cfg)
+        except Exception as exc:
+            reply({"ok": False, "error": "cannot save the setting: %s" % exc})
+            return
+        reply({
+            "ok": True,
+            "dir": str(path),
+            "override": env_override(),
+        })
+        return
+
     if action not in ("formats", "download"):
         reply({"ok": False, "error": "unknown action"})
         return
@@ -525,6 +647,13 @@ def main():
         except Exception as exc:
             log("formats: %s" % exc)
             reply({"ok": False, "error": str(exc)[:300]})
+        return
+
+    # Fail here (in the panel) rather than in the detached worker when the
+    # chosen folder is gone or read-only.
+    _, dir_err = ensure_dir(target_dir())
+    if dir_err:
+        reply({"ok": False, "error": dir_err})
         return
 
     payload = {

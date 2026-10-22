@@ -55,8 +55,29 @@ Hover a video → click the sage download button (top-right of the player).
 * **Audio** — pick *Best audio* (or a specific stream) and, if wanted, a
   **Format**: `Original`, `MP3 320k` (CBR 320), `M4A (AAC)`, `FLAC`.
 
-Progress and completion are shown via `omarchy-osd` / `omarchy-notification-send`;
-the finished file lands in `~/Videos` (override with `VIDEODL_DIR=/some/dir`).
+Progress and completion are shown via `omarchy-osd` / `omarchy-notification-send`.
+
+## Where files are saved
+
+The bottom row of the panel has a **folder field**. Type any absolute path — any
+disk, any mount, anywhere — and press **Set** (or `Enter`):
+
+    /mnt/media/Videos        /run/media/linuxer/MyDrive/Films        ~/Downloads
+
+`~` and `$VARS` are expanded, the folder is created if missing, and it is
+write-probe tested before being accepted, so a typo or a read-only mount is
+reported in the panel instead of failing mid-download. If it is not usable the
+setting is rejected — nothing silently falls back to another disk.
+
+Precedence (highest first):
+
+1. `VIDEODL_DIR` in the environment — when set, the field is disabled and the
+   panel says so.
+2. `~/.config/videodl/config.json` → `{"dir": "/your/folder"}` (written by **Set**).
+3. `~/Videos`.
+
+The setting is stored by the native host, not in `chrome.storage`, so it is the
+same in Chromium, Brave and every profile, and it survives extension reloads.
 
 If the quality list can't be enumerated (live streams, galleries, some embeds),
 the panel falls back to a fixed ladder and says *"Exact quality list unavailable
@@ -111,6 +132,8 @@ another machine without re-signing: the ID comes from `"key"` in
 * Host reports `error` → exit code 1 (usually "yt-dlp not found" or a bad URL).
 * The native host prepends `/usr/share/omarchy/bin` to `PATH`, because a
   browser-spawned process may not have it.
+* Wrong save folder → delete `~/.config/videodl/config.json` (back to `~/Videos`)
+  or check `VIDEODL_DIR` in the browser's environment.
 
 ## Uninstall
 

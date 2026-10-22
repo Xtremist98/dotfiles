@@ -21,6 +21,9 @@
   let formats = null; // last successful enumeration
   let formatsUrl = "";
   let busy = false;
+  let savingDir = false;
+  let savedDir = ""; // folder the host will use
+  let dirOverride = ""; // non-empty when VIDEODL_DIR forces a folder
 
   const cache = new Map(); // url -> formats payload
 
@@ -188,11 +191,30 @@
           color: #A7C080; font-weight: 600;
         }
         .foot {
-          display: flex; align-items: center; gap: 8px;
+          display: flex; flex-direction: column; gap: 7px;
           padding: 9px 12px 11px; border-top: 1px solid rgba(209,196,169,.12);
           position: sticky; bottom: 0; background: #1a1713;
         }
-        .note { flex: 1; font-size: 11px; color: #7c7468; }
+        .dirline { display: flex; align-items: center; gap: 6px; }
+        .dir {
+          flex: 1; min-width: 0; font: inherit; font-size: 11.5px;
+          color: #d1c4a9; background: rgba(209,196,169,.06);
+          border: 1px solid rgba(167,192,128,.22); border-radius: 7px;
+          padding: 4px 7px;
+        }
+        .dir:focus { outline: 1px solid rgba(167,192,128,.55); }
+        .dir:disabled { opacity: .55; }
+        .dir::placeholder { color: #7c7468; }
+        .set {
+          flex: none; border: 1px solid rgba(167,192,128,.4); background: transparent;
+          color: #A7C080; font: inherit; font-size: 11.5px; font-weight: 600;
+          padding: 4px 9px; border-radius: 7px; cursor: pointer;
+        }
+        .set:hover { background: rgba(167,192,128,.16); }
+        .set:disabled { opacity: .45; cursor: default; }
+        .footrow { display: flex; align-items: center; gap: 8px; }
+        .note { flex: 1; font-size: 11px; color: #7c7468; word-break: break-all; }
+        .note.err { color: #E67E80; }
         .go {
           border: 1px solid rgba(167,192,128,.5); background: rgba(167,192,128,.16);
           color: #A7C080; font-weight: 600; font-size: 12px; padding: 6px 12px;
@@ -235,8 +257,15 @@
           </div>
         </div>
         <div class="foot">
-          <span class="note">Saved to ~/Videos</span>
-          <button class="go" disabled>Download</button>
+          <div class="dirline">
+            <input class="dir" type="text" spellcheck="false" autocomplete="off"
+                   placeholder="/mnt/media/Downloads" title="Where to save the file" />
+            <button class="set" type="button" title="Save to this folder">Set</button>
+          </div>
+          <div class="footrow">
+            <span class="note">Saved to ~/Videos</span>
+            <button class="go" disabled>Download</button>
+          </div>
         </div>
       </div>
     `;
@@ -257,6 +286,18 @@
     shadow.querySelector(".go").addEventListener("click", (e) => {
       e.stopPropagation();
       startDownload();
+    });
+    shadow.querySelector(".set").addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      saveDir();
+    });
+    shadow.querySelector(".dir").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        saveDir();
+      }
     });
     // Any change inside the panel (radio picks included) keeps the panels in sync.
     shadow.querySelector(".card").addEventListener("change", syncAudioOpts);
@@ -383,6 +424,98 @@
     updateCodecs();
   }
 
+  // -------------------------------------------------------------- save folder
+  // The destination lives in the native host's config (single source of truth),
+  // so the panel mirrors it here instead of keeping its own copy.
+  function setNote(text, isError) {
+    const note = shadow.querySelector(".note");
+    if (!note) return;
+    note.textContent = text;
+    note.classList.toggle("err", !!isError);
+  }
+
+  function applyConfig(cfg) {
+    if (!panelOpen || !shadow || !cfg || !cfg.ok) return;
+    savedDir = cfg.dir || "";
+    dirOverride = cfg.override || "";
+
+    const input = shadow.querySelector(".dir");
+    const setBtn = shadow.querySelector(".set");
+    input.value = savedDir;
+    input.title = savedDir;
+
+    if (dirOverride) {
+      input.disabled = true;
+      setBtn.disabled = true;
+      setBtn.title = "VIDEODL_DIR is set in the environment and wins over the setting";
+      setNote(`Saved to ${savedDir} (VIDEODL_DIR is set)`);
+    } else {
+      input.disabled = false;
+      setBtn.disabled = savingDir;
+      setBtn.title = "Save to this folder";
+      setNote(`Saved to ${savedDir}`);
+    }
+  }
+
+  function loadConfig() {
+    try {
+      chrome.runtime.sendMessage(
+        { type: "videodl", payload: { action: "config" } },
+        (resp) => {
+          if (chrome.runtime.lastError) return;
+          applyConfig(resp);
+        }
+      );
+    } catch (_) {
+      /* extension reloaded — the next panel open retries */
+    }
+  }
+
+  function saveDir() {
+    if (!shadow || savingDir) return;
+    const input = shadow.querySelector(".dir");
+    const setBtn = shadow.querySelector(".set");
+    const raw = (input.value || "").trim();
+
+    if (!raw) {
+      setNote("Enter a folder path first", true);
+      return;
+    }
+
+    savingDir = true;
+    setBtn.disabled = true;
+    setNote("Checking folder…");
+
+    const done = (resp) => {
+      savingDir = false;
+      if (!panelOpen || !shadow) return;
+      setBtn.disabled = !!dirOverride;
+      if (resp && resp.ok) {
+        savedDir = resp.dir;
+        input.value = resp.dir;
+        input.title = resp.dir;
+        setNote(`Saved to ${resp.dir}`);
+      } else {
+        setNote((resp && resp.error) || "Could not use that folder", true);
+      }
+    };
+
+    try {
+      chrome.runtime.sendMessage(
+        { type: "videodl", payload: { action: "setdir", dir: raw } },
+        (resp) => {
+          if (chrome.runtime.lastError) {
+            done({ ok: false, error: chrome.runtime.lastError.message });
+            return;
+          }
+          done(resp);
+        }
+      );
+    } catch (_) {
+      done({ ok: false, error: "Extension reloaded — refresh the page." });
+    }
+  }
+
   // ------------------------------------------------------------------- panel
   function openPanel() {
     if (!currentVideo) return;
@@ -407,6 +540,7 @@
     shadow.querySelector(".go").disabled = true;
 
     positionPanel();
+    loadConfig();
 
     if (!url) {
       setError("Could not determine this page's address.");
@@ -567,7 +701,6 @@
 
     busy = true;
     const go = shadow.querySelector(".go");
-    const note = shadow.querySelector(".note");
     go.disabled = true;
     go.textContent = "Starting…";
 
@@ -575,11 +708,11 @@
       busy = false;
       go.textContent = "Download";
       if (resp && resp.ok) {
-        note.textContent = "Started — progress shows in the OSD";
+        setNote("Started — progress shows in the OSD");
         setTimeout(closePanel, 1400);
       } else {
         go.disabled = false;
-        note.textContent = (resp && resp.error) || "Could not start the download";
+        setNote((resp && resp.error) || "Could not start the download", true);
       }
     };
 
