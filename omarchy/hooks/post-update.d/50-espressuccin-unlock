@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Restore the espressuccin Plymouth boot screen after an Omarchy update.
+#
+# omarchy-settings-dev owns /usr/share/plymouth/themes/omarchy/{logo.png,
+# omarchy.script,...} and ships the DEFAULT art there, so every package upgrade
+# overwrites the installed boot logo and `omarchy plymouth current` falls back
+# to "default". Re-applying the active theme's unlock.png puts the chosen
+# splash back.
+#
+# Runs during `omarchy update`, whose sudo keepalive still holds the timestamp
+# at hook time, so the sudo inside omarchy-plymouth-set never prompts.
+# A standalone run with no cached sudo exits quietly.
+
+set -u
+
+theme=espressuccin
+state="$HOME/.local/state/omarchy/current/theme.name"
+
+# Only when our theme is the active one.
+[[ -f $state && $(<"$state") == "$theme" ]] || exit 0
+
+# Already correct? Skip, so we do not trigger a needless UKI rebuild.
+[[ $(omarchy-plymouth-current 2>/dev/null) == "$theme" ]] && exit 0
+
+# No cached sudo (e.g. run by hand): leave it for the user to re-apply.
+/usr/bin/sudo -n /usr/bin/true >/dev/null 2>&1 || exit 0
+
+omarchy-plymouth-set-by-theme "$theme" >/dev/null 2>&1 || true

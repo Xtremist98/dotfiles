@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Re-bind the mpv webtorrent hook to the node version mise now provides.
+#
+# `omarchy update` runs a mise step that bumps node (config pins `node = "latest"`)
+# and, because auto_prune is on, deletes the previous node build. The hook install
+# itself lives in a node-agnostic prefix (~/.local/share/webtorrent-mpv-hook) and
+# the native node-datachannel binding is N-API (ABI-stable), so the only thing
+# that needs to follow the upgrade is `node_path` in webtorrent.conf.
+#
+# Quiet when already in sync; prints only on change or failure.
+
+set -u
+
+BIN="$HOME/.local/bin/webtorrent-mpv-rebind"
+[ -x "$BIN" ] || exit 0
+
+"$BIN" || true

@@ -1,0 +1,175 @@
+#!/usr/bin/env bash
+# webtorrent-mpv-rebind — keep mpv's webtorrent hook working across node upgrades.
+#
+# The mpv hook (webtorrent-mpv-hook) runs `node <hook>/build/webtorrent.js`, where
+# <hook> lives in a node-agnostic install root. Only the `node_path` in
+# ~/.config/mpv/script-opts/webtorrent.conf is tied to a specific node version,
+# and the native node-datachannel binding is N-API (ABI-stable) so it survives
+# node upgrades. Therefore a node bump needs only this one-line rewrite.
+#
+# Safe to run any time; it is idempotent and takes ~0.2s when nothing changed.
+# Called automatically from:
+#   ~/.config/omarchy/hooks/post-update.d/50-webtorrent-mpv-rebind
+#   ~/.config/mise/config.toml  [hooks] postinstall
+#
+# Usage: webtorrent-mpv-rebind [-q] [--check]
+#   -q       quiet (only print when something changes or fails)
+#   --check  report status, change nothing (exit 1 if out of sync)
+
+set -uo pipefail
+
+HOOK_ROOT="${WEBTORRENT_HOOK_ROOT:-$HOME/.local/share/webtorrent-mpv-hook}"
+HOOK_PKG="$HOOK_ROOT/node_modules/webtorrent-mpv-hook"
+HOOK_ENTRY="$HOOK_PKG/build/webtorrent.js"
+DC_DIR="$HOOK_ROOT/node_modules/node-datachannel"
+MPV_CONF="$HOME/.config/mpv/script-opts/webtorrent.conf"
+MPV_SCRIPT="$HOME/.config/mpv/scripts/webtorrent.js"
+
+QUIET=0
+CHECK=0
+for arg in "$@"; do
+  case "$arg" in
+    -q|--quiet) QUIET=1 ;;
+    --check)    CHECK=1; QUIET=0 ;;
+    -h|--help)  sed -n '2,20p' "$0"; exit 0 ;;
+    *) printf 'webtorrent-rebind: unknown argument: %s\n' "$arg" >&2; exit 2 ;;
+  esac
+done
+
+say()  { [ "$QUIET" = 1 ] || printf 'webtorrent-rebind: %s\n' "$*"; }
+warn() { printf 'webtorrent-rebind: WARNING %s\n' "$*" >&2; }
+err()  { printf 'webtorrent-rebind: ERROR %s\n' "$*" >&2; }
+
+# --- 1. Resolve the node that mise currently provides -------------------------
+# Avoid a recursive mise call deadlocking when invoked from a mise hook: try the
+# install-dir lookups first and only shell out to mise (with a timeout) last.
+resolve_node() {
+  if [ -n "${MISE_NODE_BIN:-}" ] && [ -x "$MISE_NODE_BIN" ]; then
+    printf '%s\n' "$MISE_NODE_BIN"; return 0
+  fi
+
+  local data="${MISE_DATA_DIR:-$HOME/.local/share/mise}"
+  local cand
+
+  # 1. Authoritative answer from mise (timeout guards a lock held by the mise
+  #    operation whose hook invoked us).
+  if [ "${MISE_SKIP_MISE_LOOKUP:-0}" != 1 ] && command -v mise >/dev/null 2>&1; then
+    local dir
+    dir="$(cd "$HOME" && timeout 5 mise where node 2>/dev/null || true)"
+    if [ -n "$dir" ] && [ -x "$dir/bin/node" ]; then printf '%s\n' "$dir/bin/node"; return 0; fi
+  fi
+
+  # 2. Highest installed concrete version (version sort; skip alias symlinks).
+  local best=""
+  for cand in "$data"/installs/node/*/bin/node; do
+    [ -e "$cand" ] || continue
+    case "$cand" in */installs/node/latest/*|*/installs/node/global/*) continue ;; esac
+    # skip symlinked alias dirs
+    [ -L "${cand%/bin/node}" ] && continue
+    if [ -z "$best" ]; then
+      best="$cand"
+    elif [ "$(printf '%s\n%s\n' "$best" "$cand" | sort -V | tail -1)" = "$cand" ]; then
+      best="$cand"
+    fi
+  done
+  if [ -n "$best" ]; then printf '%s\n' "$best"; return 0; fi
+
+  # 3. `latest` alias symlink maintained by mise.
+  cand="$data/installs/node/latest/bin/node"
+  if [ -x "$cand" ]; then printf '%s\n' "$cand"; return 0; fi
+
+  return 1
+}
+
+NODE_BIN="$(resolve_node)" || NODE_BIN=""
+if [ -z "$NODE_BIN" ] || [ ! -x "$NODE_BIN" ]; then
+  err "could not resolve a mise node binary"
+  exit 1
+fi
+if ! NODE_VER="$("$NODE_BIN" -v 2>/dev/null)" || [ -z "$NODE_VER" ]; then
+  err "node at $NODE_BIN is not runnable"
+  exit 1
+fi
+
+# --- 2. Report / repair the node-independent hook install --------------------
+need_install=0
+[ -f "$HOOK_ENTRY" ] || need_install=1
+binding_ok() { [ -f "$DC_DIR/package.json" ] && "$NODE_BIN" -e "require('$(printf '%s' "$DC_DIR" | sed "s/'/\\\\'/g")')" >/dev/null 2>&1; }
+binding_ok || need_install=2
+
+if [ "$need_install" != 0 ] && [ "$CHECK" != 1 ]; then
+  say "hook install incomplete — repairing in $HOOK_ROOT"
+  mkdir -p "$HOOK_ROOT"
+  if [ "$need_install" = 1 ]; then
+    ( cd "$HOOK_ROOT" && PATH="$(dirname "$NODE_BIN"):$PATH" \
+        "$(dirname "$NODE_BIN")/npm" install webtorrent-mpv-hook \
+          --ignore-scripts --no-fund --no-audit ) >/dev/null 2>&1 \
+      || warn "npm install webtorrent-mpv-hook failed"
+  fi
+  if ! binding_ok; then
+    ( cd "$DC_DIR" 2>/dev/null && PATH="$(dirname "$NODE_BIN"):$PATH" \
+        npx --yes prebuild-install -r napi ) >/dev/null 2>&1 \
+      || warn "prebuild-install for node-datachannel failed (WebRTC peers may not work)"
+  fi
+fi
+
+if [ ! -f "$HOOK_ENTRY" ]; then
+  err "hook entry missing: $HOOK_ENTRY"
+  exit 1
+fi
+
+# --- 3. Point the mpv script symlink at the stable install -------------------
+link_ok=0
+[ "$(readlink -f "$MPV_SCRIPT" 2>/dev/null || true)" = "$(readlink -f "$HOOK_ENTRY")" ] && link_ok=1
+if [ "$CHECK" = 1 ]; then
+  [ "$link_ok" = 1 ] || warn "mpv script symlink -> $(readlink -f "$MPV_SCRIPT" 2>/dev/null || echo '<none>') (expected $HOOK_ENTRY)"
+else
+  if [ "$link_ok" != 1 ]; then
+    mkdir -p "$(dirname "$MPV_SCRIPT")"
+    ln -sfn "$HOOK_ENTRY" "$MPV_SCRIPT"
+    say "relinked $MPV_SCRIPT -> $HOOK_ENTRY"
+  fi
+fi
+
+# --- 4. Rewrite node_path in webtorrent.conf --------------------------------
+conf_cur() {
+  [ -f "$MPV_CONF" ] || { printf ''; return; }
+  sed -n 's/^[[:space:]]*node_path[[:space:]]*=[[:space:]]*//p' "$MPV_CONF" | tail -1
+}
+cur_node="$(conf_cur)"
+node_ok=0
+[ "$cur_node" = "$NODE_BIN" ] && node_ok=1
+
+if [ "$node_ok" != 1 ]; then
+  if [ "$CHECK" = 1 ]; then
+    warn "node_path out of sync: '${cur_node:-<unset>}' (expected $NODE_BIN)"
+  else
+    mkdir -p "$(dirname "$MPV_CONF")"
+    [ -f "$MPV_CONF" ] || : > "$MPV_CONF"
+    if grep -qE '^[[:space:]]*#?[[:space:]]*node_path[[:space:]]*=' "$MPV_CONF"; then
+      # Replace the first commented-or-live node_path line.
+      tmp="$(mktemp)"
+      awk -v p="$NODE_BIN" '
+        !done && /^[[:space:]]*#?[[:space:]]*node_path[[:space:]]*=/ { print "node_path=" p; done=1; next }
+        { print }
+      ' "$MPV_CONF" > "$tmp" && cat "$tmp" > "$MPV_CONF"
+      rm -f "$tmp"
+    else
+      printf 'node_path=%s\n' "$NODE_BIN" >> "$MPV_CONF"
+    fi
+    say "node_path ${cur_node:-<unset>} -> $NODE_BIN ($NODE_VER)"
+  fi
+fi
+
+# --- 5. Verify --------------------------------------------------------------
+binding_ok || { warn "node-datachannel does not load under $NODE_VER ($NODE_BIN)"; [ "$CHECK" = 1 ] || exit 1; }
+
+if [ "$CHECK" = 1 ]; then
+  if [ "$link_ok" = 1 ] && [ "$node_ok" = 1 ] && binding_ok; then
+    say "in sync: node $NODE_VER ($NODE_BIN), hook $HOOK_ENTRY"
+    exit 0
+  fi
+  exit 1
+fi
+say "ok: node $NODE_VER ($NODE_BIN)"
+exit 0

@@ -1,0 +1,12 @@
+[tools]
+node = "latest"
+opencode = "latest"
+
+[settings.upgrade]
+auto_prune = true
+
+[hooks]
+# After any tool install/upgrade, re-point the mpv webtorrent hook at the node
+# mise now provides (see ~/.local/bin/webtorrent-mpv-rebind). Never fails the
+# mise run: the omarchy post-update hook re-checks later and reports loudly.
+postinstall = "$HOME/.local/bin/webtorrent-mpv-rebind -q || true"
