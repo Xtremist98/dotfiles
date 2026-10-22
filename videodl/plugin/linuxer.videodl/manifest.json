@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "linuxer.videodl",
+  "name": "Video Grabber",
+  "version": "1.0.0",
+  "author": "linuxer",
+  "license": "MIT",
+  "description": "Live progress for Video Grabber downloads in the Omarchy bar: a continuous progress line, speeds, remaining time, thumbnails, and the files already saved.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "Video Grabber",
+    "description": "A download ring in the bar. Open it for live progress, speed and remaining time on everything in flight, and the files already finished.",
+    "category": "Files",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "pollActiveSec": 2,
+      "pollIdleSec": 20,
+      "maxCompleted": 12
+    },
+    "schema": [
+      {
+        "key": "pollActiveSec",
+        "type": "integer",
+        "label": "Refresh while downloading (seconds)",
+        "min": 1,
+        "max": 10,
+        "step": 1,
+        "defaultValue": 2,
+        "description": "How often job state is re-read while something is in flight. The panel alone also polls at this rate whenever it is open."
+      },
+      {
+        "key": "pollIdleSec",
+        "type": "integer",
+        "label": "Refresh when idle (seconds)",
+        "min": 5,
+        "max": 120,
+        "step": 5,
+        "defaultValue": 20,
+        "description": "The idle rate, so a quiet bar is not starting a process every couple of seconds. New downloads are still picked up within this window."
+      },
+      {
+        "key": "maxCompleted",
+        "type": "integer",
+        "label": "Finished files listed",
+        "min": 0,
+        "max": 50,
+        "step": 1,
+        "defaultValue": 12,
+        "description": "How many completed downloads the finished list keeps. Older entries stay on disk until the host prunes them."
+      }
+    ]
+  }
+}

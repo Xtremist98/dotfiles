@@ -22,8 +22,15 @@
   let formatsUrl = "";
   let busy = false;
   let savingDir = false;
+  let pickingDir = false; // a native folder chooser is open
   let savedDir = ""; // folder the host will use
   let dirOverride = ""; // non-empty when VIDEODL_DIR forces a folder
+
+  // Per-download post-processing choices. yt-dlp does both by default, so the
+  // panel starts with them on and remembers whatever the user picks.
+  const OPT_KEY = "videodl.embed";
+  let embedThumb = true;
+  let embedMeta = true;
 
   const cache = new Map(); // url -> formats payload
 
@@ -131,6 +138,13 @@
           pointer-events: auto; padding: 0;
         }
         .card[hidden] { display: none; }
+        .card::-webkit-scrollbar { width: 8px; }
+        .card::-webkit-scrollbar-track { background: transparent; }
+        .card::-webkit-scrollbar-thumb {
+          background: rgba(167,192,128,.28); border-radius: 8px;
+          border: 2px solid #1a1713;
+        }
+        .card::-webkit-scrollbar-thumb:hover { background: rgba(167,192,128,.5); }
         .head {
           display: flex; gap: 8px; align-items: flex-start;
           padding: 11px 12px 9px; border-bottom: 1px solid rgba(209,196,169,.12);
@@ -190,6 +204,17 @@
           background: rgba(167,192,128,.18); border-color: rgba(167,192,128,.55);
           color: #A7C080; font-weight: 600;
         }
+        .chkrow { display: flex; align-items: center; gap: 4px; margin: 0 0 1px -7px; }
+        .chk {
+          display: flex; align-items: center; gap: 6px; padding: 2px 7px;
+          border-radius: 7px; cursor: pointer; color: #b9ae97;
+        }
+        .chk:hover { background: rgba(209,196,169,.08); color: #d1c4a9; }
+        .chk input {
+          margin: 0; flex: none; accent-color: #A7C080;
+          width: 12px; height: 12px; cursor: pointer;
+        }
+        .chk span { flex: 1; min-width: 0; font-size: 11.5px; line-height: 1.4; }
         .foot {
           display: flex; flex-direction: column; gap: 7px;
           padding: 9px 12px 11px; border-top: 1px solid rgba(209,196,169,.12);
@@ -212,6 +237,15 @@
         }
         .set:hover { background: rgba(167,192,128,.16); }
         .set:disabled { opacity: .45; cursor: default; }
+        .pick {
+          flex: none; display: flex; align-items: center; justify-content: center;
+          width: 26px; height: 26px; padding: 0; border-radius: 7px;
+          cursor: pointer; background: transparent; color: #A7C080;
+          border: 1px solid rgba(167,192,128,.35);
+        }
+        .pick:hover { background: rgba(167,192,128,.16); }
+        .pick:disabled { opacity: .45; cursor: default; background: transparent; }
+        .pick svg { width: 14px; height: 14px; }
         .footrow { display: flex; align-items: center; gap: 8px; }
         .note { flex: 1; font-size: 11px; color: #7c7468; word-break: break-all; }
         .note.err { color: #E67E80; }
@@ -257,9 +291,26 @@
           </div>
         </div>
         <div class="foot">
+          <div class="chkrow">
+            <label class="chk" title="Put the video thumbnail in the file as cover art">
+              <input type="checkbox" class="cthumb" checked>
+              <span>Thumbnail</span>
+            </label>
+            <label class="chk" title="Write the title and source tags into the file">
+              <input type="checkbox" class="cmeta" checked>
+              <span>Metadata</span>
+            </label>
+          </div>
           <div class="dirline">
             <input class="dir" type="text" spellcheck="false" autocomplete="off"
                    placeholder="/mnt/media/Downloads" title="Where to save the file" />
+            <button class="pick" type="button" title="Choose a folder…">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   aria-hidden="true">
+                <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2.5h7A1.5 1.5 0 0 1 19 10v7a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 3 17z"></path>
+              </svg>
+            </button>
             <button class="set" type="button" title="Save to this folder">Set</button>
           </div>
           <div class="footrow">
@@ -292,12 +343,25 @@
       e.stopPropagation();
       saveDir();
     });
+    shadow.querySelector(".pick").addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      pickDir();
+    });
     shadow.querySelector(".dir").addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         saveDir();
       }
+    });
+    shadow.querySelector(".cthumb").addEventListener("change", (e) => {
+      embedThumb = !!e.target.checked;
+      saveEmbedOpts();
+    });
+    shadow.querySelector(".cmeta").addEventListener("change", (e) => {
+      embedMeta = !!e.target.checked;
+      saveEmbedOpts();
     });
     // Any change inside the panel (radio picks included) keeps the panels in sync.
     shadow.querySelector(".card").addEventListener("change", syncAudioOpts);
@@ -434,6 +498,41 @@
     note.classList.toggle("err", !!isError);
   }
 
+  // Post-processing choices live in chrome.storage so they stick per browser
+  // profile; every extra guard is for contexts where storage is unavailable.
+  function applyEmbedOpts() {
+    if (!shadow) return;
+    const t = shadow.querySelector(".cthumb");
+    const m = shadow.querySelector(".cmeta");
+    if (t) t.checked = embedThumb;
+    if (m) m.checked = embedMeta;
+  }
+
+  function saveEmbedOpts() {
+    try {
+      const store = chrome.storage && chrome.storage.local;
+      if (store) store.set({ [OPT_KEY]: { thumb: embedThumb, meta: embedMeta } });
+    } catch (_) {
+      /* storage unavailable — the choice still applies to this session */
+    }
+  }
+
+  function loadEmbedOpts() {
+    applyEmbedOpts();
+    try {
+      const store = chrome.storage && chrome.storage.local;
+      if (!store) return;
+      store.get(OPT_KEY, (v) => {
+        const s = (v && v[OPT_KEY]) || {};
+        if (typeof s.thumb === "boolean") embedThumb = s.thumb;
+        if (typeof s.meta === "boolean") embedMeta = s.meta;
+        applyEmbedOpts();
+      });
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
   function applyConfig(cfg) {
     if (!panelOpen || !shadow || !cfg || !cfg.ok) return;
     savedDir = cfg.dir || "";
@@ -541,6 +640,7 @@
 
     positionPanel();
     loadConfig();
+    loadEmbedOpts();
 
     if (!url) {
       setError("Could not determine this page's address.");
@@ -699,6 +799,15 @@
       };
     }
 
+    // Jobs carry the title/site/thumbnail so the bar panel can show a job card
+    // without re-probing the network; the host fills in whatever is missing.
+    const meta = formats || {};
+    payload.embed_thumbnail = embedThumb;
+    payload.embed_metadata = embedMeta;
+    payload.title = String(meta.title || document.title || "").slice(0, 200);
+    payload.site = String(meta.site || "");
+    payload.thumb = String(meta.thumbnail || "");
+
     busy = true;
     const go = shadow.querySelector(".go");
     go.disabled = true;
@@ -708,7 +817,7 @@
       busy = false;
       go.textContent = "Download";
       if (resp && resp.ok) {
-        setNote("Started — progress shows in the OSD");
+        setNote("Queued — follow it in the Video Grabber bar panel");
         setTimeout(closePanel, 1400);
       } else {
         go.disabled = false;

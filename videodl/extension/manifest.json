@@ -2,10 +2,11 @@
   "manifest_version": 3,
   "name": "Video Grabber",
   "version": "1.0.0",
-  "description": "Floating download button on videos, with video-quality and audio-only selection.",
+  "description": "Floating download button on videos, with video-quality, audio-only and embed options.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvOxP6XvNjjOHOx/Myt4zN7nOt+fPiZPn/UrilaxGvXnSaicCEXVcPyLX2mJLNr2UM1+p+sAjs9j50j4a2mo5kXWzZcicyBLZ4aSIgxprEIyA+9XjCf8/5soXoj89F/kyPHJwMLyAa1PV6BKoQD6xkrob+13waJMm+7iElDE0KD0CRCQ5r02Cr6lASic0yXn/lWjFpZ0kp84XofsrMaEQhVt2puIQ37aOjJUxoVkezvYDBcf1GZiTpAXxcyES9CdpToRbiWaxcQ/TgcFwADjWDhUtm0KpP5TBuxsR19x9ZJ3LvnQBU3sgQyTOw2bwQsWlM/2dKYOvt49S+ck/yalnxQIDAQAB",
   "permissions": [
-    "nativeMessaging"
+    "nativeMessaging",
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"

@@ -9,26 +9,82 @@
 #     "mode":"audio","format_id":"251","convert":"mp3"}
 #   {"action":"config"}                -> {"ok":true,"dir":"/home/u/Videos",...}
 #   {"action":"setdir","dir":"/mnt/media/Downloads"} -> {"ok":true,"dir":"..."}
+#   {"action":"pick-dir"}              -> native folder chooser, saves + returns it
+#   {"action":"show-dir"}              -> opens the current folder in the FM
+#   {"action":"jobs"}                  -> {"ok":true,"jobs":[...]}  (panel feed)
+#   {"action":"job-action","op":...,"id":...}
+#     op = cancel|retry|remove|open|reveal|clear-completed
 #
 # The download itself is detached (setsid) so the browser's port is released
-# immediately; progress is shown through the Quickshell OSD, like Omarchy does.
+# immediately. There is no OSD: every job writes its own JSON record under
+# ~/.local/state/videodl/jobs/ and the Omarchy bar panel (linuxer.videodl)
+# reads them. One writer per file, so nothing needs locking.
+#
+# The same records are readable from a shell, which is what the panel does:
+#   videodl-host --jobs
+#   videodl-host --job-action cancel 20261022-143012-4f2a
 
 import json
 import os
 import re
+import shutil
+import signal
 import struct
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import urllib.request
 from pathlib import Path
 
 HOST_NAME = "com.linuxer.videodl"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "videodl"
 LOG_PATH = STATE_DIR / "host.log"
+JOB_DIR = STATE_DIR / "jobs"
+THUMB_DIR = STATE_DIR / "thumbs"
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "videodl"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 DEFAULT_DIR = Path.home() / "Videos"
+
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) videodl/1.1"
+JOB_KEEP = 60
+FRAGMENTS = 4
+
+# YouTube answers anonymous yt-dlp runs with "Sign in to confirm you're not a
+# bot", so every yt-dlp call reuses the desktop browser's own session cookies.
+# Which browser is decided once, in this order: config "cookies" (auto | a
+# browser name | "browser:profile" | "none") -> the https:// handler in
+# ~/.config/mimeapps.list -> chromium -> brave -> chrome.
+COOKIE_DB = {
+    "chromium": [("~/.config/chromium/Default/Cookies", "")],
+    "brave": [
+        ("~/.config/BraveSoftware/Brave-Browser/Default/Cookies", ""),
+        # Brave Origin is not one of yt-dlp's built-in roots, so its profile
+        # directory has to be passed explicitly.
+        (
+            "~/.config/BraveSoftware/Brave-Origin/Default/Cookies",
+            "~/.config/BraveSoftware/Brave-Origin",
+        ),
+    ],
+    "chrome": [("~/.config/google-chrome/Default/Cookies", "")],
+}
+COOKIE_ORDER = ("chromium", "brave", "chrome")
+# Only messages that mean "the cookie file could not be read" trigger the
+# cookie-free retry; the bot-check message also says "--cookies", but there the
+# retry would just fail again more slowly.
+COOKIE_FAILURE_HINTS = (
+    "failed to decrypt",
+    "could not find cookie",
+    "failed to read cookie",
+    "cookie database",
+    # "could not find chromium cookies database in ..." — the profile moved or
+    # the browser was never configured for this session.
+    "cookies database",
+    "secretstorage",
+    "keyring",
+    "malformed database",
+)
 
 PATH_PREFIX = ["/usr/share/omarchy/bin", "/usr/local/bin", "/usr/bin", "/bin"]
 URL_RE = re.compile(r"^https?://[^\s\"'<>]{4,2048}$")
@@ -138,6 +194,89 @@ def ensure_dir(path):
     return path, ""
 
 
+# --------------------------------------------------------------------- cookies
+def default_browser():
+    """Browser named by the https:// handler in mimeapps.list ('' when unknown)."""
+    path = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "mimeapps.list"
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return ""
+    for line in text.splitlines():
+        line = line.strip()
+        if not line.startswith("x-scheme-handler/https="):
+            continue
+        desktop = line.split("=", 1)[1].split(";")[0].strip().lower()
+        if "brave" in desktop:
+            return "brave"
+        if "chromium" in desktop:
+            return "chromium"
+        if "chrome" in desktop:
+            return "chrome"
+    return ""
+
+
+def cookie_db(browser):
+    """-> (cookie db Path, profile dir or "") for `browser`, or (None, "")."""
+    for raw_db, raw_profile in COOKIE_DB.get(browser, ()):
+        db = Path(os.path.expanduser(raw_db))
+        if db.is_file():
+            profile = os.path.expanduser(raw_profile) if raw_profile else ""
+            return db, profile
+    return None, ""
+
+
+def cookie_spec():
+    """Resolve the config into a --cookies-from-browser value. '' = anonymous."""
+    raw = str(load_config().get("cookies") or "auto").strip()
+    low = raw.lower()
+    if low in ("none", "off", "no", "false", "0"):
+        return ""
+    if low not in ("", "auto"):
+        if ":" in raw:
+            # An explicit browser:profile is handed to yt-dlp untouched.
+            return raw
+        db, _profile = cookie_db(low)
+        if not db:
+            log("cookies: %s has no cookie database, downloading anonymously" % low)
+            return ""
+        return low
+    preferred = default_browser() or COOKIE_ORDER[0]
+    for name in (preferred,) + COOKIE_ORDER:
+        db, profile = cookie_db(name)
+        if not db:
+            continue
+        return "%s:%s" % (name, profile) if profile else name
+    log("cookies: no browser cookie database found, downloading anonymously")
+    return ""
+
+
+def cookie_args():
+    spec = cookie_spec()
+    return ["--cookies-from-browser", spec] if spec else []
+
+
+def cookie_problem(text):
+    """True when a yt-dlp error means the cookie file could not be read."""
+    low = (text or "").lower()
+    return any(hint in low for hint in COOKIE_FAILURE_HINTS)
+
+
+def strip_cookies(cmd):
+    """The same argv with --cookies-from-browser and its value removed."""
+    out = []
+    skip = False
+    for part in cmd:
+        if skip:
+            skip = False
+            continue
+        if part == "--cookies-from-browser":
+            skip = True
+            continue
+        out.append(part)
+    return out
+
+
 def config_reply():
     path = target_dir()
     return {
@@ -147,7 +286,80 @@ def config_reply():
         "writable": os.access(path, os.W_OK) if path.is_dir() else False,
         "override": env_override(),
         "default": str(DEFAULT_DIR),
+        "cookies": cookie_spec(),
+        "cookies_default": default_browser(),
     }
+
+
+PICK_TIMEOUT = 180
+
+
+def pick_dir():
+    """A real folder chooser, saved as the download dir.
+
+    The panel's location field is free text, but a folder on another disk is
+    much easier to point at with a native dialog, so this returns whatever the
+    picker hands back and stores it exactly like `setdir` does.
+    """
+    current = target_dir()
+    start = str(current if current.is_dir() else Path.home())
+    if not start.endswith(os.sep):
+        start += os.sep
+    title = "Choose where videodl saves downloads"
+
+    zenity = shutil.which("zenity")
+    kdialog = shutil.which("kdialog")
+    if zenity:
+        cmd = [
+            zenity,
+            "--file-selection",
+            "--directory",
+            "--title", title,
+            "--filename", start,
+        ]
+    elif kdialog:
+        cmd = [kdialog, "--getexistingdirectory", start, "--title", title]
+    else:
+        return {"ok": False, "error": "no folder picker installed (install zenity)"}
+
+    try:
+        res = subprocess.run(
+            cmd,
+            env=env(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=PICK_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        log("pick-dir: the folder picker timed out")
+        return {"ok": True, "cancelled": True, "dir": str(current)}
+    except Exception as exc:
+        log("pick-dir: %s" % exc)
+        return {"ok": False, "error": "cannot open the folder picker: %s" % exc}
+
+    if res.returncode != 0:
+        # Both pickers exit non-zero when the dialog is cancelled.
+        return {"ok": True, "cancelled": True, "dir": str(current)}
+
+    lines = (res.stdout or "").strip().splitlines()
+    path = expand_dir(lines[0]) if lines else None
+    if path is None:
+        return {"ok": True, "cancelled": True, "dir": str(current)}
+    if not path.is_absolute():
+        return {"ok": False, "error": "the picker returned a relative path"}
+    path, dir_err = ensure_dir(path)
+    if dir_err:
+        return {"ok": False, "error": dir_err}
+    cfg = load_config()
+    cfg["dir"] = str(path)
+    try:
+        save_config(cfg)
+    except Exception as exc:
+        return {"ok": False, "error": "cannot save the setting: %s" % exc}
+    log("pick-dir: using %s" % path)
+    return {"ok": True, "dir": str(path)}
 
 
 def env():
@@ -173,49 +385,258 @@ def run(cmd, timeout=90, capture=True):
     )
 
 
-def notify(glyph, title, body, urgency=None, image=None, exec_args=None, timeout=None):
-    cmd = ["omarchy-notification-send"]
-    if urgency:
-        cmd += ["-u", urgency]
-    cmd += ["-g", glyph, title, body]
-    if timeout:
-        cmd += ["-t", str(timeout)]
-    if image:
-        cmd += ["--image", image]
-    if exec_args:
-        cmd += ["--exec"] + exec_args
+# ------------------------------------------------------------------------ jobs
+# One JSON file per download, written only by that download's own worker. The
+# bar panel reads them with `videodl-host --jobs`; no locking, no shared state.
+ACTIVE_STATES = ("queued", "running", "processing")
+TERMINAL_STATES = ("completed", "failed", "cancelled")
+
+
+def now_ms():
+    return int(time.time() * 1000)
+
+
+def new_job_id():
+    return time.strftime("%Y%m%d-%H%M%S") + "-" + os.urandom(2).hex()
+
+
+def job_path(job_id):
+    return JOB_DIR / (job_id + ".json")
+
+
+def write_job(rec):
+    """Atomic replace so a reader never sees a half-written record."""
     try:
-        run(cmd, timeout=15)
+        JOB_DIR.mkdir(parents=True, exist_ok=True)
+        path = job_path(rec["id"])
+        tmp = path.with_name(path.name + ".tmp")
+        with tmp.open("w", encoding="utf-8") as fh:
+            json.dump(rec, fh, ensure_ascii=False)
+        os.replace(tmp, path)
     except Exception as exc:
-        log("notify failed: %s" % exc)
+        log("write_job: %s" % exc)
 
 
-def i18n(key, fallback):
+def read_job(job_id):
     try:
-        out = run(["omarchy-i18n", key], timeout=5)
-        val = (out.stdout or "").strip()
-        return val or fallback
+        rec = json.loads(job_path(job_id).read_text(encoding="utf-8"))
+        return rec if isinstance(rec, dict) else None
     except Exception:
-        return fallback
+        return None
 
 
-def osd_progress(pct):
+def list_jobs():
+    """Newest first. Feeds the bar panel and `--jobs`."""
+    JOB_DIR.mkdir(parents=True, exist_ok=True)
+    out = []
+    for p in JOB_DIR.glob("*.json"):
+        try:
+            rec = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if isinstance(rec, dict) and rec.get("id"):
+            out.append(rec)
+    out.sort(key=lambda r: (r.get("started") or 0, r.get("id") or ""), reverse=True)
+    return out
+
+
+def drop_job(job_id):
+    for p in (job_path(job_id), THUMB_DIR / (job_id + ".jpg")):
+        try:
+            p.unlink()
+        except Exception:
+            pass
+
+
+def prune_jobs():
+    for rec in list_jobs()[JOB_KEEP:]:
+        if rec.get("status") in ACTIVE_STATES:
+            continue
+        drop_job(rec["id"])
+
+
+def num(raw):
+    """yt-dlp prints NA/None for values it does not know yet."""
+    text = (raw or "").strip()
+    if not text or text in ("NA", "None", "none", "null"):
+        return 0
     try:
-        run(["omarchy-osd", "-i", "\U000f01d9", "-p", str(pct), "-d", "8000"], timeout=5)
+        return int(float(text))
+    except Exception:
+        return 0
+
+
+def save_thumbnail(url, job_id):
+    """Fetch the video thumbnail as a small JPEG. Best effort; '' on failure."""
+    if not url:
+        return ""
+    try:
+        THUMB_DIR.mkdir(parents=True, exist_ok=True)
+        raw = THUMB_DIR / (job_id + ".src")
+        out = THUMB_DIR / (job_id + ".jpg")
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=25) as resp:
+            raw.write_bytes(resp.read(4 * 1024 * 1024))
+        res = run(
+            [
+                "ffmpeg", "-y", "-i", str(raw), "-vf", "scale=320:-2",
+                "-q:v", "3", str(out), "-loglevel", "quiet",
+            ],
+            timeout=30,
+        )
+        if res.returncode == 0 and out.exists() and out.stat().st_size:
+            return str(out)
+    except Exception as exc:
+        log("thumb: %s" % exc)
+    finally:
+        try:
+            (THUMB_DIR / (job_id + ".src")).unlink()
+        except Exception:
+            pass
+    return ""
+
+
+def frame_thumb(filepath, job_id):
+    """Fallback preview grabbed from the finished file itself."""
+    out = THUMB_DIR / (job_id + ".jpg")
+    try:
+        THUMB_DIR.mkdir(parents=True, exist_ok=True)
+        res = run(
+            [
+                "ffmpeg", "-y", "-ss", "1", "-i", str(filepath), "-frames:v", "1",
+                "-vf", "scale=320:-2", "-q:v", "4", str(out), "-loglevel", "quiet",
+            ],
+            timeout=30,
+        )
+        if res.returncode == 0 and out.exists() and out.stat().st_size:
+            return str(out)
     except Exception:
         pass
+    return ""
 
 
-def osd_close():
+def open_path(target):
     try:
-        run(["omarchy-shell", "-q", "osd", "close"], timeout=5)
-    except Exception:
-        pass
+        subprocess.Popen(
+            ["xdg-open", str(target)],
+            env=env(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return True
+    except Exception as exc:
+        log("xdg-open: %s" % exc)
+        return False
+
+
+def play_media(target):
+    """Open a finished download in mpv (the user's viewer), not the default app."""
+    player = shutil.which("mpv")
+    if not player:
+        log("mpv not found, falling back to xdg-open")
+        return open_path(target)
+    try:
+        # --loop=no overrides mpv.conf's loop=yes so a finished file is watched
+        # once, and --force-window gives audio-only downloads a real window.
+        subprocess.Popen(
+            [player, "--force-window=yes", "--loop=no", "--", str(target)],
+            env=env(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return True
+    except Exception as exc:
+        log("mpv: %s" % exc)
+        return False
+
+
+def job_action(op, job_id):
+    """cancel | retry | remove | open | reveal | clear-completed.
+
+    `open` hands a finished file to mpv; `reveal` still opens the file manager.
+    """
+    if op == "clear-completed":
+        cleared = 0
+        for rec in list_jobs():
+            if rec.get("status") in TERMINAL_STATES:
+                drop_job(rec["id"])
+                cleared += 1
+        return {"ok": True, "cleared": cleared}
+
+    rec = read_job(job_id) if job_id else None
+    if not rec:
+        return {"ok": False, "error": "unknown job"}
+
+    if op == "cancel":
+        if rec.get("status") not in ACTIVE_STATES:
+            return {"ok": True, "status": rec.get("status")}
+        pid = int(rec.get("pid") or 0)
+        if pid:
+            try:
+                os.killpg(os.getpgid(pid), signal.SIGTERM)
+            except Exception as exc:
+                log("cancel %s: %s" % (job_id, exc))
+        rec.update(
+            status="cancelled", finished=now_ms(), updated=now_ms(), speed=0, eta=0
+        )
+        write_job(rec)
+        return {"ok": True, "status": "cancelled"}
+
+    if op == "remove":
+        drop_job(job_id)
+        return {"ok": True}
+
+    if op in ("open", "reveal"):
+        target = rec.get("file") or rec.get("dir") or ""
+        if not target:
+            return {"ok": False, "error": "nothing to open yet"}
+        path = Path(target)
+        if op == "reveal" and not path.is_dir():
+            path = path.parent
+        if not path.exists():
+            return {"ok": False, "error": "gone: %s" % path}
+        if op == "open" and not path.is_dir():
+            return {"ok": True} if play_media(path) else {"ok": False, "error": "cannot play"}
+        return {"ok": True} if open_path(path) else {"ok": False, "error": "cannot open"}
+
+    if op == "retry":
+        request = rec.get("request") or {}
+        if not request.get("url"):
+            return {"ok": False, "error": "nothing to retry"}
+        payload = dict(request)
+        payload["id"] = new_job_id()
+        payload["thumb_url"] = rec.get("thumb_url") or ""
+        payload["title"] = rec.get("title") or ""
+        payload["site"] = rec.get("site") or ""
+        fresh = dict(rec)
+        fresh.update(
+            id=payload["id"], status="queued", done=0, total=0, speed=0, eta=0,
+            percent=0.0, file="", name="", size=0, error="", pid=0, thumb="",
+            fragment_index=0, fragment_count=0, finished=0,
+            started=now_ms(), updated=now_ms(),
+        )
+        write_job(fresh)
+        detach_worker(payload)
+        return {"ok": True, "id": payload["id"], "status": "queued"}
+
+    return {"ok": False, "error": "unknown op"}
 
 
 # ---------------------------------------------------------------------- formats
 def extract_formats(url):
-    res = run(["yt-dlp", "-J", "--no-playlist", "--no-warnings", "--", url], timeout=120)
+    extra = cookie_args()
+    base = ["yt-dlp", "-J", "--no-playlist", "--no-warnings"]
+    res = run(base + extra + ["--", url], timeout=150)
+
+    if res.returncode != 0 and extra and cookie_problem(res.stderr):
+        log("formats: browser cookies unusable, retrying without them")
+        extra = []
+        res = run(base + ["--", url], timeout=120)
+
     if res.returncode != 0:
         err = (res.stderr or "").strip().splitlines()
         return {"ok": False, "error": (err[-1] if err else "yt-dlp could not read this page")[:300]}
@@ -319,6 +740,7 @@ def extract_formats(url):
         "duration": info.get("duration") or 0,
         "site": info.get("extractor_key") or info.get("extractor") or "",
         "webpage_url": info.get("webpage_url") or url,
+        "thumbnail": info.get("thumbnail") or "",
         "heights": sorted(heights, reverse=True),
         "video": video_list,
         "audio": audio_list[:12],
@@ -334,6 +756,12 @@ def build_command(payload, out_dir):
 
     cmd = [
         "yt-dlp",
+        # Ignore the user's ~/.config/yt-dlp/config. It routinely pins an
+        # external downloader (aria2c), another output path and its own -f /
+        # --merge-output-format. With an external downloader yt-dlp's progress
+        # hook fires only once at completion, so every job would read 100 % from
+        # its first tick. Everything we need is passed explicitly below.
+        "--ignore-config",
         "--no-playlist",
         "--no-simulate",
         "--newline",
@@ -341,11 +769,29 @@ def build_command(payload, out_dir):
         "--no-warnings",
         "--no-exec",
         "--no-exec-before-download",
-        "--progress-template", "download:VIDEODL_PROG\t%(progress._percent_str)s",
+        # YouTube needs the browser's session, or it refuses with a bot check.
+        *cookie_args(),
+        # Fragments in parallel: HLS/DASH pages download ~4x faster and this is
+        # what the panel's "chunk k/n" readout is counting. This is the
+        # segmented engine; wall time matches aria2c -x16 here.
+        "--concurrent-fragments", str(FRAGMENTS),
+        # One tab-separated line per tick, everything the panel needs.
+        "--progress-template",
+        "download:VIDEODL_PROG\t%(progress.downloaded_bytes)s\t"
+        "%(progress.total_bytes)s\t%(progress.total_bytes_estimate)s\t"
+        "%(progress.speed)s\t%(progress.eta)s\t"
+        "%(progress.fragment_index)s\t%(progress.fragment_count)s\t"
+        "%(progress.status)s",
         "--print", "after_move:VIDEODL_FILE\t%(filepath)s",
         "--print", "after_move:VIDEODL_TITLE\t%(title)j",
         "--paths", str(out_dir),
     ]
+
+    # Per-download choices from the panel, both default ON in the extension.
+    if payload.get("embed_metadata", True):
+        cmd += ["--embed-metadata"]
+    if payload.get("embed_thumbnail", True):
+        cmd += ["--embed-thumbnail", "--convert-thumbnails", "jpg"]
 
     if mode == "audio":
         fid = payload.get("format_id") or ""
@@ -363,7 +809,6 @@ def build_command(payload, out_dir):
             cmd += ["--audio-format", convert if convert != "ogg" else "vorbis"]
         else:
             cmd += ["--audio-format", "best"]
-        cmd += ["--embed-metadata"]
         cmd += ["-o", outtmpl]
     else:
         try:
@@ -417,7 +862,27 @@ def build_command(payload, out_dir):
     return cmd
 
 
+PP_TAGS = (
+    "[Merger]",
+    "[ExtractAudio]",
+    "[VideoConvertor]",
+    "[VideoRemuxer]",
+    "[EmbedThumbnail]",
+    "[ThumbnailsConvertor]",
+    "[Metadata]",
+    "[FixupM3u8]",
+    "[FixupM4a]",
+    "[MoveFiles]",
+)
+
+
 def worker(payload_path):
+    """Run one download and keep its job record current.
+
+    The record is the whole interface: the bar panel polls it with `--jobs`.
+    Every write goes through write_job(), which replaces the file atomically,
+    so a reader can never catch a half-written record.
+    """
     try:
         payload = json.loads(Path(payload_path).read_text())
     except Exception as exc:
@@ -429,119 +894,256 @@ def worker(payload_path):
         except Exception:
             pass
 
-    url = payload.get("url", "")
+    job_id = payload.get("id") or new_job_id()
+    request = {
+        "url": payload.get("url", ""),
+        "mode": payload.get("mode") or "video",
+        "height": payload.get("height") or 0,
+        "codec": payload.get("codec") or "",
+        "format_id": payload.get("format_id") or "",
+        "convert": payload.get("convert") or "",
+        "embed_thumbnail": bool(payload.get("embed_thumbnail", True)),
+        "embed_metadata": bool(payload.get("embed_metadata", True)),
+    }
+
+    rec = read_job(job_id) or {}
+    rec.update(
+        id=job_id,
+        status="running",
+        mode=request["mode"],
+        url=request["url"],
+        title=payload.get("title") or rec.get("title") or "",
+        site=payload.get("site") or rec.get("site") or "",
+        thumb_url=payload.get("thumb_url") or rec.get("thumb_url") or "",
+        height=request["height"],
+        codec=request["codec"],
+        convert=request["convert"],
+        embed_thumbnail=request["embed_thumbnail"],
+        embed_metadata=request["embed_metadata"],
+        request=request,
+        pid=os.getpid(),
+        started=rec.get("started") or now_ms(),
+        updated=now_ms(),
+        finished=0,
+        error="",
+    )
+    for key in ("dir", "file", "name", "thumb"):
+        rec.setdefault(key, "")
+    for key in ("size", "done", "total", "speed", "eta", "fragment_index", "fragment_count"):
+        rec.setdefault(key, 0)
+    rec.setdefault("percent", 0.0)
+    write_job(rec)
+
+    def flush(**kw):
+        rec.update(kw)
+        rec["updated"] = now_ms()
+        write_job(rec)
+
     out_dir, dir_err = ensure_dir(target_dir())
     if dir_err:
         # Never silently fall back to another disk: a full root partition is
-        # worse than a clear failure.
+        # worse than a clear failure the panel can show.
         log("worker: %s" % dir_err)
-        notify(
-            "\U000f0156",
-            i18n("download.failed", "Download failed"),
-            dir_err,
-            urgency="critical",
-        )
+        flush(status="failed", error=dir_err, finished=now_ms())
         return 1
+    flush(dir=str(out_dir))
+
+    # Thumbnail in the background so a slow image host cannot delay the
+    # download itself; the panel just shows no preview until it lands.
+    def _fetch_thumb():
+        path = save_thumbnail(rec.get("thumb_url") or "", job_id)
+        if path:
+            cur = read_job(job_id) or rec
+            cur["thumb"] = path
+            cur["updated"] = now_ms()
+            write_job(cur)
+
+    if rec.get("thumb_url"):
+        threading.Thread(target=_fetch_thumb, daemon=True).start()
 
     cmd = build_command(payload, out_dir)
-    log("worker: %s" % " ".join(cmd))
 
-    osd_progress(0)
+    child = {"proc": None}
 
-    last_pct = None
-    last_ms = 0
-    filepath = ""
-    title = ""
-
-    proc = subprocess.Popen(
-        cmd,
-        env=env(),
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-        start_new_session=True,
-    )
-    try:
-        for line in proc.stdout:
-            line = line.rstrip("\n")
-            if line.startswith("VIDEODL_PROG\t"):
-                raw = line.split("\t", 1)[1]
-                digits = re.sub(r"[^0-9]", "", raw.split(".")[0])
-                if not digits:
-                    continue
-                pct = int(digits)
-                if pct == last_pct:
-                    continue
-                now = int(time.time() * 1000)
-                if now - last_ms < 250:
-                    continue
-                last_pct, last_ms = pct, now
-                osd_progress(pct)
-            elif line.startswith("VIDEODL_FILE\t"):
-                filepath = line.split("\t", 1)[1].strip()
-            elif line.startswith("VIDEODL_TITLE\t"):
+    def on_term(_signum, _frame):
+        proc = child["proc"]
+        if proc is not None:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception:
                 try:
-                    title = json.loads(line.split("\t", 1)[1])
-                except Exception:
-                    title = ""
-            elif line:
-                log("yt-dlp: " + line[:400])
-        proc.wait(timeout=30)
-    except Exception as exc:
-        log("worker loop: %s" % exc)
-
-    osd_close()
-
-    if proc.returncode == 0 and filepath and Path(filepath).exists():
-        if not title:
-            title = Path(filepath).stem
-        shown = title if len(title) <= 50 else title[:50] + "\u2026"
-        preview = None
-        try:
-            fd, preview = tempfile.mkstemp(suffix=".jpg")
-            os.close(fd)
-            r = run(
-                [
-                    "ffmpeg", "-y", "-i", filepath, "-ss", "00:00:00.1", "-vframes", "1",
-                    "-vf", "crop='min(iw,ih)':'min(iw,ih)',scale=256:256", "-q:v", "2",
-                    preview, "-loglevel", "quiet",
-                ],
-                timeout=30,
-            )
-            if r.returncode != 0 or not Path(preview).stat().st_size:
-                raise RuntimeError("no preview")
-        except Exception:
-            preview = None
-
-        notify(
-            "\U000f012c",
-            i18n("download.complete", "Download complete"),
-            shown,
-            image=preview or filepath,
-            exec_args=["mpv", "--", filepath],
-            timeout=10000,
-        )
-
-        if preview:
-            def _clean():
-                time.sleep(2)
-                try:
-                    os.unlink(preview)
+                    proc.terminate()
                 except Exception:
                     pass
+        flush(status="cancelled", finished=now_ms(), speed=0, eta=0)
+        os._exit(143)
 
-            import threading
-            threading.Thread(target=_clean, daemon=True).start()
+    signal.signal(signal.SIGTERM, on_term)
+    signal.signal(signal.SIGINT, on_term)
+
+    def attempt(commands):
+        """One yt-dlp run. -> (returncode, filepath, title, last_error).
+
+        Kept as a nested function so a cookie-free retry reuses the exact same
+        progress/thumbnail/flush plumbing instead of duplicating it.
+        """
+        log("worker: %s" % " ".join(commands))
+        try:
+            proc = subprocess.Popen(
+                commands,
+                env=env(),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+        except Exception as exc:
+            return 1, "", rec.get("title") or "", "cannot start yt-dlp: %s" % exc
+
+        child["proc"] = proc
+
+        run_file = ""
+        run_title = rec.get("title") or ""
+        run_error = ""
+        last_write = 0
+        # Progress is reported per download stream (video, then audio); these
+        # three carry the bytes of finished streams so the totals add up.
+        prev_done = 0
+        stream_base = 0
+        stream_counted = False
+
+        try:
+            for line in proc.stdout:
+                line = line.rstrip("\n")
+                if line.startswith("VIDEODL_PROG\t"):
+                    parts = line.split("\t")[1:]
+                    while len(parts) < 8:
+                        parts.append("")
+                    phase = (parts[7] or "").strip()
+                    done = num(parts[0])
+                    total = num(parts[1]) or num(parts[2])
+                    speed = num(parts[3])
+                    eta = num(parts[4])
+                    frag_i = num(parts[5])
+                    frag_n = num(parts[6])
+
+                    # A "best video + best audio" job is two downloads, and
+                    # yt-dlp reports each one from zero. Fold finished streams
+                    # into a running base so the panel's byte counter never
+                    # jumps backwards.
+                    if done + 1 < prev_done:
+                        stream_counted = False
+                    prev_done = done
+                    if phase == "finished" and not stream_counted and (total or done):
+                        stream_base += total or done
+                        stream_counted = True
+                    visible_done = stream_base + (0 if stream_counted else done)
+                    visible_total = stream_base + (0 if stream_counted else total)
+
+                    pct = round(visible_done * 100.0 / visible_total, 1) if visible_total else 0.0
+                    now = now_ms()
+                    # ~2.5 writes/s is smooth for a 1 s poller and stops the file
+                    # being rewritten once per fragment.
+                    if now - last_write < 400:
+                        continue
+                    last_write = now
+                    flush(
+                        # Merging/converting is signalled by PP_TAGS below; a
+                        # per-stream "finished" tick is not the end of the job.
+                        status="running",
+                        done=visible_done,
+                        total=visible_total,
+                        speed=speed,
+                        eta=eta,
+                        percent=pct,
+                        fragment_index=frag_i,
+                        fragment_count=frag_n,
+                    )
+                elif line.startswith("VIDEODL_FILE\t"):
+                    run_file = line.split("\t", 1)[1].strip()
+                elif line.startswith("VIDEODL_TITLE\t"):
+                    try:
+                        run_title = json.loads(line.split("\t", 1)[1]) or run_title
+                    except Exception:
+                        pass
+                elif line:
+                    if line.startswith(PP_TAGS):
+                        # Past the download half: merging, converting, embedding.
+                        flush(
+                            status="processing",
+                            done=rec.get("total") or rec.get("done") or 0,
+                            percent=100.0,
+                            speed=0,
+                            eta=0,
+                        )
+                    if line.startswith("ERROR:"):
+                        run_error = line[:300]
+                    log("yt-dlp: " + line[:400])
+            proc.wait(timeout=30)
+        except Exception as exc:
+            log("worker loop: %s" % exc)
+            run_error = run_error or str(exc)[:300]
+        finally:
+            child["proc"] = None
+
+        return proc.returncode, run_file, run_title, run_error
+
+    rc, filepath, _title, last_error = attempt(cmd)
+
+    # A stale or undecryptable cookie database must not cost the user the whole
+    # download: retry exactly once without cookies before calling it failed.
+    if rc != 0 and not filepath and cookie_problem(last_error):
+        plain = strip_cookies(cmd)
+        if plain != cmd:
+            log("worker: browser cookies unusable, retrying without them")
+            flush(
+                status="running",
+                error="",
+                done=0,
+                total=0,
+                percent=0.0,
+                speed=0,
+                eta=0,
+                fragment_index=0,
+                fragment_count=0,
+            )
+            rc, filepath, _title, last_error = attempt(plain)
+
+    if rec.get("status") == "cancelled":
+        prune_jobs()
+        return 143
+
+    if rc == 0 and filepath and Path(filepath).exists():
+        target = Path(filepath)
+        size = target.stat().st_size
+        thumb = rec.get("thumb") or frame_thumb(str(target), job_id)
+        flush(
+            status="completed",
+            file=str(target),
+            name=target.name,
+            dir=str(target.parent),
+            size=size,
+            done=rec.get("total") or size,
+            total=rec.get("total") or size,
+            percent=100.0,
+            speed=0,
+            eta=0,
+            thumb=thumb,
+            error="",
+            finished=now_ms(),
+        )
+        prune_jobs()
         return 0
 
-    notify(
-        "\U000f0156",
-        i18n("download.failed", "Download failed"),
-        url,
-        urgency="critical",
+    flush(
+        status="failed",
+        speed=0,
+        eta=0,
+        error=last_error or ("yt-dlp exited with code %s" % rc),
+        finished=now_ms(),
     )
+    prune_jobs()
     return 1
 
 
@@ -584,8 +1186,22 @@ def detach_worker(payload):
 
 
 def main():
-    if len(sys.argv) > 2 and sys.argv[1] == "--worker":
-        sys.exit(worker(sys.argv[2]))
+    argv = sys.argv[1:]
+
+    if len(argv) >= 2 and argv[0] == "--worker":
+        sys.exit(worker(argv[1]))
+
+    # Shell-visible modes: this is what the bar panel shells out to.
+    if argv and argv[0] == "--jobs":
+        prune_jobs()
+        print(json.dumps({"ok": True, "jobs": list_jobs()}, ensure_ascii=False))
+        return
+
+    if argv and argv[0] == "--job-action":
+        op = argv[1] if len(argv) > 1 else ""
+        jid = argv[2] if len(argv) > 2 else ""
+        print(json.dumps(job_action(op, jid), ensure_ascii=False))
+        return
 
     try:
         msg = read_message()
@@ -598,6 +1214,15 @@ def main():
 
     action = msg.get("action")
     url = (msg.get("url") or "").strip()
+
+    if action == "jobs":
+        prune_jobs()
+        reply({"ok": True, "jobs": list_jobs()})
+        return
+
+    if action == "job-action":
+        reply(job_action(str(msg.get("op") or ""), str(msg.get("id") or "")))
+        return
 
     if action == "config":
         reply(config_reply())
@@ -632,6 +1257,16 @@ def main():
         })
         return
 
+    if action == "pick-dir":
+        reply(pick_dir())
+        return
+
+    if action == "show-dir":
+        path = target_dir()
+        target = path if path.is_dir() else path.parent
+        reply({"ok": open_path(target), "dir": str(path)})
+        return
+
     if action not in ("formats", "download"):
         reply({"ok": False, "error": "unknown action"})
         return
@@ -663,11 +1298,70 @@ def main():
         "codec": str(msg.get("codec") or ""),
         "format_id": str(msg.get("format_id") or ""),
         "convert": str(msg.get("convert") or ""),
+        "embed_thumbnail": bool(msg.get("embed_thumbnail", True)),
+        "embed_metadata": bool(msg.get("embed_metadata", True)),
+        "title": str(msg.get("title") or ""),
+        "site": str(msg.get("site") or ""),
+        "thumb_url": str(msg.get("thumb") or ""),
+        "id": new_job_id(),
     }
+
+    request = {
+        "url": payload["url"],
+        "mode": payload["mode"],
+        "height": payload["height"],
+        "codec": payload["codec"],
+        "format_id": payload["format_id"],
+        "convert": payload["convert"],
+        "embed_thumbnail": payload["embed_thumbnail"],
+        "embed_metadata": payload["embed_metadata"],
+    }
+
     try:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
+        # The record exists before the worker starts, so the panel sees the
+        # queue entry immediately instead of a gap until yt-dlp says anything.
+        write_job({
+            "id": payload["id"],
+            "status": "queued",
+            "mode": payload["mode"],
+            "url": url,
+            "title": payload["title"],
+            "site": payload["site"],
+            "thumb": "",
+            "thumb_url": payload["thumb_url"],
+            "dir": "",
+            "file": "",
+            "name": "",
+            "size": 0,
+            "height": payload["height"],
+            "codec": payload["codec"],
+            "convert": payload["convert"],
+            "embed_thumbnail": payload["embed_thumbnail"],
+            "embed_metadata": payload["embed_metadata"],
+            "done": 0,
+            "total": 0,
+            "speed": 0,
+            "eta": 0,
+            "percent": 0.0,
+            "fragment_index": 0,
+            "fragment_count": 0,
+            "started": now_ms(),
+            "updated": now_ms(),
+            "finished": 0,
+            "pid": 0,
+            "error": "",
+            "request": request,
+        })
+        prune_jobs()
         detach_worker(payload)
-        reply({"ok": True, "queued": True, "mode": payload["mode"]})
+        reply({
+            "ok": True,
+            "queued": True,
+            "mode": payload["mode"],
+            "id": payload["id"],
+            "dir": str(target_dir()),
+        })
     except Exception as exc:
         log("download: %s" % exc)
         reply({"ok": False, "error": str(exc)[:300]})

@@ -27,7 +27,7 @@ BROWSER_ROOTS=(
   "$HOME/.config/microsoft-edge-dev"
 )
 
-say "[1/2] native messaging host manifests"
+say "[1/3] native messaging host manifests"
 for root in "${BROWSER_ROOTS[@]}"; do
   f="$root/NativeMessagingHosts/$HOST_NAME.json"
   if [[ -f $f ]]; then
@@ -36,7 +36,7 @@ for root in "${BROWSER_ROOTS[@]}"; do
   fi
 done
 
-say "[2/2] browser flags"
+say "[2/3] browser flags"
 unpatch_flags() {
   local file=$1
   [[ -f $file ]] || return 0
@@ -70,5 +70,49 @@ for f in "$HOME/.config/chromium-flags.conf" \
 done
 
 say ""
-say "Done. Restart the browser to unload the extension."
+say "[3/3] bar widget layout entry"
+# The plugin itself lives under ~/.config/omarchy/plugins and is kept: only the
+# layout entry is dropped, so the bar goes back to its previous shape and the
+# widget cannot reappear on a config reset.
+drop_layout() {
+  local file=$1
+  [[ -f $file ]] || { say "      missing: $file"; return 0; }
+  cp -a "$file" "$file.bak.$STAMP"
+  python3 - "$file" <<'PY'
+import json, sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as fh:
+    cfg = json.load(fh)
+
+layout = (cfg.get("bar") or {}).get("layout") or {}
+removed = 0
+for side, entries in layout.items():
+    if not isinstance(entries, list):
+        continue
+    kept = [e for e in entries
+            if not (isinstance(e, dict) and e.get("id") == "linuxer.videodl")]
+    removed += len(entries) - len(kept)
+    layout[side] = kept
+
+if removed:
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(cfg, fh, indent=2, ensure_ascii=False)
+        fh.write("\n")
+print("removed %d entr%s" % (removed, "y" if removed == 1 else "ies"))
+PY
+  say "      cleaned: $file"
+}
+
+drop_layout "$HOME/.config/omarchy/shell.json"
+drop_layout "$HOME/.config/omarchy/profiles/shell.localbar.json"
+
+say ""
+say "Done. Restart the browser to unload the extension, then"
+say "  omarchy restart shell   # to drop the bar widget"
+say ""
+say "Kept on disk (delete by hand if you want):"
+say "  $HOME/.config/omarchy/plugins/linuxer.videodl"
+say "  $HOME/.config/videodl/config.json"
+say "  $HOME/.local/state/videodl"
 say "Files were kept in $BASE — run ./install.sh to reinstate."

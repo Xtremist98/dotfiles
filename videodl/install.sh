@@ -144,7 +144,7 @@ patch_flags() {
   fi
 }
 
-say "  [2/2] browser flags"
+say "[2/2] browser flags"
 
 # Only touch browsers that are actually installed, plus any flags file that is
 # already loading unpacked extensions.
