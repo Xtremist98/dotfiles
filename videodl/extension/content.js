@@ -540,17 +540,20 @@
 
     const input = shadow.querySelector(".dir");
     const setBtn = shadow.querySelector(".set");
+    const pickBtn = shadow.querySelector(".pick");
     input.value = savedDir;
     input.title = savedDir;
 
     if (dirOverride) {
       input.disabled = true;
       setBtn.disabled = true;
+      if (pickBtn) pickBtn.disabled = true;
       setBtn.title = "VIDEODL_DIR is set in the environment and wins over the setting";
       setNote(`Saved to ${savedDir} (VIDEODL_DIR is set)`);
     } else {
       input.disabled = false;
       setBtn.disabled = savingDir;
+      if (pickBtn) pickBtn.disabled = pickingDir;
       setBtn.title = "Save to this folder";
       setNote(`Saved to ${savedDir}`);
     }
@@ -602,6 +605,58 @@
     try {
       chrome.runtime.sendMessage(
         { type: "videodl", payload: { action: "setdir", dir: raw } },
+        (resp) => {
+          if (chrome.runtime.lastError) {
+            done({ ok: false, error: chrome.runtime.lastError.message });
+            return;
+          }
+          done(resp);
+        }
+      );
+    } catch (_) {
+      done({ ok: false, error: "Extension reloaded — refresh the page." });
+    }
+  }
+
+  // The folder glyph asks the native host for a real chooser (zenity/kdialog),
+  // because typing an absolute path is no way to reach a folder on another disk.
+  // The host stores whatever comes back, exactly like "Set" does.
+  function pickDir() {
+    if (!shadow || savingDir || pickingDir) return;
+
+    const input = shadow.querySelector(".dir");
+    const pickBtn = shadow.querySelector(".pick");
+    if (dirOverride) {
+      setNote(`Saved to ${savedDir} (VIDEODL_DIR is set)`, true);
+      return;
+    }
+
+    pickingDir = true;
+    if (pickBtn) pickBtn.disabled = true;
+    setNote("Waiting for the folder chooser…");
+
+    const done = (resp) => {
+      pickingDir = false;
+      if (!panelOpen || !shadow) return;
+      if (pickBtn) pickBtn.disabled = false;
+      if (resp && resp.ok && resp.cancelled) {
+        setNote(`Saved to ${savedDir}`); // dialog dismissed — nothing changed
+      } else if (resp && resp.ok && resp.dir) {
+        savedDir = resp.dir;
+        input.value = resp.dir;
+        input.title = resp.dir;
+        setNote(`Saved to ${resp.dir}`);
+      } else {
+        setNote(
+          (resp && resp.error) || "Could not open the folder chooser",
+          true
+        );
+      }
+    };
+
+    try {
+      chrome.runtime.sendMessage(
+        { type: "videodl", payload: { action: "pick-dir" } },
         (resp) => {
           if (chrome.runtime.lastError) {
             done({ ok: false, error: chrome.runtime.lastError.message });
