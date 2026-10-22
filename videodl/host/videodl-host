@@ -35,6 +35,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -43,6 +44,7 @@ STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
 LOG_PATH = STATE_DIR / "host.log"
 JOB_DIR = STATE_DIR / "jobs"
 THUMB_DIR = STATE_DIR / "thumbs"
+MODE_FILE = STATE_DIR / "modes.json"
 CONFIG_DIR = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "videodl"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 DEFAULT_DIR = Path.home() / "Videos"
@@ -50,6 +52,9 @@ DEFAULT_DIR = Path.home() / "Videos"
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) videodl/1.1"
 JOB_KEEP = 60
 FRAGMENTS = 4
+
+# Which job the running worker belongs to, so a crash can still be reported.
+_CURRENT_JOB = {"id": ""}
 
 # YouTube answers anonymous yt-dlp runs with "Sign in to confirm you're not a
 # bot", so every yt-dlp call reuses the desktop browser's own session cookies.
@@ -70,21 +75,6 @@ COOKIE_DB = {
     "chrome": [("~/.config/google-chrome/Default/Cookies", "")],
 }
 COOKIE_ORDER = ("chromium", "brave", "chrome")
-# Only messages that mean "the cookie file could not be read" trigger the
-# cookie-free retry; the bot-check message also says "--cookies", but there the
-# retry would just fail again more slowly.
-COOKIE_FAILURE_HINTS = (
-    "failed to decrypt",
-    "could not find cookie",
-    "failed to read cookie",
-    "cookie database",
-    # "could not find chromium cookies database in ..." — the profile moved or
-    # the browser was never configured for this session.
-    "cookies database",
-    "secretstorage",
-    "keyring",
-    "malformed database",
-)
 
 PATH_PREFIX = ["/usr/share/omarchy/bin", "/usr/local/bin", "/usr/bin", "/bin"]
 URL_RE = re.compile(r"^https?://[^\s\"'<>]{4,2048}$")
@@ -256,12 +246,6 @@ def cookie_args():
     return ["--cookies-from-browser", spec] if spec else []
 
 
-def cookie_problem(text):
-    """True when a yt-dlp error means the cookie file could not be read."""
-    low = (text or "").lower()
-    return any(hint in low for hint in COOKIE_FAILURE_HINTS)
-
-
 def strip_cookies(cmd):
     """The same argv with --cookies-from-browser and its value removed."""
     out = []
@@ -275,6 +259,57 @@ def strip_cookies(cmd):
             continue
         out.append(part)
     return out
+
+
+# --------------------------------------------------------------------- modes
+# Cookies are what YouTube needs, but some sites refuse to extract when a
+# browser session is attached (TikTok answers "Requested format is not
+# available"). So both ways are tried and the one that worked is remembered
+# per site, which keeps every later probe and download a single attempt.
+def host_of(url):
+    try:
+        host = urllib.parse.urlsplit(url).hostname or ""
+    except Exception:
+        return ""
+    return host.lower().removeprefix("www.")
+
+
+def load_modes():
+    try:
+        data = json.loads(MODE_FILE.read_text())
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_modes(modes):
+    try:
+        STATE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = MODE_FILE.with_name(MODE_FILE.name + ".tmp")
+        tmp.write_text(json.dumps(modes, indent=2, sort_keys=True))
+        tmp.replace(MODE_FILE)
+    except Exception:
+        pass
+
+
+def mode_for(url):
+    """Which way of asking worked last time on this site."""
+    host = host_of(url)
+    if not host:
+        return "cookies"
+    return load_modes().get(host, "cookies")
+
+
+def remember_mode(url, mode):
+    host = host_of(url)
+    if not host:
+        return
+    modes = load_modes()
+    if modes.get(host) == mode:
+        return
+    modes[host] = mode
+    save_modes(modes)
+    log("cookies: %s works better for %s" % (mode, host))
 
 
 def config_reply():
@@ -515,6 +550,52 @@ def frame_thumb(filepath, job_id):
     return ""
 
 
+def _name_key(text):
+    """Loose comparison key for file names (yt-dlp sanitises titles)."""
+    return re.sub(r"[^0-9a-z]+", "", (text or "").lower())[:24]
+
+
+def find_downloaded_file(out_dir, title, started_ms):
+    """Find the finished media file when a post-processor failed.
+
+    yt-dlp prints the file path with --print after_move, which runs *after*
+    the embedding step. If attaching a thumbnail or the metadata fails, the
+    download itself is fine but the job would be reported as failed and the
+    file would look lost. The media file is the deliverable, so look for it.
+    """
+    try:
+        entries = list(Path(out_dir).iterdir())
+    except Exception:
+        return None
+
+    key = _name_key(title)
+    best = None
+    for p in entries:
+        if not p.is_file():
+            continue
+        name = p.name
+        # Per-stream leftovers ("title.f137.mp4") are not the finished file.
+        if re.search(r"\.f\d{2,}\.", name):
+            continue
+        if not re.search(
+            r"\.(mp4|mkv|webm|m4v|mov|flac|mp3|m4a|opus|ogg|wav)$", name, re.I
+        ):
+            continue
+        if key and not _name_key(name).startswith(key):
+            continue
+        try:
+            st = p.stat()
+        except Exception:
+            continue
+        if st.st_size <= 0:
+            continue
+        if started_ms and (st.st_mtime * 1000.0) < (started_ms - 10000):
+            continue
+        if best is None or st.st_mtime > best[1]:
+            best = (p, st.st_mtime)
+    return best[0] if best else None
+
+
 def open_path(target):
     try:
         subprocess.Popen(
@@ -627,24 +708,43 @@ def job_action(op, job_id):
 
 
 # ---------------------------------------------------------------------- formats
+def probe_info(url):
+    """Ask yt-dlp what is on this page. Returns (info, error).
+
+    Both cookie modes are tried, the one that worked last time on this site
+    first, and the winner is remembered.
+    """
+    base = ["yt-dlp", "-J", "--ignore-config", "--no-playlist", "--no-warnings"]
+    preferred = mode_for(url)
+    order = [preferred, "plain" if preferred == "cookies" else "cookies"]
+    error = ""
+
+    for mode in order:
+        extra = cookie_args() if mode == "cookies" else []
+        if mode == "cookies" and not extra:
+            continue  # no cookie database on this box: nothing to try
+        res = run(base + extra + ["--", url], timeout=150)
+        if res.returncode == 0:
+            remember_mode(url, mode)
+            try:
+                return json.loads(res.stdout or "{}"), ""
+            except Exception as exc:
+                return None, "bad yt-dlp output: %s" % exc
+        lines = (res.stderr or "").strip().splitlines()
+        error = (lines[-1] if lines else "yt-dlp could not read this page")[:300]
+        log("formats: %s attempt with %s failed: %s" % (url, mode, error))
+
+    return None, error or "yt-dlp could not read this page"
+
+
 def extract_formats(url):
-    extra = cookie_args()
-    base = ["yt-dlp", "-J", "--no-playlist", "--no-warnings"]
-    res = run(base + extra + ["--", url], timeout=150)
+    # The URL the panel actually asked about: worth keeping, it is the first
+    # thing to check when a site does not download.
+    log("formats: %s" % url)
 
-    if res.returncode != 0 and extra and cookie_problem(res.stderr):
-        log("formats: browser cookies unusable, retrying without them")
-        extra = []
-        res = run(base + ["--", url], timeout=120)
-
-    if res.returncode != 0:
-        err = (res.stderr or "").strip().splitlines()
-        return {"ok": False, "error": (err[-1] if err else "yt-dlp could not read this page")[:300]}
-
-    try:
-        info = json.loads(res.stdout or "{}")
-    except Exception as exc:
-        return {"ok": False, "error": "bad yt-dlp output: %s" % exc}
+    info, error = probe_info(url)
+    if info is None:
+        return {"ok": False, "error": error}
 
     if info.get("_type") == "playlist":
         entries = [e for e in (info.get("entries") or []) if e]
@@ -795,7 +895,10 @@ def build_command(payload, out_dir):
 
     if mode == "audio":
         fid = payload.get("format_id") or ""
-        cmd += ["-f", fid if fid else "ba/b"]
+        # "id/ba/b": use the picked stream, else best audio, else best combined
+        # (sites that only publish muxed streams still work, -x pulls the
+        # audio out of them).
+        cmd += ["-f", (fid + "/ba/b") if fid else "ba/b"]
         cmd += ["-x"]
         convert = (payload.get("convert") or "").lower()
         if convert == "mp3":
@@ -830,15 +933,17 @@ def build_command(payload, out_dir):
 
         if codec_filter:
             # Prefer the requested codec, then degrade gracefully so a pick that
-            # is not offered at this height still downloads something.
+            # is not offered at this height still downloads something. The tail
+            # "bv*+ba/b" is the universal net: separate streams if the site has
+            # them, otherwise the best muxed stream.
             sel = (
                 "bv*%s%s+ba[ext=m4a]/bv*%s%s+ba/"
-                "bv*%s+ba/b%s/b" % (hfilter, codec_filter, hfilter, codec_filter, hfilter, hfilter)
+                "bv*%s+ba/b%s/bv*+ba/b" % (hfilter, codec_filter, hfilter, codec_filter, hfilter, hfilter)
             )
         elif height > 0:
             sel = (
                 "bv*[height<=%d][ext=mp4]+ba[ext=m4a]/"
-                "bv*[height<=%d]+ba/b[height<=%d]/b" % (height, height, height)
+                "bv*[height<=%d]+ba/b[height<=%d]/bv*+ba/b" % (height, height, height)
             )
         else:
             sel = "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b"
@@ -884,6 +989,28 @@ def worker(payload_path):
     so a reader can never catch a half-written record.
     """
     try:
+        return _worker_run(payload_path)
+    except Exception as exc:
+        # An unexpected crash must not leave the job spinning in the panel.
+        log("worker: crashed: %s" % exc)
+        job_id = _CURRENT_JOB.get("id") or ""
+        if job_id:
+            rec = read_job(job_id) or {}
+            rec.update(
+                status="failed",
+                error="internal error: %s" % exc,
+                speed=0,
+                eta=0,
+                updated=now_ms(),
+                finished=now_ms(),
+            )
+            write_job(rec)
+            prune_jobs()
+        return 1
+
+
+def _worker_run(payload_path):
+    try:
         payload = json.loads(Path(payload_path).read_text())
     except Exception as exc:
         log("worker: bad payload %s" % exc)
@@ -895,6 +1022,7 @@ def worker(payload_path):
             pass
 
     job_id = payload.get("id") or new_job_id()
+    _CURRENT_JOB["id"] = job_id
     request = {
         "url": payload.get("url", ""),
         "mode": payload.get("mode") or "video",
@@ -1089,26 +1217,37 @@ def worker(payload_path):
 
         return proc.returncode, run_file, run_title, run_error
 
-    rc, filepath, _title, last_error = attempt(cmd)
+    # Cookies are what YouTube needs, but a few sites refuse to extract when a
+    # browser session is attached. Ask the way that worked last time on this
+    # site first and fall back to the other one, but only while nothing has
+    # been downloaded yet, so a broken transfer is never repeated.
+    plain_cmd = strip_cookies(cmd)
+    url = payload.get("url") or ""
+    preferred = mode_for(url)
+    first_cmd = cmd if preferred == "cookies" else plain_cmd
+    other_mode = "plain" if preferred == "cookies" else "cookies"
+    second_cmd = plain_cmd if preferred == "cookies" else cmd
 
-    # A stale or undecryptable cookie database must not cost the user the whole
-    # download: retry exactly once without cookies before calling it failed.
-    if rc != 0 and not filepath and cookie_problem(last_error):
-        plain = strip_cookies(cmd)
-        if plain != cmd:
-            log("worker: browser cookies unusable, retrying without them")
-            flush(
-                status="running",
-                error="",
-                done=0,
-                total=0,
-                percent=0.0,
-                speed=0,
-                eta=0,
-                fragment_index=0,
-                fragment_count=0,
-            )
-            rc, filepath, _title, last_error = attempt(plain)
+    rc, filepath, _title, last_error = attempt(first_cmd)
+    if rc == 0:
+        remember_mode(url, preferred)
+
+    if rc != 0 and not filepath and not rec.get("done") and second_cmd != first_cmd:
+        log("worker: retrying %s with %s" % (url, other_mode))
+        flush(
+            status="running",
+            error="",
+            done=0,
+            total=0,
+            percent=0.0,
+            speed=0,
+            eta=0,
+            fragment_index=0,
+            fragment_count=0,
+        )
+        rc, filepath, _title, last_error = attempt(second_cmd)
+        if rc == 0:
+            remember_mode(url, other_mode)
 
     if rec.get("status") == "cancelled":
         prune_jobs()
@@ -1135,6 +1274,35 @@ def worker(payload_path):
         )
         prune_jobs()
         return 0
+
+    # yt-dlp can fail *after* the media is on disk (thumbnail or metadata
+    # embedding). The file is what the user asked for, so keep the job.
+    if rc != 0 and not filepath:
+        recovered = find_downloaded_file(
+            out_dir, rec.get("title") or "", rec.get("started") or 0
+        )
+        if recovered:
+            log("worker: keeping %s despite post-processing failure (%s)"
+                % (recovered, last_error))
+            size = recovered.stat().st_size
+            thumb = rec.get("thumb") or frame_thumb(str(recovered), job_id)
+            flush(
+                status="completed",
+                file=str(recovered),
+                name=recovered.name,
+                dir=str(recovered.parent),
+                size=size,
+                done=rec.get("total") or size,
+                total=rec.get("total") or size,
+                percent=100.0,
+                speed=0,
+                eta=0,
+                thumb=thumb,
+                error="",
+                finished=now_ms(),
+            )
+            prune_jobs()
+            return 0
 
     flush(
         status="failed",

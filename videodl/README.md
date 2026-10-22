@@ -58,7 +58,9 @@ Hover a video → click the sage download button (top-right of the player).
   (`Auto` / only the codecs actually offered at that height).
   Container rule: **mkv** for VP9/AV1/VP8, **mp4** for H.264/HEVC/auto.
 * **Audio** — pick *Best audio* (or a specific stream) and, if wanted, a
-  **Format**: `Original`, `MP3 320k` (CBR 320), `M4A (AAC)`, `FLAC`.
+  **Format**: `Original`, `MP3 (320k)`, `M4A (AAC)`, `FLAC`. The 320 kbps CBR
+  applies when yt-dlp actually converts; a source that is already MP3 is kept
+  as it is instead of being re-encoded for no gain.
 * **Embedding** — two checkboxes in the sticky footer, both **on by default**:
   *thumbnail* (cover art) and *metadata* (title/artist/date tags). They are
   per-download, applied to every job started from that panel state, and remembered
@@ -67,8 +69,37 @@ Hover a video → click the sage download button (top-right of the player).
   folder field does not type into the site's search box.
 
 If the quality list can't be enumerated (live streams, galleries, some embeds),
-the panel falls back to a fixed ladder and says *"Exact quality list unavailable —
-the closest match to your pick is used."* The download still works.
+the panel offers *Best available* only and says why — *"This is a feed page — open
+the video's own post and try again."*, *"This video needs a signed-in session…"*,
+*"No video on this address that yt-dlp can read…"* and so on. The download still
+works.
+
+## Which address is downloaded
+
+Every site yt-dlp supports works, not only YouTube. The button floats on the
+biggest `<video>` of the page, and the address handed to yt-dlp is chosen like
+this:
+
+1. **The page itself**, when the page *is* a post page (`…/watch?v=`,
+   `…/comments/<id>`, `…/p/<code>/`, `…/@user/video/<id>`, `…/status/<id>`, …).
+2. **The post around the player** — on feed and app-style pages (X home,
+   Reddit, Instagram, TikTok) the page address is only the feed, and yt-dlp
+   would answer *"Unsupported URL"*. The permalink is therefore looked up in
+   the DOM around the `<video>`: the enclosing post element, the link that
+   wraps the player, and the few levels around it. The link that belongs to
+   the post that owns the player wins, so a quoted or reposted video still
+   resolves to its own post.
+3. **The player's own media file**, when the page is a bare feed and the
+   `<video>` points at a plain `.mp4`/`.webm`/… file.
+4. Otherwise the page address, and the panel explains what went wrong.
+
+Embedded players are rewritten to their post as well: YouTube and Vimeo embeds,
+`platform.twitter.com/embed/…?id=<id>` → `x.com/i/status/<id>`, and Instagram
+`/embed` URLs.
+
+The URL that was actually asked about is written to
+`~/.local/state/videodl/host.log` (`formats: <url>`) — the first thing to look
+at when a site misbehaves.
 
 ## Where files are saved
 
@@ -132,12 +163,18 @@ entries the list keeps (`0` hides the finished switch entirely).
 
 ## Progress, and why the engine is plain yt-dlp
 
-The host runs `yt-dlp` **with `--ignore-config` as its first argument**, so the
-user's `~/.config/yt-dlp/config` cannot change a download behind the UI's back.
-That config on this machine forces `--downloader aria2c`, `--concurrent-fragments
-12`, `-P /mnt/media/`, `-o`, `-f`, `--merge-output-format mkv` and the embed flags
-— every one of which would override the panel's choices (and it wrote files into
-`/mnt/media`). Everything the download needs is passed explicitly instead.
+The host runs `yt-dlp` **with `--ignore-config` as its first argument** — for the
+download *and* for the format probe — so the user's `~/.config/yt-dlp/config`
+cannot change a download behind the UI's back. That config on this machine
+forces `--downloader aria2c`, `--concurrent-fragments 12`, `-P /mnt/media/`,
+`-o`, `-f`, `--merge-output-format mkv` and the embed flags — every one of which
+would override the panel's choices (and it wrote files into `/mnt/media`).
+Everything the download needs is passed explicitly instead.
+
+The probe needs it just as much: with that config loaded, the probe inherited
+its `-f "bv*[height<=720][vcodec^=avc1]+ba[ext=webm]/…"` filter, and every site
+that does not offer exactly that combination answered *"Requested format is not
+available"* — which is why the quality list used to stay empty outside YouTube.
 
 Parallel fragments are yt-dlp's own `--concurrent-fragments 4`. `aria2c` was
 benchmarked on the same 360p H.264 video and was **not faster** (24.4 s vs
@@ -167,10 +204,16 @@ Resolution order:
 3. `chromium`, then `brave`, then `chrome`.
 
 The cookie database is validated first; if it doesn't exist the host logs a
-warning and runs without cookies. If yt-dlp still fails on a cookie *read*
-problem (locked/keyring database, or `could not find … cookies database`) the job
-is retried **once without cookies**. The bot check is deliberately *not* retried
-that way — it is not a cookie read failure.
+warning and runs without cookies.
+
+**Both ways are tried, and the winner is remembered per site.** YouTube needs
+the cookies, but a few sites refuse to extract while a browser session is
+attached, and some only work without them. Every probe and every download
+therefore asks the way that worked last time on that host first (stored in
+`~/.local/state/videodl/modes.json`) and falls back to the other one — but only
+while nothing has been downloaded yet, so a broken transfer is never repeated.
+A cookie *read* problem (locked/keyring database, `could not find … cookies
+database`) is covered by the same fallback.
 
 ## Fresh Omarchy machine
 
@@ -226,10 +269,17 @@ another machine without re-signing: the ID comes from `"key"` in
 
 ## Troubleshooting
 
-* `~/.local/state/videodl/host.log` — every host invocation and the full `yt-dlp`
-  command line. **Progress ticks are not logged**; watch
+* `~/.local/state/videodl/host.log` — every host invocation, the full `yt-dlp`
+  command line, and the address every probe asked about (`formats: <url>`).
+  **Progress ticks are not logged**; watch
   `~/.local/state/videodl/jobs/<id>.json` instead (`done`, `total`, `speed`,
   `eta`, `percent` are rewritten ~2.5×/s).
+* A site that never downloads → look at the `formats: <url>` line in the log:
+  if it shows a feed address (`…/home`, `…/`) instead of a post, the page
+  offered no permalink next to the player; open the post itself and try again.
+* `~/.local/state/videodl/modes.json` — which way of asking (with or without
+  browser cookies) worked last time per site. Delete a host's entry to make the
+  host try the other one first.
 * `Sign in to confirm you're not a bot` → fix the cookies (above); this is not a
   download-engine problem.
 * Host reports `error` → exit code 1 (usually "yt-dlp not found" or a bad URL).

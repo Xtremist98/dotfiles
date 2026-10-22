@@ -20,6 +20,7 @@
   let panelOpen = false;
   let formats = null; // last successful enumeration
   let formatsUrl = "";
+  let panelUrl = ""; // target resolved when the panel was opened
   let busy = false;
   let savingDir = false;
   let pickingDir = false; // a native folder chooser is open
@@ -53,27 +54,180 @@
   const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
   const isHttp = (u) => typeof u === "string" && /^https?:\/\//i.test(u);
 
-  function pageUrl() {
+  // ------------------------------------------------------------------- links
+  // The button floats on the biggest <video> of the page. On feed and SPA
+  // sites (X home, Reddit, Instagram, TikTok) that player sits inside a feed,
+  // so the page address is the feed root and yt-dlp refuses it with
+  // "Unsupported URL". The post's own permalink is an <a href> right next to
+  // the player, so look for it around the video before falling back.
+  const PERMALINK_RES = [
+    /\/status\/\d{5,}/, // x / twitter
+    /\/@[^/]+\/\d{8,}/, // mastodon style
+    /\/comments\/[A-Za-z0-9]{4,}/, // reddit
+    /\/(?:p|reel|reels|tv)\/[A-Za-z0-9_-]{5,}/, // instagram
+    /\/@[^/]+\/video\/\d{4,}/, // tiktok
+    /\/video\/[A-Za-z0-9_-]{3,}/, // dailymotion, vk, rumble
+    /\/watch\?v=[A-Za-z0-9_-]{6,}/, // youtube
+    /\/shorts\/[A-Za-z0-9_-]{6,}/, // youtube shorts
+    /\/(?:videos|reel)\/\d{4,}/, // facebook
+    /\/v\/\d{4,}/, // vk video
+    /\/pin\/\d{4,}/, // pinterest
+  ];
+
+  // Containers that hold exactly one post. Inside them a media link belongs
+  // to that post.
+  const POST_ROOT_SEL =
+    "article, shreddit-post, [data-testid='tweet'], [data-testid='quoteTweet'], [role='article'], [data-test-id='post-content']";
+
+  // Plain media files the player may point at directly.
+  const MEDIA_FILE_RE =
+    /\.(?:mp4|m4v|webm|mkv|mov|m4a|mp3|ogg|opus|flac|wav)(?:[?#]|$)/i;
+
+  // Page paths that are a feed listing rather than a single post.
+  const FEED_PATH_RES = [
+    /^\/(?:home|explore|search|notifications|messages|i\/(?:home|explore|search|notifications|messages))?\/?$/i,
+    /^\/(?:r|u)\/[^/]+\/?$/i, // reddit listing
+    /^\/(?:home|explore|popular|all|foryou|following|feed)\/?$/i,
+    /^\/(?:reels|explore|direct|stories)\/?$/i, // instagram
+    /^\/@[^/]+\/?$/i, // tiktok profile
+    /^\/?$/i, // site root
+  ];
+
+  function mediaLink(href) {
+    if (!href) return null;
+    let u;
+    try {
+      u = new URL(href, location.href);
+    } catch (_) {
+      return null;
+    }
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (/\/analytics(?:[/?#]|$)/i.test(u.pathname)) return null;
+    const s = u.pathname + u.search;
+    for (const re of PERMALINK_RES) if (re.test(s)) return u.href;
+    return null;
+  }
+
+  function isPostUrl(url) {
+    return mediaLink(url) !== null;
+  }
+
+  function isFeedRoot(url) {
+    let p;
+    try {
+      p = new URL(url);
+    } catch (_) {
+      return false;
+    }
+    return FEED_PATH_RES.some((re) => re.test(p.pathname));
+  }
+
+  function permalinkFor(video) {
+    if (!video) return null;
+
+    // The player may be wrapped in the post link itself.
+    const owner = video.closest("a[href]");
+    if (owner) {
+      const link = mediaLink(owner.getAttribute("href"));
+      if (link) return link;
+    }
+
+    // Search the post container first, then a few levels around the player.
+    const scopes = [];
+    const root = video.closest(POST_ROOT_SEL);
+    if (root) scopes.push(root);
+
+    let node = video.parentElement;
+    for (let depth = 0; node && depth < 6; depth++, node = node.parentElement) {
+      if (
+        node === document.body ||
+        node === document.documentElement ||
+        node.tagName === "MAIN"
+      )
+        break;
+      scopes.push(node);
+    }
+
+    for (const scope of scopes) {
+      const cands = [];
+      for (const a of scope.querySelectorAll("a[href]")) {
+        const link = mediaLink(a.getAttribute("href"));
+        if (!link) continue;
+
+        // Which post owns this link? A quoted or reposted post carries its
+        // own container, and the player usually belongs to the post around
+        // it rather than to the quote.
+        const post = a.closest(POST_ROOT_SEL) || scope;
+        const owns = post.contains(video);
+
+        // How deep the link sits in the scope: the post's own link is closer
+        // to the surface than a nested quote's.
+        let depth = 0;
+        let n = a.parentElement;
+        while (n && n !== scope) {
+          depth++;
+          n = n.parentElement;
+        }
+        if (n !== scope) continue; // not inside this scope after all
+
+        cands.push({ link, owns, depth });
+      }
+      if (!cands.length) continue;
+
+      // Prefer the post that actually holds the player, then the link that
+      // sits closest to the surface.
+      const owners = cands.filter((c) => c.owns);
+      const pool = owners.length ? owners : cands;
+      let best = pool[0].depth;
+      for (const c of pool) if (c.depth < best) best = c.depth;
+      return pool.find((c) => c.depth === best).link;
+    }
+    return null;
+  }
+
+  function pageUrl(video) {
+    const v = video || currentVideo;
+    const here = location.href;
+
+    // Embedded players live on their own URL; rewrite those to the post.
+    const yt = here.match(/youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,})/);
+    if (yt) return "https://www.youtube.com/watch?v=" + yt[1];
+
+    const vm = here.match(/player\.vimeo\.com\/video\/(\d+)/);
+    if (vm) return "https://vimeo.com/" + vm[1];
+
+    const tw = here.match(/platform\.twitter\.com\/embed\/[^#]*[?&]id=(\d+)/);
+    if (tw) return "https://x.com/i/status/" + tw[1];
+
+    const ig = here.match(
+      /instagram\.com\/(p|reel|reels|tv)\/([A-Za-z0-9_-]{5,})\/embed/
+    );
+    if (ig) return "https://www.instagram.com/" + ig[1] + "/" + ig[2] + "/";
+
+    // The address of the top frame: on most sites this is the post page.
+    let page = here;
     try {
       const t = window.top;
-      if (t && isHttp(t.location.href)) return t.location.href;
+      if (t && isHttp(t.location.href)) page = t.location.href;
     } catch (_) {
       /* cross-origin frame */
     }
 
-    const yt = location.href.match(
-      /youtube(?:-nocookie)?\.com\/embed\/([A-Za-z0-9_-]{6,})/
-    );
-    if (yt) return "https://www.youtube.com/watch?v=" + yt[1];
+    // A post page is already what yt-dlp wants.
+    if (isPostUrl(page)) return page;
 
-    const vm = location.href.match(/player\.vimeo\.com\/video\/(\d+)/);
-    if (vm) return "https://vimeo.com/" + vm[1];
+    // Feed and SPA pages: find the post this player belongs to.
+    const permalink = permalinkFor(v);
+    if (permalink) return permalink;
 
-    if (isHttp(location.href)) return location.href;
+    // The page itself, unless it is only a feed listing.
+    if (!isFeedRoot(page)) return page;
 
-    const src = currentVideo && (currentVideo.currentSrc || currentVideo.src);
-    if (isHttp(src)) return src;
-    return null;
+    // A plain media file in the player is the last resort.
+    const src = v && (v.currentSrc || v.src);
+    if (isHttp(src) && MEDIA_FILE_RE.test(src)) return src;
+
+    return isHttp(page) ? page : null;
   }
 
   function pickVideo() {
@@ -283,7 +437,7 @@
               <span>Format</span>
               <select class="afmt" title="Re-encode the audio stream">
                 <option value="">Original</option>
-                <option value="mp3">MP3 320k</option>
+                <option value="mp3">MP3 (320k)</option>
                 <option value="m4a">M4A (AAC)</option>
                 <option value="flac">FLAC</option>
               </select>
@@ -679,7 +833,10 @@
     btn.classList.add("on");
     card.hidden = false;
 
-    const url = pageUrl();
+    // Resolve the target once: the probe and the download must agree, even if
+    // the page scrolls and the button moves to another player in the meantime.
+    const url = pageUrl(currentVideo);
+    panelUrl = url || "";
     shadow.querySelector(".title").textContent =
       (document.title || "Video").slice(0, 120);
     shadow.querySelector(".status").hidden = false;
@@ -712,6 +869,7 @@
 
   function closePanel() {
     panelOpen = false;
+    panelUrl = "";
     if (btn) btn.classList.remove("on");
     if (card) card.hidden = true;
   }
@@ -721,6 +879,21 @@
     s.hidden = false;
     s.classList.add("err");
     s.textContent = text;
+  }
+
+  // Turn a yt-dlp complaint into something a person can act on.
+  function probeMessage(error, url) {
+    const e = String(error || "");
+    if (/unsupported url/i.test(e))
+      return "No video on this address that yt-dlp can read — open the video's own post and try again.";
+    if (/private video/i.test(e)) return "This video is private.";
+    if (/geo|country|not available in your region/i.test(e))
+      return "This video is blocked in this region.";
+    if (/sign in|login|cookies|confirm your age|age.restricted/i.test(e))
+      return "This video needs a signed-in session — try it in the browser you are signed in to.";
+    if (isFeedRoot(url))
+      return "This is a feed page — open the video's own post and try again.";
+    return "Quality list unavailable — the best available version will be downloaded.";
   }
 
   function loadFormats(url) {
@@ -734,22 +907,19 @@
           if (formatsUrl !== token || !panelOpen) return;
           if (!resp || !resp.ok) {
             // yt-dlp cannot introspect every page (drm players, auth walls,
-            // plain embeds). Keep the technical reason out of the UI.
+            // plain embeds). Say why in plain words and keep the button useful.
             console.debug("[videodl] formats lookup failed:", resp && resp.error);
             const s = shadow.querySelector(".status");
             s.hidden = false;
             s.classList.remove("err");
-            s.textContent =
-              "Exact quality list unavailable — the closest match to your pick is used.";
+            s.textContent = probeMessage(resp && resp.error, url);
             const go = shadow.querySelector(".go");
             go.disabled = false;
-            // Keep a usable fallback so the button still does something useful.
-            shadow.querySelector(".sect.video .opts").innerHTML = [0, 2160, 1440, 1080, 720, 480, 360, 240, 144].map(
-              (h, i) =>
-                `<label class="opt"><input type="radio" name="vdq" value="v:${h}" ${
-                  i === 0 ? "checked" : ""
-                }><span>${h ? heightLabel(h) : "Best available"}</span></label>`
-            ).join("");
+            // No honest height list exists, so offer the best quality only
+            // instead of inventing resolutions this page may not have.
+            shadow.querySelector(".sect.video .opts").innerHTML =
+              `<label class="opt"><input type="radio" name="vdq" value="v:0" checked>` +
+              `<span>Best available</span></label>`;
             shadow.querySelector(".sect.audio .opts").innerHTML =
               `<label class="opt"><input type="radio" name="vdq" value="a:">` +
               `<span>Best audio <em>native format</em></span></label>`;
@@ -801,6 +971,12 @@
 
   function update() {
     const v = pickVideo();
+    if (v !== currentVideo) {
+      // A different player is now the biggest one on screen: the open panel
+      // belongs to the old one, so drop its target.
+      panelUrl = "";
+      formats = null;
+    }
     currentVideo = v;
 
     if (!v) {
@@ -825,7 +1001,7 @@
     const picked = shadow.querySelector('input[name="vdq"]:checked');
     if (!picked) return;
 
-    const url = pageUrl();
+    const url = panelUrl || pageUrl(currentVideo);
     if (!url) {
       setError("Could not determine this page's address.");
       return;
