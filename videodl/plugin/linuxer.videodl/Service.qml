@@ -21,6 +21,11 @@ Item {
   // Poll cadence. Fast while something is downloading (or the panel is open,
   // where the user is watching), slow otherwise so an idle bar is not starting
   // a python interpreter every couple of seconds forever.
+  // While a transfer is in flight the panel also animates against this value,
+  // so the poll cadence and the motion share one number: sampling slower than
+  // the animation leaves a visible dead stop, sampling faster wastes a python
+  // start per tick on a box that is already memory constrained.
+  property int liveInterval: 800
   property int activeInterval: 1500
   property int idleInterval: 20000
   property bool open: false
@@ -115,12 +120,13 @@ Item {
 
   Component.onCompleted: refresh()
 
-  // One poll loop for both paces: interval reads the faster value whenever the
-  // panel is open or a job is in flight, and the timer restarts when that flips
-  // so the change takes effect immediately rather than after the slow interval.
+  // One poll loop for three paces: live while a job is in flight (the only time
+  // anything moves on screen), the medium pace while the panel is merely open,
+  // and the slow one for a quiet desktop. The timer restarts when the chosen
+  // pace flips so the change takes effect immediately.
   Timer {
     id: pollTimer
-    interval: (root.open || root.busy) ? root.activeInterval : root.idleInterval
+    interval: root.busy ? root.liveInterval : (root.open ? root.activeInterval : root.idleInterval)
     repeat: true
     running: true
     triggeredOnStart: false

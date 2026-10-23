@@ -12,6 +12,9 @@ Item {
   property real value: 0
   property real thickness: Style.space(4)
   property color fillColor: Commons.Color.accent
+  // Matching the poll interval makes the fill travel at a constant speed
+  // instead of arriving early and standing still until the next sample.
+  property int animationDuration: 800
 
   implicitHeight: thickness
   readonly property real ratio: Math.max(0, Math.min(1, (Number(value) || 0) / 100))
@@ -23,8 +26,8 @@ Item {
 
   Behavior on value {
     NumberAnimation {
-      duration: 260
-      easing.type: Easing.OutCubic
+      duration: Math.max(120, root.animationDuration)
+      easing.type: Easing.Linear
     }
   }
 

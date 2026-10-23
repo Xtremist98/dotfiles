@@ -32,6 +32,38 @@ Rectangle {
     : active ? accent
     : foreground
 
+  // Speed and ETA are not in every sample: a finished segment, a merge starting
+  // or a metadata pass reports zero for a poll or two. Read literally that
+  // blanks a word out of the line and flips "2m 10s left" to "3m elapsed" and
+  // back, which is what made the row flicker. Hold the last real reading and
+  // drop it only when this row starts showing another job, or stops moving.
+  property real steadySpeed: 0
+  property real steadyEta: 0
+  property string steadyFor: ""
+
+  function sampleSteady() {
+    var record = root.job
+    var id = record && record.id !== undefined && record.id !== null ? String(record.id) : ""
+    if (id !== root.steadyFor) {
+      root.steadyFor = id
+      root.steadySpeed = 0
+      root.steadyEta = 0
+    }
+    if (!root.active || !record) {
+      root.steadySpeed = 0
+      root.steadyEta = 0
+      return
+    }
+    var rate = Number(record.speed) || 0
+    if (rate > 0) root.steadySpeed = rate
+    var eta = Number(record.eta) || 0
+    if (eta > 0) root.steadyEta = eta
+  }
+
+  onJobChanged: sampleSteady()
+  onActiveChanged: sampleSteady()
+  Component.onCompleted: sampleSteady()
+
   readonly property real padding: Style.space(8)
   readonly property real thumbWidth: Style.space(56)
   readonly property real thumbHeight: Style.space(34)
@@ -154,6 +186,7 @@ Rectangle {
         value: Model.percent(root.job)
         thickness: Style.space(3)
         fillColor: root.accent
+        animationDuration: root.service ? root.service.liveInterval : 800
       }
 
       Text {
@@ -256,10 +289,9 @@ Rectangle {
     if (root.active) {
       var moved = Model.transferred(job)
       if (moved !== "") parts.push(moved)
-      var rate = Model.speed(job.speed)
+      var rate = Model.speed(root.steadySpeed)
       if (rate !== "") parts.push(rate)
-      var eta = Number(job.eta) || 0
-      if (eta > 0) parts.push(Model.duration(eta) + " left")
+      if (root.steadyEta > 0) parts.push(Model.duration(root.steadyEta) + " left")
       else {
         var running = Model.elapsed(job, tick)
         if (running !== "") parts.push(running + " elapsed")

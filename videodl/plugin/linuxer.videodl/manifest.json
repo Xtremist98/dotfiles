@@ -19,20 +19,31 @@
     "allowMultiple": false,
     "defaultSection": "right",
     "defaults": {
+      "pollLiveMs": 800,
       "pollActiveSec": 2,
       "pollIdleSec": 20,
       "maxCompleted": 12
     },
     "schema": [
       {
+        "key": "pollLiveMs",
+        "type": "integer",
+        "label": "Refresh while downloading (milliseconds)",
+        "min": 250,
+        "max": 3000,
+        "step": 50,
+        "defaultValue": 800,
+        "description": "The live rate, used only while a transfer is in flight. The progress bar and the bar ring animate over exactly this long, so a faster value means a smoother line at the cost of one host process per tick."
+      },
+      {
         "key": "pollActiveSec",
         "type": "integer",
-        "label": "Refresh while downloading (seconds)",
+        "label": "Refresh with the panel open (seconds)",
         "min": 1,
         "max": 10,
         "step": 1,
         "defaultValue": 2,
-        "description": "How often job state is re-read while something is in flight. The panel alone also polls at this rate whenever it is open."
+        "description": "Used when the panel is open but nothing is downloading. The live rate above takes over the moment a transfer starts."
       },
       {
         "key": "pollIdleSec",

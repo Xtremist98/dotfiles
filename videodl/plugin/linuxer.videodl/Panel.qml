@@ -30,6 +30,7 @@ Panel {
   Service {
     id: service
     open: root.opened
+    liveInterval: Math.max(250, Math.min(3000, Number(root.setting("pollLiveMs", 800)) || 800))
     activeInterval: Math.max(500, Number(root.setting("pollActiveSec", 2)) * 1000)
     idleInterval: Math.max(2000, Number(root.setting("pollIdleSec", 20)) * 1000)
   }
@@ -104,6 +105,15 @@ Panel {
           anchors.fill: parent
           visible: service.busy
           property real progress: root.progress
+
+          // Glide across the poll instead of snapping to each sample: the ring
+          // then reads as steady motion rather than a once-a-second tick.
+          Behavior on progress {
+            NumberAnimation {
+              duration: Math.max(120, service.liveInterval)
+              easing.type: Easing.Linear
+            }
+          }
 
           onProgressChanged: requestPaint()
           onVisibleChanged: requestPaint()
@@ -228,7 +238,6 @@ Panel {
                   tooltipText: "Refresh"
                   foreground: root.ink
                   fontFamily: root.fontFamily
-                  enabled: !service.refreshing
                   onClicked: service.refresh()
                 }
               }
@@ -281,7 +290,6 @@ Panel {
                   tooltipText: "Refresh"
                   foreground: root.ink
                   fontFamily: root.fontFamily
-                  enabled: !service.refreshing
                   onClicked: service.refresh()
                 }
               }

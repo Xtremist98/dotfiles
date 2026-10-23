@@ -39,14 +39,19 @@ Column {
     font.pixelSize: Style.font.bodySmall
   }
 
+  // An integer model on purpose. `model: root.jobs` would reset the view every
+  // time the service publishes a new array (which it does on every poll), and a
+  // reset destroys and rebuilds every delegate: the progress line restarts at
+  // zero, the thumbnail reloads, hover and focus are lost. With a count, the
+  // delegates keep their identity and only re-read the record assigned to them.
   Repeater {
-    model: root.jobs
+    model: root.jobs ? root.jobs.length : 0
 
     JobRow {
-      required property var modelData
+      required property int index
 
       width: root.width
-      job: modelData
+      job: root.jobs && index < root.jobs.length ? root.jobs[index] : null
       service: root.service
       now: root.now
       foreground: root.foreground
