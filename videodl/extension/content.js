@@ -66,13 +66,21 @@
     /\/comments\/[A-Za-z0-9]{4,}/, // reddit
     /\/(?:p|reel|reels|tv)\/[A-Za-z0-9_-]{5,}/, // instagram
     /\/@[^/]+\/video\/\d{4,}/, // tiktok
-    /\/video\/[A-Za-z0-9_-]{3,}/, // dailymotion, vk, rumble
     /\/watch\?v=[A-Za-z0-9_-]{6,}/, // youtube
     /\/shorts\/[A-Za-z0-9_-]{6,}/, // youtube shorts
     /\/(?:videos|reel)\/\d{4,}/, // facebook
     /\/v\/\d{4,}/, // vk video
     /\/pin\/\d{4,}/, // pinterest
+    /\/view_video\.php/i, // pornhub and friends
+    /\/video\d{4,}/i, // xvideos style
   ];
+
+  // "/video/<something>" is a media path on several sites, but on others it
+  // is only a listing ("/video/search", "/video/trending"). Only an id-like
+  // segment counts as a post.
+  const VIDEO_ID_RE = /\/video\/([A-Za-z0-9_-]{3,})/;
+  const VIDEO_WORDS =
+    /^(?:search|watch|browse|category|categories|tag|tags|channel|channels|list|home|popular|trending|results|upload|uploads|live|embed|embedder|playlist|explore|new|all|rank|site|staff|porn|videos?|hd|mobile|view|watched|most|top|latest)$/i;
 
   // Containers that hold exactly one post. Inside them a media link belongs
   // to that post.
@@ -105,6 +113,11 @@
     if (/\/analytics(?:[/?#]|$)/i.test(u.pathname)) return null;
     const s = u.pathname + u.search;
     for (const re of PERMALINK_RES) if (re.test(s)) return u.href;
+
+    // "/video/<id>" only when the segment really looks like an id.
+    const vid = s.match(VIDEO_ID_RE);
+    if (vid && !VIDEO_WORDS.test(vid[1])) return u.href;
+
     return null;
   }
 
@@ -549,6 +562,29 @@
     const videoSect = shadow.querySelector(".sect.video");
     const audioSect = shadow.querySelector(".sect.audio");
 
+    // The page carries the media itself (an Instagram story, for one) and no
+    // extractor could read it: every media link found in the page is offered.
+    const media = Array.isArray(data.media) ? data.media : [];
+    if (media.length) {
+      videoBox.innerHTML = media
+        .map(
+          (m, i) =>
+            `<label class="opt"><input type="radio" name="vdq" value="m:${i}" ${
+              i === 0 ? "checked" : ""
+            }><span>${m.label || "Video " + (i + 1)}</span></label>`
+        )
+        .join("");
+      videoSect.hidden = false;
+      audioBox.innerHTML = "";
+      audioSect.hidden = true;
+      status.textContent = "";
+      status.hidden = true;
+      go.disabled = false;
+      syncAudioOpts();
+      positionPanel();
+      return;
+    }
+
     const videoList = Array.isArray(data.video) ? data.video : [];
     const heights = (videoList.length
       ? videoList.map((v) => v.height)
@@ -896,37 +932,51 @@
     return "Quality list unavailable — the best available version will be downloaded.";
   }
 
+  // Reduce the panel to a single "best available" choice. Used when the page
+  // cannot be enumerated (or is slow) so the button still works.
+  function showBestOnly(message) {
+    const s = shadow.querySelector(".status");
+    s.hidden = false;
+    s.classList.remove("err");
+    if (message) s.textContent = message;
+    const go = shadow.querySelector(".go");
+    go.disabled = false;
+    shadow.querySelector(".sect.video .opts").innerHTML =
+      `<label class="opt"><input type="radio" name="vdq" value="v:0" checked>` +
+      `<span>Best available</span></label>`;
+    shadow.querySelector(".sect.audio .opts").innerHTML =
+      `<label class="opt"><input type="radio" name="vdq" value="a:">` +
+      `<span>Best audio <em>native format</em></span></label>`;
+    shadow.querySelector(".sect.audio").hidden = false;
+    formats = null;
+    syncAudioOpts();
+    positionPanel();
+  }
+
   function loadFormats(url) {
     const token = url;
     formatsUrl = token;
+
+    // A slow site must not leave the panel hanging on "Reading available
+    // formats…". After a while the button becomes usable with the best
+    // quality; a late answer still replaces the list when it arrives.
+    const slow = setTimeout(() => {
+      if (formatsUrl !== token || !panelOpen || formats) return;
+      console.debug("[videodl] formats lookup is slow, offering best quality");
+      showBestOnly("Still reading this page — the best available version will be used.");
+    }, 12000);
 
     try {
       chrome.runtime.sendMessage(
         { type: "videodl", payload: { action: "formats", url } },
         (resp) => {
+          clearTimeout(slow);
           if (formatsUrl !== token || !panelOpen) return;
           if (!resp || !resp.ok) {
             // yt-dlp cannot introspect every page (drm players, auth walls,
             // plain embeds). Say why in plain words and keep the button useful.
             console.debug("[videodl] formats lookup failed:", resp && resp.error);
-            const s = shadow.querySelector(".status");
-            s.hidden = false;
-            s.classList.remove("err");
-            s.textContent = probeMessage(resp && resp.error, url);
-            const go = shadow.querySelector(".go");
-            go.disabled = false;
-            // No honest height list exists, so offer the best quality only
-            // instead of inventing resolutions this page may not have.
-            shadow.querySelector(".sect.video .opts").innerHTML =
-              `<label class="opt"><input type="radio" name="vdq" value="v:0" checked>` +
-              `<span>Best available</span></label>`;
-            shadow.querySelector(".sect.audio .opts").innerHTML =
-              `<label class="opt"><input type="radio" name="vdq" value="a:">` +
-              `<span>Best audio <em>native format</em></span></label>`;
-            shadow.querySelector(".sect.audio").hidden = false;
-            formats = null;
-            syncAudioOpts();
-            positionPanel();
+            showBestOnly(probeMessage(resp && resp.error, url));
             return;
           }
           cache.set(token, resp);
@@ -995,6 +1045,26 @@
     positionPanel();
   }
 
+  // CDNs that serve a whole file rather than a chunked stream. Only these are
+  // worth handing to the host as a hint: a googlevideo/streaming address would
+  // land a truncated file if it were ever used as a plain download.
+  const WHOLE_FILE_HOSTS =
+    /(^|\.)(fbcdn\.net|cdninstagram\.com|tiktokcdn\.com|tiktokcdn-us\.com)$/i;
+
+  function mediaHint(video) {
+    try {
+      const src = video && (video.currentSrc || video.src);
+      if (!src) return "";
+      const u = new URL(src, location.href);
+      if (u.protocol !== "https:" && u.protocol !== "http:") return "";
+      if (!WHOLE_FILE_HOSTS.test(u.hostname)) return "";
+      if (!/\.(mp4|m4v|webm|mkv|mov)$/i.test(u.pathname)) return "";
+      return u.href;
+    } catch (err) {
+      return "";
+    }
+  }
+
   // --------------------------------------------------------------- download
   function startDownload() {
     if (busy) return;
@@ -1010,7 +1080,27 @@
     const value = picked.value;
     let payload;
 
-    if (value.startsWith("a:")) {
+    if (value.startsWith("m:")) {
+      // A media link taken from the page itself: that link is what gets
+      // downloaded, not the page.
+      const idx = Number(value.slice(2)) || 0;
+      const media = (formats && formats.media) || [];
+      const entry = media[idx];
+      if (!entry || !entry.url) {
+        setError("That media link is gone — close the panel and try again.");
+        return;
+      }
+      payload = {
+        action: "download",
+        url: entry.url,
+        mode: "video",
+        height: 0,
+        codec: "",
+        // Lets the host try the same item first if it has to look inside the
+        // page itself (the list order can differ from what was on screen).
+        media_index: idx,
+      };
+    } else if (value.startsWith("a:")) {
       const id = value.slice(2);
       const convert = shadow.querySelector(".afmt").value;
       payload = {
@@ -1038,6 +1128,12 @@
     payload.title = String(meta.title || document.title || "").slice(0, 200);
     payload.site = String(meta.site || "");
     payload.thumb = String(meta.thumbnail || "");
+    // Only for a page address: if the host has to fall back to the media the
+    // player is actually showing, this is it.
+    if (!value.startsWith("m:")) {
+      const hint = mediaHint(currentVideo);
+      if (hint) payload.media_hint = hint;
+    }
 
     busy = true;
     const go = shadow.querySelector(".go");

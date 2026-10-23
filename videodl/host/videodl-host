@@ -723,7 +723,7 @@ def probe_info(url):
         extra = cookie_args() if mode == "cookies" else []
         if mode == "cookies" and not extra:
             continue  # no cookie database on this box: nothing to try
-        res = run(base + extra + ["--", url], timeout=150)
+        res = run(base + extra + ["--", url], timeout=45)
         if res.returncode == 0:
             remember_mode(url, mode)
             try:
@@ -737,6 +737,119 @@ def probe_info(url):
     return None, error or "yt-dlp could not read this page"
 
 
+# ------------------------------------------------------------------- sniffing
+# Some pages carry the media in their own markup but no yt-dlp extractor can
+# read them (an Instagram story, for instance: the media is in the page's
+# embedded JSON while the API yt-dlp uses answers with an empty list). When
+# that happens the page is fetched here and the media links are picked out of
+# it, so the panel can still offer them.
+MEDIA_URL_RE = re.compile(
+    r'"(?:url|dash_manifest|playback_url|hls_url|contentUrl)"\s*:\s*"'
+    r'(https://[^"\\]+?\.(?:mp4|m3u8|m4v|webm)(?:\?[^"\\]*)?)"',
+    re.I,
+)
+MEDIA_BLOCK_RE = re.compile(r'"video_versions"\s*:\s*\[(.*?)\]', re.S)
+
+
+def unescape_json_text(text):
+    """Undo the escaping the markup uses inside its JSON blobs."""
+    return (
+        text.replace("\\/", "/")
+        .replace("\\u00253D", "=")
+        .replace("\\u0025", "%")
+        .replace("\\u0026", "&")
+        .replace("\\u003D", "=")
+        .replace("\\u0026", "&")
+    )
+
+
+
+def fetch_page(url):
+    """Download a page with the browser's cookies. -> (html, error)."""
+    try:
+        import yt_dlp
+        from yt_dlp.networking import Request
+    except Exception as exc:
+        return None, "yt-dlp is not importable: %s" % exc
+
+    opts = {"quiet": True, "no_warnings": True, "skip_download": True,
+            "simulate": True, "socket_timeout": 30}
+    spec = cookie_spec()
+    if spec:
+        opts["cookiesfrombrowser"] = (spec, None, None)
+    try:
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+        opts["impersonate"] = ImpersonateTarget.from_str("chrome")
+    except Exception:
+        pass
+
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            resp = ydl.urlopen(Request(url))
+            body = resp.read()
+        if isinstance(body, bytes):
+            body = body.decode("utf-8", "replace")
+        return body, ""
+    except Exception as exc:
+        return None, str(exc)[:200]
+
+
+def sniff_media(url):
+    """Pick media links out of the page itself. -> (list, title, error)."""
+    html, err = fetch_page(url)
+    if not html:
+        return [], "", err or "could not read the page"
+
+    html = unescape_json_text(html)
+
+    # A long numeric path segment (an Instagram story id, for one) is normally
+    # repeated in the page's own JSON. The media block closest to that spot is
+    # the item the address points at, which matters when the page preloads the
+    # neighbours too.
+    pin = None
+    try:
+        path = urllib.parse.urlparse(url).path
+    except Exception:
+        path = ""
+    m = re.search(r"/(\d{10,})(?:/|$)", path)
+    if m:
+        at = html.find(m.group(1))
+        if at >= 0:
+            pin = at
+
+    found = []
+    seen = set()
+
+    def add(media_url, at):
+        if media_url and media_url not in seen:
+            seen.add(media_url)
+            found.append((at, media_url))
+
+    # One entry per "video_versions" block, best rendition only: a story with
+    # four renditions of the same clip is not offered four times.
+    for block in MEDIA_BLOCK_RE.finditer(html):
+        urls = MEDIA_URL_RE.findall(block.group(1))
+        if urls:
+            add(urls[0], block.start())
+
+    # Anything else that points straight at a media file.
+    for sub in MEDIA_URL_RE.finditer(html):
+        add(sub.group(1), sub.start())
+
+    if pin is None:
+        found.sort(key=lambda item: item[0])
+    else:
+        found.sort(key=lambda item: abs(item[0] - pin))
+
+    title = ""
+    m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+    if m:
+        title = re.sub(r"\s+", " ", m.group(1)).strip()[:200]
+
+    return [media_url for _at, media_url in found], title, ""
+
+
+
 def extract_formats(url):
     # The URL the panel actually asked about: worth keeping, it is the first
     # thing to check when a site does not download.
@@ -744,6 +857,31 @@ def extract_formats(url):
 
     info, error = probe_info(url)
     if info is None:
+        # The extractor could not read the page. Before giving up, look for
+        # media links inside the page itself: a few sites (an Instagram story,
+        # for one) publish the media in their markup while the API yt-dlp
+        # uses answers with an empty list.
+        media, page_title, sniff_err = sniff_media(url)
+        if media:
+            log("formats: %s -> %d media links found in the page itself"
+                % (url, len(media)))
+            return {
+                "ok": True,
+                "title": page_title or "video",
+                "duration": 0,
+                "site": host_of(url),
+                "webpage_url": url,
+                "thumbnail": "",
+                "heights": [],
+                "video": [],
+                "audio": [],
+                "has_video": True,
+                "media": [
+                    {"url": m, "label": "Video %d" % (i + 1)}
+                    for i, m in enumerate(media[:12])
+                ],
+            }
+        log("formats: %s could not be sniffed either: %s" % (url, sniff_err))
         return {"ok": False, "error": error}
 
     if info.get("_type") == "playlist":
@@ -849,6 +987,66 @@ def extract_formats(url):
 
 
 # --------------------------------------------------------------------- download
+# Hosts that serve raw media rather than pages. A URL on one of them is the
+# file itself, so it must never be sniffed for media links.
+MEDIA_HOSTS = (
+    "fbcdn.net",
+    "cdninstagram.com",
+    "googlevideo.com",
+    "video.twimg.com",
+    "twimg.com",
+    "tiktokcdn.com",
+    "tiktokcdn-us.com",
+    "vimeocdn.com",
+    "akamaized.net",
+    "cloudfront.net",
+)
+MEDIA_PATH_RE = re.compile(r"\.(?:mp4|m4v|webm|mkv|mov|m3u8|mpd|ts)$", re.I)
+
+
+def is_direct_media(url):
+    """True when this address *is* a media file, not a page about one."""
+    try:
+        parts = urllib.parse.urlparse(url)
+    except Exception:
+        return False
+    host = (parts.netloc or "").lower()
+    if any(host == h or host.endswith("." + h) for h in MEDIA_HOSTS):
+        return True
+    return bool(MEDIA_PATH_RE.search(parts.path or ""))
+
+
+def clean_title(text):
+    """A title safe to hand yt-dlp as an output template.
+
+    Trailing dots/spaces matter: Instagram story titles end in a full stop
+    ("...before it disappears."), so appending " %(ext)s" produced
+    "<name>. mp4".  splitext() then reads the extension as " mp4" (leading
+    space), the Metadata postprocessor writes "<name>.temp. mp4", and ffmpeg
+    refuses that with "Error opening output files: Invalid argument".
+    """
+    text = re.sub(r"[\\/:*?\"<>|\n\r\t%]+", " ", text or "")
+    text = re.sub(r"\s+", " ", text).strip()
+    text = text.rstrip(" ._-")
+    return text[:120]
+
+
+def insert_before_url(cmd, extra):
+    """Add options to a command built by build_command().
+
+    build_command() ends with "-- <url>", and yt-dlp treats EVERYTHING after
+    that separator as a URL. Appending to the list therefore turns options into
+    bogus URLs ("'--add-header' is not a valid URL"), so they must be spliced in
+    before the separator instead.
+    """
+    if not extra:
+        return cmd
+    if "--" in cmd:
+        at = cmd.index("--")
+        return cmd[:at] + list(extra) + cmd[at:]
+    return cmd + list(extra)
+
+
 def build_command(payload, out_dir):
     url = payload["url"]
     mode = payload.get("mode") or "video"
@@ -1232,6 +1430,10 @@ def _worker_run(payload_path):
     if rc == 0:
         remember_mode(url, preferred)
 
+    # Filled in when the page-sniff fallback below finds a media file: the
+    # address was a page, so there may be no title from a probe to show.
+    sniffed_title = ""
+
     if rc != 0 and not filepath and not rec.get("done") and second_cmd != first_cmd:
         log("worker: retrying %s with %s" % (url, other_mode))
         flush(
@@ -1249,6 +1451,94 @@ def _worker_run(payload_path):
         if rc == 0:
             remember_mode(url, other_mode)
 
+    # The page still would not download, and the address was a page rather than
+    # a file (an Instagram story, for one: yt-dlp answers "you need to log in"
+    # while the media sits in the page's own markup). Look inside the page here
+    # as well, so a download never depends on the panel having managed to probe
+    # it first — and so a story that advanced between the probe and the click
+    # still lands something.
+    if rc != 0 and not filepath and not rec.get("done") and not is_direct_media(url):
+        media, page_title, sniff_err = sniff_media(url)
+        if media:
+            log("worker: %d media links found in the page itself" % len(media))
+        else:
+            log("worker: nothing sniffable in the page: %s" % sniff_err)
+
+        try:
+            index = int(payload.get("media_index") or 0)
+        except Exception:
+            index = 0
+        if not media:
+            index = 0
+        else:
+            index = max(0, min(index, len(media) - 1))
+        ordered = media[index:] + media[:index]
+
+        # The player's own address, when the panel could read it, is the most
+        # accurate hint of what was on screen.
+        hint = payload.get("media_hint") or ""
+        if hint and is_direct_media(hint) and hint not in ordered:
+            ordered.insert(0, hint)
+
+        if ordered:
+            nice = clean_title(rec.get("title") or page_title or "")
+            sniffed_title = nice
+            for n, candidate in enumerate(ordered[:4], 1):
+                if rec.get("status") == "cancelled":
+                    break
+                log("worker: trying the page's own media %d/%d"
+                    % (n, min(len(ordered), 4)))
+                flush(
+                    status="running",
+                    error="",
+                    done=0,
+                    total=0,
+                    percent=0.0,
+                    speed=0,
+                    eta=0,
+                    fragment_index=0,
+                    fragment_count=0,
+                )
+                retry_payload = dict(payload)
+                retry_payload.update(
+                    url=candidate,
+                    height=0,
+                    codec="",
+                    format_id="",
+                    media_hint="",
+                )
+                retry_cmd = build_command(retry_payload, out_dir)
+                # CDNs of signed-in sites often refuse without a referer.
+                # Both options have to land before build_command's "-- <url>"
+                # separator or yt-dlp reads them as addresses.
+                extra = ["--add-header", "Referer: %s" % url]
+                if nice:
+                    # "<name>.%(ext)s" — never a space before the dot: see
+                    # clean_title() for why the extension must stay attached.
+                    extra += ["-o", "%s.%%(ext)s" % nice]
+                retry_cmd = insert_before_url(retry_cmd, extra)
+                rc, filepath, _title, last_error = attempt(retry_cmd)
+                if rc == 0 and filepath:
+                    break
+                # Some CDNs reject the browser session but serve anonymously.
+                if n == 1:
+                    plain_retry = strip_cookies(retry_cmd)
+                    if plain_retry != retry_cmd:
+                        flush(
+                            status="running",
+                            error="",
+                            done=0,
+                            total=0,
+                            percent=0.0,
+                            speed=0,
+                            eta=0,
+                            fragment_index=0,
+                            fragment_count=0,
+                        )
+                        rc, filepath, _title, last_error = attempt(plain_retry)
+                        if rc == 0 and filepath:
+                            break
+
     if rec.get("status") == "cancelled":
         prune_jobs()
         return 143
@@ -1261,6 +1551,7 @@ def _worker_run(payload_path):
             status="completed",
             file=str(target),
             name=target.name,
+            title=rec.get("title") or sniffed_title or target.stem,
             dir=str(target.parent),
             size=size,
             done=rec.get("total") or size,
@@ -1290,6 +1581,7 @@ def _worker_run(payload_path):
                 status="completed",
                 file=str(recovered),
                 name=recovered.name,
+                title=rec.get("title") or sniffed_title or recovered.stem,
                 dir=str(recovered.parent),
                 size=size,
                 done=rec.get("total") or size,
@@ -1471,6 +1763,13 @@ def main():
         "title": str(msg.get("title") or ""),
         "site": str(msg.get("site") or ""),
         "thumb_url": str(msg.get("thumb") or ""),
+        # Which of the page's own media links the panel offered, and the
+        # address the player itself was showing. Only used when yt-dlp cannot
+        # read the page and the worker has to look inside the markup.
+        "media_index": int(msg.get("media_index") or 0)
+        if str(msg.get("media_index") or "0").isdigit()
+        else 0,
+        "media_hint": str(msg.get("media_hint") or ""),
         "id": new_job_id(),
     }
 
