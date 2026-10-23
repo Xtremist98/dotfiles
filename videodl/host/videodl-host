@@ -106,6 +106,42 @@ def video_codec_key(codec):
     return ""
 
 
+# Extensions that can only ever be audio. Used as a fallback when the extractor
+# leaves vcodec unset: a bare ".m4a" is audio, but an HLS ".mp4" with no codec
+# named is still video and must not be discarded.
+AUDIO_ONLY_EXTS = ("m4a", "mp3", "opus", "ogg", "flac", "wav", "aac")
+
+
+def format_height(f):
+    """Height of a rendition, or 0 when the site does not name one.
+
+    Plenty of HLS extractors report no "height" at all and only advertise the
+    figure inside the label ("hls-720p", "1280x720", "720p60").
+    """
+    try:
+        h = int(f.get("height") or 0)
+    except Exception:
+        h = 0
+    if 0 < h <= 4320:
+        return h
+    note = str(f.get("format_note") or "")
+    res = str(f.get("resolution") or "")
+    fid = str(f.get("format_id") or "")
+    for text in (note, res, fid):
+        m = re.search(r"(\d{3,4})\s*[pP](?![a-zA-Z])", text)
+        if m:
+            v = int(m.group(1))
+            if 0 < v <= 4320:
+                return v
+    for text in (res, note):
+        m = re.search(r"\d{2,5}\s*[xX]\s*(\d{2,5})", text)
+        if m:
+            v = int(m.group(1))
+            if 0 < v <= 4320:
+                return v
+    return 0
+
+
 # --------------------------------------------------------------------------- log
 def log(msg):
     try:
@@ -550,6 +586,153 @@ def frame_thumb(filepath, job_id):
     return ""
 
 
+# Image formats yt-dlp's own --embed-thumbnail can read. It always hands the
+# thumbnail to ffmpeg as `-f image2 -pattern_type none -i <file>`
+# (yt_dlp/postprocessor/ffmpeg.py, convert_thumbnail), and image2 only demuxes
+# plain web images. AVIF is ISO-BMFF, so image2 reports "Video: none, none:
+# unknown codec" and the post-processor dies with "Decoding requested, but no
+# decoder found for: none" / "Error opening output files: Invalid argument".
+# `-f image2` cannot be overridden from the command line, so such thumbnails
+# are attached by embed_cover() after the download instead.
+THUMB_OK_EXTS = ("jpg", "jpeg", "png", "webp", "gif", "bmp", "tif", "tiff")
+
+
+def thumb_ext(url):
+    """Lowercase extension of a thumbnail address, '' when it has none."""
+    try:
+        path = urllib.parse.urlparse(url or "").path
+    except Exception:
+        return ""
+    name = path.rsplit("/", 1)[-1]
+    return name.rsplit(".", 1)[-1].lower() if "." in name else ""
+
+
+def ytdlp_can_embed_thumb(url):
+    """True when --embed-thumbnail can open this image.
+
+    An address without an extension is left to yt-dlp: refusing would switch
+    cover art off on hosts that simply do not put an extension in the URL.
+    """
+    ext = thumb_ext(url)
+    return ext in THUMB_OK_EXTS if ext else True
+
+
+def count_video_streams(path):
+    """How many video streams the file already has (0 when ffprobe fails)."""
+    try:
+        res = run(
+            [
+                "ffprobe", "-v", "error", "-select_streams", "v",
+                "-show_entries", "stream=index", "-of", "csv=p=0", str(path),
+            ],
+            timeout=30,
+        )
+        if res.returncode == 0:
+            return len([x for x in (res.stdout or "").split() if x.strip()])
+    except Exception:
+        pass
+    return 0
+
+
+def fetch_cover_jpeg(url, job_id):
+    """Download `url` and re-encode it as a JPEG at its own size.
+
+    `ffmpeg -i` probes the real demuxer, which is exactly what yt-dlp cannot
+    do for AVIF. Returns '' on failure.
+    """
+    if not url:
+        return ""
+    raw = THUMB_DIR / (job_id + ".cover.src")
+    out = THUMB_DIR / (job_id + ".cover.jpg")
+    try:
+        THUMB_DIR.mkdir(parents=True, exist_ok=True)
+        req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            raw.write_bytes(resp.read(8 * 1024 * 1024))
+        res = run(
+            [
+                "ffmpeg", "-y", "-i", str(raw), "-frames:v", "1",
+                "-q:v", "2", str(out), "-loglevel", "error",
+            ],
+            timeout=60,
+        )
+        if res.returncode == 0 and out.exists() and out.stat().st_size:
+            return str(out)
+        log("cover: cannot convert %s (%s)" % (url, (res.stderr or "")[-200:]))
+    except Exception as exc:
+        log("cover: %s" % exc)
+    finally:
+        try:
+            raw.unlink()
+        except Exception:
+            pass
+    return ""
+
+
+def embed_cover(filepath, cover, job_id):
+    """Attach `cover` (a JPEG) to `filepath` in place. Best effort.
+
+    The media file is what the user asked for, so nothing here may fail the
+    job: on any problem the untouched file is kept.
+    """
+    target = Path(filepath)
+    suffix = target.suffix.lower()
+    if suffix in (".webm", ".aac", ".opus", ".ogg", ".wav"):
+        # Those containers cannot carry a still picture.
+        log("cover: %s cannot hold cover art, skipped" % suffix)
+        return False
+    tmp = target.with_name(target.stem + ".cover" + target.suffix)
+    base = ["ffmpeg", "-y", "-i", str(target), "-i", cover, "-loglevel", "error"]
+    if suffix in (".mp4", ".m4a", ".m4v", ".mov"):
+        # The picture becomes one more video stream, flagged as cover art, and
+        # the mp4 muxer turns it into the "covr" atom. v:N counts the existing
+        # video streams so audio-only files still attach at v:0.
+        args = base + [
+            "-map", "0", "-map", "1", "-c", "copy",
+            "-disposition:v:%d" % count_video_streams(target), "attached_pic",
+            "-movflags", "+faststart", str(tmp),
+        ]
+    elif suffix == ".mkv":
+        args = base + [
+            "-map", "0", "-c", "copy", "-attach", cover,
+            "-metadata:s:t", "mimetype=image/jpeg", str(tmp),
+        ]
+    elif suffix == ".mp3":
+        args = base + [
+            "-map", "0", "-map", "1", "-c", "copy",
+            "-id3v2_version", "3", str(tmp),
+        ]
+    elif suffix == ".flac":
+        args = base + [
+            "-map", "0", "-map", "1", "-c", "copy",
+            "-disposition:v:0", "attached_pic", str(tmp),
+        ]
+    else:
+        log("cover: no cover support for %s" % suffix)
+        return False
+
+    try:
+        res = run(args, timeout=300)
+        if res.returncode != 0 or not tmp.exists() or not tmp.stat().st_size:
+            log("cover: embed failed (%s)" % (res.stderr or "")[-200:])
+            return False
+        # A silent truncation would be worse than no cover art.
+        if tmp.stat().st_size < target.stat().st_size:
+            log("cover: result smaller than source, keeping the original")
+            return False
+        os.replace(str(tmp), str(target))
+        return True
+    except Exception as exc:
+        log("cover: %s" % exc)
+        return False
+    finally:
+        try:
+            if tmp.exists():
+                tmp.unlink()
+        except Exception:
+            pass
+
+
 def _name_key(text):
     """Loose comparison key for file names (yt-dlp sanitises titles)."""
     return re.sub(r"[^0-9a-z]+", "", (text or "").lower())[:24]
@@ -894,14 +1077,27 @@ def extract_formats(url):
 
     heights = set()
     video = {}  # height -> {codec key -> entry}
+    has_video = False
     for f in formats:
-        if f.get("vcodec") in (None, "none"):
+        vcodec = f.get("vcodec")
+        if vcodec == "none":
+            continue  # yt-dlp explicitly says this one carries no picture
+        ext = (f.get("ext") or "").lower()
+        # Several extractors (XVideos and other HLS sites) leave vcodec AND
+        # acodec unset instead of naming them. "unknown" must not be read as
+        # "audio", or every format on those pages gets thrown away and the
+        # panel ends up with nothing to offer.
+        if not vcodec and ext in AUDIO_ONLY_EXTS:
             continue
-        h = f.get("height")
-        if not isinstance(h, int) or not (0 < h <= 4320):
+        has_video = True
+        h = format_height(f)
+        if not h:
+            # No usable height: still a video rendition ("Best available" in
+            # the panel covers it), just nothing to build a pill from.
             continue
         heights.add(h)
-        key = video_codec_key(f.get("vcodec"))
+        bucket = video.setdefault(h, {})
+        key = video_codec_key(vcodec)  # "" when the site does not say
         if not key:
             continue
         try:
@@ -915,7 +1111,6 @@ def extract_formats(url):
             "size": size,
             "fps": f.get("fps") or 0,
         }
-        bucket = video.setdefault(h, {})
         cur = bucket.get(key)
         # Keep the biggest rendition per codec (usually the best quality).
         if cur is None or (entry["size"] or 0) > (cur["size"] or 0):
@@ -982,7 +1177,7 @@ def extract_formats(url):
         "heights": sorted(heights, reverse=True),
         "video": video_list,
         "audio": audio_list[:12],
-        "has_video": bool(heights),
+        "has_video": bool(has_video or heights),
     }
 
 
@@ -1089,7 +1284,10 @@ def build_command(payload, out_dir):
     if payload.get("embed_metadata", True):
         cmd += ["--embed-metadata"]
     if payload.get("embed_thumbnail", True):
-        cmd += ["--embed-thumbnail", "--convert-thumbnails", "jpg"]
+        # Only let yt-dlp embed when it can actually open the image; AVIF/HEIC
+        # thumbnails are attached after the download by embed_cover().
+        if ytdlp_can_embed_thumb(payload.get("thumb_url") or ""):
+            cmd += ["--embed-thumbnail", "--convert-thumbnails", "jpg"]
 
     if mode == "audio":
         fid = payload.get("format_id") or ""
@@ -1543,8 +1741,29 @@ def _worker_run(payload_path):
         prune_jobs()
         return 143
 
+    def attach_cover(path):
+        """Attach cover art yt-dlp could not embed itself (AVIF and friends).
+
+        build_command() leaves --embed-thumbnail out when the thumbnail's
+        container is one yt-dlp's fixed `-f image2` cannot read, so the picture
+        is fetched and attached here. Purely cosmetic: failures are logged and
+        the media file is left exactly as it is.
+        """
+        url = rec.get("thumb_url") or payload.get("thumb_url") or ""
+        if not request["embed_thumbnail"] or ytdlp_can_embed_thumb(url):
+            return
+        cover = fetch_cover_jpeg(url, job_id)
+        if cover:
+            if embed_cover(path, cover, job_id):
+                log("cover: attached %s to %s" % (Path(cover).name, path))
+            try:
+                Path(cover).unlink()
+            except Exception:
+                pass
+
     if rc == 0 and filepath and Path(filepath).exists():
         target = Path(filepath)
+        attach_cover(str(target))
         size = target.stat().st_size
         thumb = rec.get("thumb") or frame_thumb(str(target), job_id)
         flush(
@@ -1575,6 +1794,7 @@ def _worker_run(payload_path):
         if recovered:
             log("worker: keeping %s despite post-processing failure (%s)"
                 % (recovered, last_error))
+            attach_cover(str(recovered))
             size = recovered.stat().st_size
             thumb = rec.get("thumb") or frame_thumb(str(recovered), job_id)
             flush(
