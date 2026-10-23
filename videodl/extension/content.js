@@ -26,6 +26,7 @@
   let pickingDir = false; // a native folder chooser is open
   let savedDir = ""; // folder the host will use
   let dirOverride = ""; // non-empty when VIDEODL_DIR forces a folder
+  let ghostRect = null; // anchor rect when a playerless post page offers a target
 
   // Per-download post-processing choices. yt-dlp does both by default, so the
   // panel starts with them on and remembers whatever the user picks.
@@ -135,56 +136,116 @@
     return FEED_PATH_RES.some((re) => re.test(p.pathname));
   }
 
+  // Ancestors and containers across shadow boundaries: Reddit (and other
+  // component sites) keep the player inside a shadow root, so parentElement
+  // and closest() stop at the boundary too early. These climb the *composed*
+  // ancestor chain instead.
+  function upNode(node) {
+    if (!node || node === document || node === document.documentElement) return null;
+    if (node.parentElement) return node.parentElement;
+    const root = node.getRootNode ? node.getRootNode() : null;
+    return root && root.host ? root.host : null;
+  }
+
+  function closestDeep(node, selector) {
+    let el = node instanceof Element ? node : upNode(node);
+    let guard = 0;
+    while (el && guard++ < 40) {
+      try {
+        const hit = el.closest(selector);
+        if (hit) return hit;
+      } catch (_) {
+        /* invalid selector on this element */
+      }
+      el = upNode(el);
+    }
+    return null;
+  }
+
+  // Does `root` contain `target`, even when a shadow boundary sits between?
+  function containsDeep(root, target) {
+    if (!root || !root.contains || !target) return false;
+    if (root.contains(target)) return true;
+    let n = target;
+    let guard = 0;
+    while (n && guard++ < 40) {
+      const tr = n.getRootNode ? n.getRootNode() : null;
+      if (tr === root) return true;
+      if (!tr || !tr.host) return false;
+      n = tr.host;
+      if (root.contains(n)) return true;
+    }
+    return false;
+  }
+
   function permalinkFor(video) {
     if (!video) return null;
 
+    // Reddit marks its posts directly; the attribute link is the strongest
+    // signal and needs no scope searching at all.
+    const marked = closestDeep(video, "shreddit-post[permalink]");
+    if (marked) {
+      const link = mediaLink(marked.getAttribute("permalink") || "");
+      if (link) return link;
+    }
+
     // The player may be wrapped in the post link itself.
-    const owner = video.closest("a[href]");
+    const owner = closestDeep(video, "a[href]");
     if (owner) {
       const link = mediaLink(owner.getAttribute("href"));
       if (link) return link;
     }
 
     // Search the post container first, then a few levels around the player.
+    // All of it climbs through shadow roots (upNode), and each scope's own
+    // shadow root is searched as well.
     const scopes = [];
-    const root = video.closest(POST_ROOT_SEL);
+    const root = closestDeep(video, POST_ROOT_SEL);
     if (root) scopes.push(root);
 
-    let node = video.parentElement;
-    for (let depth = 0; node && depth < 6; depth++, node = node.parentElement) {
+    let node = upNode(video);
+    for (let depth = 0; node && depth < 8; depth++, node = upNode(node)) {
       if (
         node === document.body ||
         node === document.documentElement ||
         node.tagName === "MAIN"
       )
         break;
-      scopes.push(node);
+      if (!scopes.includes(node)) scopes.push(node);
     }
 
     for (const scope of scopes) {
       const cands = [];
-      for (const a of scope.querySelectorAll("a[href]")) {
-        const link = mediaLink(a.getAttribute("href"));
-        if (!link) continue;
+      const seen = new Set();
+      const collect = (container) => {
+        if (!container || !container.querySelectorAll) return;
+        for (const a of container.querySelectorAll("a[href]")) {
+          if (seen.has(a)) continue;
+          seen.add(a);
+          const link = mediaLink(a.getAttribute("href"));
+          if (!link) continue;
 
-        // Which post owns this link? A quoted or reposted post carries its
-        // own container, and the player usually belongs to the post around
-        // it rather than to the quote.
-        const post = a.closest(POST_ROOT_SEL) || scope;
-        const owns = post.contains(video);
+          // Which post owns this link? A quoted or reposted post carries its
+          // own container, and the player usually belongs to the post around
+          // it rather than to the quote.
+          const post = closestDeep(a, POST_ROOT_SEL) || scope;
+          const owns = containsDeep(post, video);
 
-        // How deep the link sits in the scope: the post's own link is closer
-        // to the surface than a nested quote's.
-        let depth = 0;
-        let n = a.parentElement;
-        while (n && n !== scope) {
-          depth++;
-          n = n.parentElement;
+          // How deep the link sits in the scope: the post's own link is
+          // closer to the surface than a nested quote's.
+          let depth = 0;
+          let n = upNode(a);
+          while (n && n !== scope) {
+            depth++;
+            n = upNode(n);
+          }
+          if (n !== scope) continue; // not inside this scope after all
+
+          cands.push({ link, owns, depth });
         }
-        if (n !== scope) continue; // not inside this scope after all
-
-        cands.push({ link, owns, depth });
-      }
+      };
+      collect(scope);
+      if (scope.shadowRoot) collect(scope.shadowRoot);
       if (!cands.length) continue;
 
       // Prefer the post that actually holds the player, then the link that
@@ -243,8 +304,88 @@
     return isHttp(page) ? page : null;
   }
 
+  // Reddit and other component sites keep players inside shadow roots; walk
+  // every reachable open shadow root as well. Guarded hard — this runs on a
+  // timer on every page.
+  function collectShadowVideos(root, out) {
+    if (!root || !root.querySelectorAll || out.length > 200) return;
+    let els;
+    try {
+      els = root.querySelectorAll("*");
+    } catch (_) {
+      return;
+    }
+    for (const el of els) {
+      if (out.length > 200) return;
+      if (!(el instanceof Element) || !el.shadowRoot) continue;
+      const sr = el.shadowRoot;
+      try {
+        for (const v of sr.querySelectorAll("video")) out.push(v);
+      } catch (_) {
+        continue;
+      }
+      collectShadowVideos(sr, out);
+    }
+  }
+
+  // Merged light + shadow video list, throttled: the full walk is heavier
+  // than the flat scan, so it runs at most every 800 ms even though
+  // pickVideo() itself is polled faster.
+  let deepCache = null; // { at, vids }
+  function deepVideos() {
+    const now = Date.now();
+    if (deepCache && now - deepCache.at < 800) return deepCache.vids;
+    const out = Array.from(document.querySelectorAll("video"));
+    try {
+      collectShadowVideos(document, out);
+    } catch (_) {
+      /* defensive */
+    }
+    deepCache = { at: now, vids: out };
+    return out;
+  }
+
+  // Private TikTok pages render no <video> at all, yet yt-dlp can download
+  // them fine from the page address. Ghost mode: a virtual centered rectangle
+  // that anchors the button and panel so the flow still works.
+  const TIKTOK_HOST_RE = /(?:^|\.)(?:tiktok\.com)$/i;
+  const TIKTOK_POST_PATH_RE = /^\/@[^/]+\/(?:video|photo)\/\d{6,}/;
+
+  function ghostTarget() {
+    let u;
+    try {
+      u = new URL(location.href);
+    } catch (_) {
+      return null;
+    }
+    if (!TIKTOK_HOST_RE.test(u.hostname)) return null;
+    if (!TIKTOK_POST_PATH_RE.test(u.pathname)) return null;
+
+    const w = clamp(Math.round(innerWidth * 0.58), 320, innerWidth - 24);
+    const h = Math.round((w * 9) / 16);
+    const left = Math.round((innerWidth - w) / 2);
+    const top = Math.round((innerHeight - h) / 2);
+    return {
+      left,
+      top,
+      right: left + w,
+      bottom: top + h,
+      width: w,
+      height: h,
+    };
+  }
+
   function pickVideo() {
-    const vids = Array.from(document.querySelectorAll("video"));
+    // Light DOM plus shadow roots, deduped — deepVideos() already includes
+    // every light-DOM <video>.
+    const seen = new Set();
+    const vids = [];
+    for (const v of deepVideos()) {
+      if (seen.has(v)) continue;
+      seen.add(v);
+      vids.push(v);
+    }
+
     let best = null;
     let bestArea = 0;
 
@@ -259,8 +400,17 @@
       if (cs.display === "none" || cs.visibility === "hidden") continue;
       if (parseFloat(cs.opacity) < 0.05) continue;
 
-      // Skip decorative background loops (muted, looping, very short).
-      if (v.muted && v.loop && v.duration && v.duration < 30) continue;
+      // Skip decorative background loops (muted, looping, very short) — but
+      // Reddit gifs are exactly that shape and live inside a post container,
+      // so keep those.
+      if (
+        v.muted &&
+        v.loop &&
+        v.duration &&
+        v.duration < 30 &&
+        !closestDeep(v, POST_ROOT_SEL)
+      )
+        continue;
 
       const area = r.width * r.height;
       if (area > bestArea) {
@@ -862,7 +1012,7 @@
 
   // ------------------------------------------------------------------- panel
   function openPanel() {
-    if (!currentVideo) return;
+    if (!currentVideo && !ghostRect) return;
     ensureHost();
 
     panelOpen = true;
@@ -1000,7 +1150,8 @@
 
   function positionPanel() {
     if (!panelOpen || !card || card.hidden) return;
-    const r = currentVideo ? currentVideo.getBoundingClientRect() : null;
+    // Ghost pages have no player to measure; the virtual rectangle anchors.
+    const r = currentVideo ? currentVideo.getBoundingClientRect() : ghostRect;
     if (!r) return;
 
     const bw = card.offsetWidth || 304;
@@ -1022,23 +1173,35 @@
   function update() {
     const v = pickVideo();
     if (v !== currentVideo) {
-      // A different player is now the biggest one on screen: the open panel
-      // belongs to the old one, so drop its target.
+      // The anchor changed — a different player, none, or a ghost page: the
+      // open panel belongs to the old one, so drop its target. (Ghost mode
+      // keeps currentVideo null, so nothing is cleared every tick.)
       panelUrl = "";
       formats = null;
     }
     currentVideo = v;
 
+    // No playable video, but the page is one yt-dlp can still serve (a
+    // private TikTok post): anchor the button to a virtual rectangle and
+    // keep the host alive.
     if (!v) {
-      if (hostEl && hostEl.isConnected) hostEl.remove();
-      hostEl = null;
-      shadow = null;
-      btn = null;
-      card = null;
-      panelOpen = false;
+      ghostRect = ghostTarget();
+      if (!ghostRect) {
+        if (hostEl && hostEl.isConnected) hostEl.remove();
+        hostEl = null;
+        shadow = null;
+        btn = null;
+        card = null;
+        panelOpen = false;
+        return;
+      }
+      ensureHost();
+      positionButton(ghostRect);
+      positionPanel();
       return;
     }
 
+    ghostRect = null;
     ensureHost();
     const rect = v.getBoundingClientRect();
     positionButton(rect);
