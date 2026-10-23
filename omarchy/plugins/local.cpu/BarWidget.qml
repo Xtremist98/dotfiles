@@ -120,13 +120,25 @@ Ui.Panel {
       }
 
       Text {
+        id: cpuPercentHorizontal
         visible: root.displayMode !== "icon"
         anchors.verticalCenter: parent.verticalCenter
+        width: cpuPercentHorizontalMetrics.width
+        horizontalAlignment: Text.AlignHCenter
         text: String(root.percent).padStart(2, "0") + "%"
         color: root.widgetInk
         font.family: root.bar ? root.bar.fontFamily : Commons.Style.font.family
         font.pixelSize: root.tokens.labelSize
         renderType: Text.NativeRendering
+      }
+
+      // Fixed-width readout: digit shape and 2-vs-3 digit counts change the
+      // intrinsic width, which reflowed the whole right-aligned bar on every
+      // cpu update. Pin the slot so only the glyphs inside change.
+      TextMetrics {
+        id: cpuPercentHorizontalMetrics
+        font: cpuPercentHorizontal.font
+        text: "888%"
       }
     }
   }
@@ -148,12 +160,21 @@ Ui.Panel {
       }
 
       Text {
+        id: cpuPercentVertical
         anchors.horizontalCenter: parent.horizontalCenter
+        width: cpuPercentVerticalMetrics.width
+        horizontalAlignment: Text.AlignHCenter
         text: String(root.percent).padStart(2, "0") + "%"
         color: root.widgetInk
         font.family: root.bar ? root.bar.fontFamily : Commons.Style.font.family
         font.pixelSize: Commons.Style.font.caption
         renderType: Text.NativeRendering
+      }
+
+      TextMetrics {
+        id: cpuPercentVerticalMetrics
+        font: cpuPercentVertical.font
+        text: "888%"
       }
     }
   }
