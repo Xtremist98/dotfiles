@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
-# Re-bind the mpv webtorrent hook to the node version mise now provides.
+# Repair net for the mpv webtorrent hook's `node_path`.
 #
-# `omarchy update` runs a mise step that bumps node (config pins `node = "latest"`)
-# and, because auto_prune is on, deletes the previous node build. The hook install
-# itself lives in a node-agnostic prefix (~/.local/share/webtorrent-mpv-hook) and
-# the native node-datachannel binding is N-API (ABI-stable), so the only thing
-# that needs to follow the upgrade is `node_path` in webtorrent.conf.
+# ⚠️ TIMING — this hook CANNOT fix a node bump made by the same `omarchy update`
+# run: it fires at the post-update step, which is BEFORE `omarchy-update-mise`
+# (`mise up`), so the new node does not exist yet and this run only re-affirms
+# the path that already works. A same-run bump is handled at the moment it
+# happens by mise's own `[hooks] postinstall` in ~/.config/mise/config.toml,
+# which fires after the new node is installed but before auto_prune deletes the
+# old one. That mise hook is the primary protection; this one is the net that
+# catches everything else: a manual `mise install`/`mise up`, a postinstall hook
+# that failed or was skipped, or a rebind missed entirely. Idempotent and cheap,
+# so a run when already in sync just confirms the current path.
+#
+# It can work at all because the hook install lives in a node-agnostic prefix
+# (~/.local/share/webtorrent-mpv-hook) and node-datachannel's native binding is
+# N-API (ABI-stable) — so only `node_path` in webtorrent.conf has to follow.
 #
 # Quiet when already in sync; prints only on change or failure.
 
