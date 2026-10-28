@@ -8,5 +8,9 @@ auto_prune = true
 [hooks]
 # After any tool install/upgrade, re-point the mpv webtorrent hook at the node
 # mise now provides (see ~/.local/bin/webtorrent-mpv-rebind). Never fails the
-# mise run: the omarchy post-update hook re-checks later and reports loudly.
+# mise run. It fires after the new version is installed but before auto_prune,
+# while mise still answers with the OLD version, so the script deliberately
+# prefers the newest concrete install. The omarchy post-update hook (which runs
+# BEFORE the mise step of an update) is the second net: it repairs a missed
+# rebind on the following update, or on any manual run.
 postinstall = "$HOME/.local/bin/webtorrent-mpv-rebind -q || true"

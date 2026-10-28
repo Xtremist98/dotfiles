@@ -41,38 +41,51 @@ warn() { printf 'webtorrent-rebind: WARNING %s\n' "$*" >&2; }
 err()  { printf 'webtorrent-rebind: ERROR %s\n' "$*" >&2; }
 
 # --- 1. Resolve the node that mise currently provides -------------------------
-# Avoid a recursive mise call deadlocking when invoked from a mise hook: try the
-# install-dir lookups first and only shell out to mise (with a timeout) last.
+# ORDER IS DELIBERATE: install-dir lookups first, mise last (also keeps a
+# recursive mise call from deadlocking when we run inside a mise hook).
+#
+# Why the newest concrete install wins over `mise where`: when this runs from
+# mise's own [hooks] postinstall during a node upgrade, the new version is
+# already installed but `mise where node` AND the `latest` alias still resolve to
+# the OLD one (verified empirically), and auto_prune deletes that old install
+# immediately after the hook. Asking the resolver first would therefore write a
+# node_path that is deleted seconds later. At hook time both versions exist and
+# only the newest survives the prune, so that is the safe answer.
+#
+# Caveat: if node is ever deliberately pinned to an older version while a newer
+# install is left on disk, this follows the newer one. The hook only needs *a*
+# working node (the node-datachannel binding is N-API), so that is intentional.
 resolve_node() {
   if [ -n "${MISE_NODE_BIN:-}" ] && [ -x "$MISE_NODE_BIN" ]; then
     printf '%s\n' "$MISE_NODE_BIN"; return 0
   fi
 
   local data="${MISE_DATA_DIR:-$HOME/.local/share/mise}"
-  local cand
+  local cand dir
 
-  # 1. Authoritative answer from mise (timeout guards a lock held by the mise
+  # 1. Concrete installs, newest first, skipping alias symlinks. Each candidate
+  #    must actually run, so a half-written install can never be selected.
+  local concrete=()
+  for cand in "$data"/installs/node/*/bin/node; do
+    [ -x "$cand" ] || continue
+    case "$cand" in */installs/node/latest/*|*/installs/node/global/*) continue ;; esac
+    # skip symlinked alias dirs (e.g. `26`, `26.12`)
+    [ -L "${cand%/bin/node}" ] && continue
+    concrete+=("$cand")
+  done
+  if [ "${#concrete[@]}" -gt 0 ]; then
+    while IFS= read -r cand; do
+      "$cand" -v >/dev/null 2>&1 || continue
+      printf '%s\n' "$cand"; return 0
+    done < <(printf '%s\n' "${concrete[@]}" | sort -rV)
+  fi
+
+  # 2. Authoritative answer from mise (timeout guards a lock held by the mise
   #    operation whose hook invoked us).
   if [ "${MISE_SKIP_MISE_LOOKUP:-0}" != 1 ] && command -v mise >/dev/null 2>&1; then
-    local dir
     dir="$(cd "$HOME" && timeout 5 mise where node 2>/dev/null || true)"
     if [ -n "$dir" ] && [ -x "$dir/bin/node" ]; then printf '%s\n' "$dir/bin/node"; return 0; fi
   fi
-
-  # 2. Highest installed concrete version (version sort; skip alias symlinks).
-  local best=""
-  for cand in "$data"/installs/node/*/bin/node; do
-    [ -e "$cand" ] || continue
-    case "$cand" in */installs/node/latest/*|*/installs/node/global/*) continue ;; esac
-    # skip symlinked alias dirs
-    [ -L "${cand%/bin/node}" ] && continue
-    if [ -z "$best" ]; then
-      best="$cand"
-    elif [ "$(printf '%s\n%s\n' "$best" "$cand" | sort -V | tail -1)" = "$cand" ]; then
-      best="$cand"
-    fi
-  done
-  if [ -n "$best" ]; then printf '%s\n' "$best"; return 0; fi
 
   # 3. `latest` alias symlink maintained by mise.
   cand="$data/installs/node/latest/bin/node"
