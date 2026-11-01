@@ -1,3 +1,4 @@
+# User-local bin first (prism wrapper, etc.)
 # If not running interactively, don't do anything (leave this at the top of this file)
 [[ $- != *i* ]] && return
 
@@ -118,3 +119,5 @@ cliamp() {
 }
 
 
+
+export PATH="$HOME/.local/bin:$PATH"
