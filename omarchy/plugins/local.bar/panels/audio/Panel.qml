@@ -242,7 +242,7 @@ Panel {
   readonly property bool hasOutput: !!(volumeSink && volumeSink.audio)
   readonly property bool hasInput: !!(source && source.audio) || (inputViaWpctl && UntypedInput.known)
   readonly property bool anyAudible: (hasOutput && !outputMuted) || (hasInput && !inputMuted)
-  readonly property string toggleHint: anyAudible ? "Mute" : "Unmute"
+  readonly property string toggleHint: anyAudible ? Commons.I18n.t("audio.mute") : Commons.I18n.t("audio.unmute")
 
   readonly property color hoverFill: bar
     ? Style.hoverFillFor(bar.panelForeground, Commons.Color.accent)
@@ -502,7 +502,7 @@ Panel {
   // panel's brightnessName ladder; bands are wide enough that small
   // tweaks don't rename the room you're in.
   function outputVolumeName(volume, muted) {
-    return Model.outputVolumeName(volume, muted)
+    return Model.outputVolumeName(volume, muted, Commons.I18n.t)
   }
 
   function setOutputVolume(v) {
@@ -591,7 +591,7 @@ Panel {
   }
 
   function nodeLabel(node) {
-    return Model.nodeLabel(node)
+    return Model.nodeLabel(node, Commons.I18n.t)
   }
 
   function nodeProps(node) {
@@ -657,7 +657,7 @@ Panel {
   // displayAudioStreams carries primitives now, and resolving each row back
   // would only rebuild what audioStreams already is.
   function streamLabel(node) {
-    return Model.streamLabel(node, mprisPlayers, audioStreams)
+    return Model.streamLabel(node, mprisPlayers, audioStreams, Commons.I18n.t)
   }
 
   function streamRepresentsPlayer(node, player) {
@@ -885,7 +885,8 @@ Panel {
               spacing: Style.space(2)
 
               Text {
-                text: "Audio"
+                text: Commons.I18n.t("audio.title")
+                textFormat: Text.PlainText
                 color: root.bar.panelForeground
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
@@ -927,7 +928,7 @@ Panel {
 
               PanelSectionHeader {
                 id: outputHeader
-                text: "OUTPUT"
+                text: Commons.I18n.t("audio.output")
                 foreground: root.bar.panelForeground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -937,7 +938,7 @@ Panel {
               Text {
                 id: outputPercent
                 textFormat: Text.PlainText
-                text: Math.round((outputSlider.dragging ? outputSlider.liveValue : root.outputVolume) * 100) + "%"
+                text: Commons.I18n.formatNumber(Math.round((outputSlider.dragging ? outputSlider.liveValue : root.outputVolume) * 100)) + "%"
                 color: Qt.darker(root.bar.panelForeground, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
@@ -1017,7 +1018,7 @@ Panel {
 
               PanelSectionHeader {
                 id: microphoneHeader
-                text: "INPUT"
+                text: Commons.I18n.t("audio.input")
                 foreground: root.bar.panelForeground
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
@@ -1027,7 +1028,7 @@ Panel {
               Text {
                 id: microphonePercent
                 textFormat: Text.PlainText
-                text: root.inputLevelKnown ? Math.round((inputSlider.dragging ? inputSlider.liveValue : root.inputVolume) * 100) + "%" : "–"
+                text: root.inputLevelKnown ? Commons.I18n.formatNumber(Math.round((inputSlider.dragging ? inputSlider.liveValue : root.inputVolume) * 100)) + "%" : "–"
                 color: Qt.darker(root.bar.panelForeground, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
@@ -1128,7 +1129,7 @@ Panel {
             visible: root.displayAudioStreams.length > 0
 
             PanelSectionHeader {
-              text: "SOURCES"
+              text: Commons.I18n.t("audio.sources")
               foreground: root.bar.panelForeground
               fontFamily: root.bar.fontFamily
             }
@@ -1147,43 +1148,44 @@ Panel {
           }
         }
       }
-    // Themed scrollbar: parked in the reserved right gutter so it never
-    // overlaps the switch or the rows, and colored from the theme accent
-    // instead of the white app-default scrollbar. A SIBLING of scrollArea,
-    // never a child of it -- a child would land in the ScrollView content
-    // and scroll away with the content.
-    Item {
-    id: verticalScrollBar
-    anchors.top: scrollArea.top
-    anchors.bottom: scrollArea.bottom
-    anchors.right: scrollArea.right
-    // The PILL is parked in the popup's padding gutter, stopping ~6px
-    // short of the panel border so it hugs the edge without touching it.
-    // The ITEM is deliberately wider than the 2px pill: a plain Item
-    // takes no press grab, so the extra width is a slightly easier hit
-    // target and costs nothing in click-through.
-    anchors.rightMargin: -(Style.spacing.popupPadding - 6)
-    anchors.topMargin: 2
-    anchors.bottomMargin: 2
-    width: Style.space(12)
-    visible: scrollArea.contentItem.contentHeight > scrollArea.height
 
-    Rectangle {
-    id: verticalScrollHandle
-    width: Style.space(2)
-    anchors.right: parent.right
-    radius: height / 2
-    height: Math.max(18, scrollArea.height * scrollArea.height / Math.max(1, scrollArea.contentItem.contentHeight))
-    y: {
-    var spread = Math.max(1, scrollArea.contentItem.contentHeight - scrollArea.height)
-    var travel = Math.max(0, parent.height - verticalScrollHandle.height)
-    return travel * scrollArea.contentItem.contentY / spread
-    }
-    color: root.scrollbarColor
+      // Themed scrollbar: parked in the reserved right gutter so it never
+      // overlaps the switch or the rows, and colored from the theme accent
+      // instead of the white app-default scrollbar. A SIBLING of scrollArea,
+      // never a child of it -- a child would land in the ScrollView content
+      // and scroll away with the content.
+      Item {
+        id: verticalScrollBar
+        anchors.top: scrollArea.top
+        anchors.bottom: scrollArea.bottom
+        anchors.right: scrollArea.right
+        // The PILL is parked in the popup's padding gutter, stopping ~6px
+        // short of the panel border so it hugs the edge without touching it.
+        // The ITEM is deliberately wider than the 2px pill: a plain Item
+        // takes no press grab, so the extra width is a slightly easier hit
+        // target and costs nothing in click-through.
+        anchors.rightMargin: -(Style.spacing.popupPadding - 6)
+        anchors.topMargin: 2
+        anchors.bottomMargin: 2
+        width: Style.space(12)
+        visible: scrollArea.contentItem.contentHeight > scrollArea.height
 
-    Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-    }
-    }
+        Rectangle {
+          id: verticalScrollHandle
+          width: Style.space(2)
+          anchors.right: parent.right
+          radius: height / 2
+          height: Math.max(18, scrollArea.height * scrollArea.height / Math.max(1, scrollArea.contentItem.contentHeight))
+          y: {
+            var spread = Math.max(1, scrollArea.contentItem.contentHeight - scrollArea.height)
+            var travel = Math.max(0, parent.height - verticalScrollHandle.height)
+            return travel * scrollArea.contentItem.contentY / spread
+          }
+          color: root.scrollbarColor
+
+          Behavior on y { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        }
+      }
     }
   }
 
@@ -1384,7 +1386,7 @@ Panel {
         Text {
           id: streamPct
           textFormat: Text.PlainText
-          text: Math.round(streamRow.streamVolume * 100) + "%"
+          text: Commons.I18n.formatNumber(Math.round(streamRow.streamVolume * 100)) + "%"
           color: Qt.darker(root.bar.panelForeground, 1.5)
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.caption

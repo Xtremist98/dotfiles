@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "local.clock",
+  "id": "omarchy.clock",
   "name": "Clock",
   "version": "1.0.0",
   "author": "Omarchy",

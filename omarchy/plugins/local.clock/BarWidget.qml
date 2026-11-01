@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Commons
-import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
 
@@ -14,10 +13,6 @@ import "Model.js" as Model
 BarWidget {
   id: root
   moduleName: "omarchy.clock"
-
-  readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
 
   property date displayDate: clock.date
 
@@ -33,6 +28,10 @@ BarWidget {
   // What the bar shows is what shell.json stores, so a cycled format is the
   // format from then on rather than something that reverts on restart.
   readonly property string activeFormat: configuredFormat
+
+  // A seconds label needs the clock to tick sixty times as often, and a
+  // repaint a second is a price only the formats that print seconds pay.
+  readonly property bool showsSeconds: Model.clockNeedsSeconds(activeFormat)
   readonly property string displayText: formatted(displayDate)
   readonly property var verticalLines: displayText.split("\n")
 
@@ -57,8 +56,16 @@ BarWidget {
       root.bar.shell.updateEntryInline(root.moduleName, entry)
   }
 
+  // Day and month names follow the Omarchy language, not the system locale,
+  // which only catches up at the next login.
+  readonly property var formatLocale: Qt.locale(I18n.formatLocale)
+
+  // The ISO week goes in as a literal, so its digits are localized here the
+  // way Qt localizes the rest of the format.
   function formatted(date) {
-    return Qt.formatDateTime(date, activeFormat.replace(/ww/g, Model.isoWeekLiteral(date.getFullYear(), date.getMonth(), date.getDate())))
+    var week = Model.isoWeekLiteral(date.getFullYear(), date.getMonth(), date.getDate())
+    week = week.split("").map(function(digit) { return I18n.formatNumber(digit) }).join("")
+    return date.toLocaleString(root.formatLocale, activeFormat.replace(/ww/g, week))
   }
 
   // ---- Calendar popup. Shape contract for shell.summon/hide/toggle
@@ -116,7 +123,7 @@ BarWidget {
 
   SystemClock {
     id: clock
-    precision: SystemClock.Minutes
+    precision: root.showsSeconds ? SystemClock.Seconds : SystemClock.Minutes
     onDateChanged: root.displayDate = date
   }
 
@@ -148,13 +155,16 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    foreground: root.glyphColor
     text: root.vertical ? "" : root.displayText
     labelVisible: !root.vertical
     hasVisualContent: root.vertical ? root.verticalLines.length > 0 : text !== ""
     fixedHeight: root.vertical ? root.verticalLines.length * Style.bar.iconSlot : -1
-    horizontalMargin: 6
-    verticalPadding: 7.5
+    horizontalMargin: 8.75
+    verticalPadding: 8.75
+    tooltipText: I18n.t("clock.toggleFormat")
+    // The clock is text to read, not an icon to press, so a click never
+    // shrinks it; the format it cycles to, or the panel it opens, is feedback.
+    pressFeedbackButtons: Qt.NoButton
 
     onPressed: function(b) {
       if (b === Qt.RightButton) root.cycleFormat()
