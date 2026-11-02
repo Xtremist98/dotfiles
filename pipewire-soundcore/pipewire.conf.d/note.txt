@@ -1,1 +1,0 @@
-install "rtkit" from arch for mlock and pipewire priority
