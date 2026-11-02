@@ -128,6 +128,8 @@ Paths below are relative to this directory. `systemd/user/` mirrors
 | `pipewire.conf.d/99-lock-quantum.conf` | `~/.config/pipewire/pipewire.conf.d/` |
 | `pipewire.conf.d/99-realtime-mlock.conf` | `~/.config/pipewire/pipewire.conf.d/` |
 | `soundcore.txt` (+ `-honey` / `-spacious`) | `~/.config/pipewire/` |
+| `cheapbuds.txt` (wired / cheap-bud baseline) | `~/.config/pipewire/` |
+| `cheapbuds-hd800s.txt` (same driver, warm / bass-forward) | `~/.config/pipewire/` |
 | `atmos.wav` (HeSuVi IR) | `~/.config/pipewire/` |
 | `systemd/user/pipewire.service.d/limits.conf` | `~/.config/systemd/user/pipewire.service.d/` |
 | `systemd/user/pipewire-pulse.service.d/limits.conf` | `~/.config/systemd/user/pipewire-pulse.service.d/` |
@@ -145,17 +147,64 @@ systemctl --user restart pipewire pipewire-pulse wireplumber
 Restarting all three together matters — restarting pipewire alone leaves the
 session daemons pointing at dead sockets.
 
-## Caveat on the two configs stored here
+## Caveats on what is stored here
 
 The copies in this tree are the **Soundcore-era** versions:
 
-- `01-paramatric-eq.conf` points `equalizer.filepath` at `soundcore.txt`.
-  **On this box that is still what runs** — `~/.config/pipewire/eq.txt` (the AKG
-  curve, `Preamp: -6.0 dB`) exists but is *not* wired in. Repointing is a
-  one-line change to `equalizer.filepath` (line 4) followed by a full
-  `pipewire`/`pipewire-pulse`/`wireplumber` restart; do it only deliberately,
-  and note the EQ node is global, not per-device, so it also applies to any
-  wired/other output.
+- `01-paramatric-eq.conf` points `equalizer.filepath` at `soundcore.txt`, which
+  is the right default for a restore (the buds are the normal output). **On this
+  box it currently points somewhere else** — at
+  `~/.config/pipewire/cheapbuds-hd800s.txt`, because the buds are swapped out for
+  the wired earbuds. Do not "sync" that one line back: the EQ node is global, not
+  per-device, so whichever file is named applies to buds and wired jack alike.
+  Repointing is a one-line change to `equalizer.filepath` (line 4) followed by a
+  full `pipewire`/`pipewire-pulse`/`wireplumber` restart; do it only
+  deliberately.
+- `cheapbuds.txt` is a **7-band curve built for a small cheap driver**, not for
+  the Soundcore buds: `Preamp: -6.0 dB`, `PK 120 Hz +4.5 Q0.90`,
+  `PK 200 Hz +2.0 Q0.90`, `PK 480 Hz -1.0 Q1.40`, `PK 1900 Hz +1.0 Q1.20`,
+  `PK 3100 Hz +1.2 Q1.60`, `PK 6800 Hz -2.0 Q2.50`, `HSC 9000 Hz -1.0 Q0.70`.
+  Peak +5.59 dB raw at 129 Hz, so `-6.0` lands the peak at -0.41 dBFS — 0.41 dB
+  of sample-peak headroom, nothing clips. Do not raise the preamp above -5.6:
+  that is the point where the peak crosses full scale, and loudness belongs to
+  the sink, not the preamp. It is the **baseline** wired-earbud curve (the
+  warmer variant below is what is live now), and it is kept as the
+  alternative to the handmade AKG curve, which cuts 6 dB of preamp, scoops the
+  low mids with a Q 0.30 filter at 142 Hz, and dips 3 dB at 5.7 kHz — that
+  combination is what made the little earbuds sound thin. Bass lives at
+  120-250 Hz here on purpose: a driver that size makes no 30 Hz, so a sub-bass
+  shelf only costs headroom. Because the EQ node is global, this file and the
+  others can never be active at the same time.
+- `cheapbuds-hd800s.txt` is the same driver with a **warm, bass-forward shape**:
+  6 bands, `Preamp: -5.9 dB`, `PK 100 Hz +4.8 Q0.70`, `PK 200 Hz +1.6 Q0.90`,
+  `PK 400 Hz +0.2 Q0.85`, `PK 2000 Hz +1.0 Q1.20`, `PK 3400 Hz +1.5 Q1.60`,
+  `PK 6500 Hz -1.5 Q2.20`. Raw peak +5.43 dB at 108 Hz, floor -1.21 dB at
+  6576 Hz; with the preamp the peak is -0.47 dB and the minimum -7.11 dB, so
+  0.47 dB of headroom and no clipping. Levelled against `cheapbuds.txt` it is
+  about +2.0 dB at 100-250 Hz (the punch band sits ~0.3 dB above the mud band,
+  which is the point) and about +1 dB at 2-4 kHz.
+  It has no sub-bass shelf and no shelf anywhere: the lift is three peaking
+  filters standing next to each other at 100 / 200 / 400 Hz, so the response
+  falls monotonically from the peak and never sags in between. That
+  continuity is the whole design. A low **shelf** was measured against it and
+  cannot do the job — an LSC always tilts mud-ward (e.g. `LSC 250 Hz +5.0`
+  gives bass +1.67 / punch +1.32 / mud +1.23), so punch can never exceed mud.
+  **History, because the shape changed twice:** the first version was an
+  8-band "HD 800S" tilt with `PK 9000 +2.5` and `HSC 12000 +2.0` on top of the
+  bands above. It was too airy on a small closed driver, so both air bands
+  were dropped (6 bands, `Preamp: -3.9 dB`) — that base was approved. It then
+  read as *bass-eaten*: `PK 450 Hz -1.5` had put a saddle in the response, a
+  narrow 110 Hz bump followed by a dip whose skirt reached back into ~200 Hz,
+  and every dB of bass also costs a dB of preamp. The fix was not more gain but
+  **one continuous 70-500 Hz lift**: the 450 Hz cut is gone, the +0.2 dB band at
+  400 Hz is kept deliberately (it joins the 200 Hz bell to the flat region
+  without a step), and the preamp went -3.9 -> -5.9 to pay for it.
+  **Normalisation, stated plainly:** with `preamp = -(raw peak + 0.5)` the
+  cascade tops out at -0.47 dBFS, so this curve is a *shape*, not a loudness
+  change. The "boost + deep preamp" form and a "cut the mids + shallow preamp"
+  form of the same shape are identical to ~0.03 dB; the tilt is cashed in at the
+  volume knob, and no curve can raise absolute bass at a fixed knob without
+  clipping. **This is the file currently live on this box.**
 - `02-hesuvi-surround.conf` contains exactly **one** `node.target`, and it is
   the logical `node.target = "eq_input"` (HeSuVi output -> EQ input). That is
   correct and expected; no device name is hardcoded there.
