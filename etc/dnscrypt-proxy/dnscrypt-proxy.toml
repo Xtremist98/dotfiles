@@ -1,0 +1,11 @@
+listen_addresses = ['127.0.0.1:53']
+server_names = ['cf']
+max_clients = 64
+timeout = 5000
+keepalive = 30
+cert_refresh_delay = 240
+
+# Cloudflare DoH, address AND SNI both set to 1.1.1.1 (raw IP).
+# The ZONG hotspot hijacks DNS by hostname/SNI; a raw-IP connection passes.
+[static.'cf']
+stamp = 'sdns://AgcAAAAAAAAABzEuMS4xLjEABzEuMS4xLjEKL2Rucy1xdWVyeQ'
