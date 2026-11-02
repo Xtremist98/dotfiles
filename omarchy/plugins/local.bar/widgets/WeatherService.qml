@@ -30,6 +30,16 @@ Item {
   property bool geocodeAttempted: false
   readonly property bool refreshing: weatherProc.running
 
+  // Provider state. Open-Meteo is preferred (richest payload, real is_day),
+  // but it answers 503 "service is overloaded" for hours at a time, which used
+  // to leave the bar showing a stale temperature forever. Whichever provider
+  // answered last is tried first on the next fetch.
+  property string preferredProvider: "open-meteo"
+  property string activeProvider: ""
+  property string activeUrl: ""
+  property var providerQueue: []
+  property bool fallbackPending: false
+
   readonly property string locationQuery: {
     const latitude = parseFloat(String(configuredLocation.latitude))
     const longitude = parseFloat(String(configuredLocation.longitude))
@@ -50,6 +60,13 @@ Item {
       + "&daily=weather_code,temperature_2m_max,temperature_2m_min,"
       + "precipitation_probability_max"
       + "&timezone=auto&forecast_days=3&wind_speed_unit=kmh"
+  }
+
+  readonly property string wttrUrl: {
+    const latitude = parseFloat(String(configuredLocation.latitude))
+    const longitude = parseFloat(String(configuredLocation.longitude))
+    if (isNaN(latitude) || isNaN(longitude)) return ""
+    return "https://wttr.in/" + latitude + "," + longitude + "?format=j1"
   }
 
   readonly property string geocodeUrl: {
@@ -133,7 +150,11 @@ Item {
       if (force === true) refreshPending = true
       return
     }
-    weatherProc.running = true
+    const first = root.preferredProvider === "wttr" ? "wttr" : "open-meteo"
+    const second = first === "wttr" ? "open-meteo" : "wttr"
+    root.fallbackPending = false
+    root.providerQueue = [first, second]
+    root.startNextProvider()
   }
 
   // Retry the fetch with backoff after a failed/empty result so the widget
@@ -150,22 +171,94 @@ Item {
     locationFile.reload()
   }
 
-  function parseReport(raw) {
-    const text = String(raw || "").trim()
-    if (!text) {
-      unavailable = true
-      scheduleRetry()
+  // Single place that decides what happens once the shell is idle: either the
+  // next provider in the queue or a queued forced refresh. Idempotent and safe
+  // to call from both the stream collector and onRunningChanged, because those
+  // two can fire in either order.
+  function maybeAdvance() {
+    if (weatherProc.running) return
+    if (root.fallbackPending) {
+      root.fallbackPending = false
+      root.startNextProvider()
       return
     }
+    if (!root.refreshPending) return
+    root.refreshPending = false
+    root.refresh(false)
+  }
 
+  function providerUrl(name) {
+    if (name === "wttr") return root.wttrUrl
+    if (name === "open-meteo") return root.requestUrl
+    return ""
+  }
+
+  function startNextProvider() {
+    if (weatherProc.running) return
+    const queue = root.providerQueue
+    if (!queue || !queue.length) {
+      root.activeProvider = ""
+      root.activeUrl = ""
+      root.unavailable = true
+      root.scheduleRetry()
+      return
+    }
+    root.activeProvider = queue[0]
+    root.activeUrl = root.providerUrl(queue[0])
+    root.providerQueue = queue.slice(1)
+    if (!root.activeUrl) {
+      root.startNextProvider()
+      return
+    }
+    weatherProc.running = true
+  }
+
+  // WorldWeatherOnline codes (wttr.in) collapsed onto the WMO codes this widget
+  // already renders and describes. Unknown codes return -1 and are skipped.
+  function wwoToWmo(code) {
+    const value = parseInt(code)
+    if (isNaN(value)) return -1
+    const map = {
+      113: 0, 116: 2, 119: 3, 122: 3,
+      143: 45, 149: 45, 248: 45, 260: 48,
+      176: 80, 179: 71, 182: 77, 185: 56, 200: 95,
+      227: 71, 230: 75,
+      263: 51, 266: 53, 281: 56, 284: 57,
+      293: 61, 296: 61, 299: 63, 302: 63, 305: 65, 308: 65,
+      311: 66, 314: 67, 317: 77, 320: 75,
+      323: 71, 326: 71, 329: 73, 332: 73, 335: 75, 338: 75,
+      350: 77, 353: 80, 356: 81, 359: 82,
+      362: 85, 365: 86, 368: 85, 371: 86, 374: 77, 377: 77,
+      386: 95, 389: 95, 392: 96, 395: 96
+    }
+    return map[value] !== undefined ? map[value] : -1
+  }
+
+  // wttr.in has no per-day code: pick the worst (highest WMO) daylight hour so a
+  // rainy afternoon is not advertised as a sunny day, falling back to any hour.
+  function wttrDayCode(day) {
+    if (!day || !day.hourly || !day.hourly.length) return ""
+    const daylight = [600, 900, 1200, 1500, 1800]
+    let best = -1
+    let any = -1
+    for (let index = 0; index < day.hourly.length; index++) {
+      const hour = day.hourly[index]
+      if (!hour) continue
+      const code = wwoToWmo(hour.weatherCode)
+      if (code < 0) continue
+      if (any < 0) any = code
+      if (daylight.indexOf(parseInt(hour.time)) === -1) continue
+      if (code > best) best = code
+    }
+    const chosen = best >= 0 ? best : any
+    return chosen >= 0 ? String(chosen) : ""
+  }
+
+  function applyOpenMeteo(raw) {
     try {
-      const report = JSON.parse(text)
-      const current = report.current
-      if (!current) {
-        unavailable = true
-        scheduleRetry()
-        return
-      }
+      const report = JSON.parse(String(raw || ""))
+      const current = report && report.current
+      if (!current) return false
 
       const code = parseInt(current.weather_code)
       const isDay = current.is_day === 1
@@ -210,12 +303,101 @@ Item {
         }
       }
       forecastDays = days
+      return true
+    } catch (_error) {
+      return false
+    }
+  }
+
+  function applyWttr(raw) {
+    try {
+      const report = JSON.parse(String(raw || ""))
+      const current = report && report.current_condition
+        && report.current_condition[0]
+      if (!current) return false
+
+      const code = wwoToWmo(current.weatherCode)
+      const hour = new Date().getHours()
+      const isDay = hour >= 6 && hour < 18
+      icon = glyphForCode(code, isDay)
+
+      tempC = roundC(current.temp_C)
+      tempF = cToF(current.temp_C)
+      feelsC = roundC(current.FeelsLikeC)
+      feelsF = cToF(current.FeelsLikeC)
+
+      const desc = current.weatherDesc && current.weatherDesc[0]
+        ? String(current.weatherDesc[0].value || "").trim() : ""
+      description = desc || descriptionForCode(code)
+
+      const area = report.nearest_area && report.nearest_area[0]
+      const areaName = area && area.areaName && area.areaName[0]
+        ? String(area.areaName[0].value || "") : ""
+      place = String(configuredLocation.name || areaName || "")
+      country = area && area.country && area.country[0]
+        ? String(area.country[0].value || "") : ""
+
+      humidity = current.humidity !== undefined
+        ? String(Math.round(parseFloat(current.humidity))) : ""
+      windKmh = current.windspeedKmph !== undefined
+        ? String(Math.round(parseFloat(current.windspeedKmph))) : ""
+      windMph = current.windspeedMiles !== undefined
+        ? String(Math.round(parseFloat(current.windspeedMiles)))
+        : (windKmh ? String(Math.round(parseFloat(windKmh) * 0.621371)) : "")
+
+      const days = []
+      const list = report.weather || []
+      const count = Math.min(list.length, 3)
+      for (let index = 0; index < count; index++) {
+        const day = list[index] || {}
+        let rain = 0
+        const hourly = day.hourly || []
+        for (let slot = 0; slot < hourly.length; slot++) {
+          const chance = hourly[slot] ? parseFloat(hourly[slot].chanceofrain) : NaN
+          if (!isNaN(chance) && chance > rain) rain = chance
+        }
+        days.push({
+          date: String(day.date || ""),
+          minC: roundC(day.mintempC),
+          maxC: roundC(day.maxtempC),
+          minF: cToF(day.mintempC),
+          maxF: cToF(day.maxtempC),
+          code: wttrDayCode(day),
+          rain: rain
+        })
+      }
+      forecastDays = days
+      return true
+    } catch (_error) {
+      return false
+    }
+  }
+
+  // The process appends "\n<http status>" so a 5xx body stays visible for the
+  // log instead of being swallowed by curl -f.
+  function handleResponse(provider, payload) {
+    const text = String(payload || "")
+    const tail = text.match(/\n(\d{3})\s*$/)
+    const status = tail ? parseInt(tail[1]) : 0
+    const body = tail ? text.slice(0, tail.index) : text
+
+    const ok = status === 200
+      && (provider === "wttr" ? applyWttr(body) : applyOpenMeteo(body))
+
+    if (ok) {
+      preferredProvider = provider
       loaded = true
       unavailable = false
-    } catch (_error) {
-      unavailable = true
-      scheduleRetry()
+      if (provider !== "open-meteo")
+        console.log("weather: served by " + provider)
+      return
     }
+
+    const next = root.providerQueue.length ? root.providerQueue[0] : ""
+    console.warn("weather: " + provider + " failed (http " + status + ")"
+      + (next ? " - trying " + next : ""))
+    fallbackPending = true
+    Qt.callLater(function() { root.maybeAdvance() })
   }
 
   function parseGeocode(raw) {
@@ -234,16 +416,24 @@ Item {
 
   Process {
     id: weatherProc
-    command: ["curl", "-fsS", "--max-time", "15", "-A", "omarchy-weather",
-      root.requestUrl]
+    command: ["curl", "-sS", "--max-time", "20", "-A", "omarchy-weather",
+      "-w", "\n%{http_code}", root.activeUrl]
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.parseReport(text)
+      onStreamFinished: root.handleResponse(root.activeProvider, text)
+    }
+    stderr: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        const message = String(text || "").trim()
+        if (message) console.warn("weather: curl: " + message)
+      }
     }
     onRunningChanged: {
-      if (running || !root.refreshPending) return
-      root.refreshPending = false
-      Qt.callLater(function() { root.refresh(false) })
+      if (running) return
+      // Never re-enter a running Process: hand the next provider / pending
+      // refresh back to the event loop instead of starting it from here.
+      Qt.callLater(function() { root.maybeAdvance() })
     }
   }
 
