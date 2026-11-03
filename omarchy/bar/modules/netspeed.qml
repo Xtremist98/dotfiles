@@ -9,9 +9,15 @@ BarWidget {
   id: root
   moduleName: "netspeed"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, panelColor)
+    : (bar ? panelColor : Commons.Color.foreground)
 
   property string curIface: ""
   property var prevRx: 0
@@ -119,7 +125,7 @@ BarWidget {
     anchors.rightMargin: Style.space(2)
     width: 1
     height: Math.min(parent.height - 14, 11)
-    color: bar ? bar.panelForeground : Commons.Color.foreground
+    color: bar ? panelColor : Commons.Color.foreground
     opacity: 0.16
   }
 }

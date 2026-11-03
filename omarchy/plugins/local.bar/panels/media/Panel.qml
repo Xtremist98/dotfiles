@@ -14,6 +14,12 @@ Panel {
   moduleName: "mpris"
   ipcTarget: "mpris"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property int barSize: root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
 
   // ------------------------------------------------------------- player
@@ -125,7 +131,7 @@ Panel {
 
   // --------------------------------------------------------- panel palette
 
-  readonly property color ink: bar ? bar.panelForeground : Commons.Color.foreground
+  readonly property color ink: bar ? panelColor : Commons.Color.foreground
   readonly property color barInk: bar && bar.widgetGlyphColor
     ? bar.widgetGlyphColor(settings, ink) : ink
   readonly property string mono: bar ? bar.fontFamily : Style.font.family

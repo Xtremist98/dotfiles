@@ -9,6 +9,12 @@ Item {
   property string moduleName: ""
   property var settings: null
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   implicitWidth: Style.space(1)
   implicitHeight: bar ? bar.barSize : 28
 
@@ -18,7 +24,7 @@ Item {
     anchors.rightMargin: Style.space(0)
     width: 1
     height: Math.min(parent.height - 14, 12)
-    color: bar ? bar.panelForeground : Commons.Color.foreground
+    color: bar ? panelColor : Commons.Color.foreground
     opacity: 0.16
   }
 }

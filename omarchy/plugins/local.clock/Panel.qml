@@ -19,6 +19,12 @@ Panel {
   id: root
   moduleName: "omarchy.clock"
   ipcTarget: "omarchy.clock"
+
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
   manageIpc: false
 
   property var anchorItem: null
@@ -72,7 +78,7 @@ Panel {
 
   // Guarded so the widget renders before the bar is injected (the bar-widget
   // contract instantiates it bare).
-  readonly property color contentForeground: bar ? bar.panelForeground : Commons.Color.foreground
+  readonly property color contentForeground: bar ? panelColor : Commons.Color.foreground
   readonly property string contentFontFamily: bar ? bar.fontFamily : Style.font.family
 
   readonly property int cellWidth: Style.space(52)

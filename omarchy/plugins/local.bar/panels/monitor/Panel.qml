@@ -12,9 +12,15 @@ Panel {
   moduleName: "omarchy.monitor"
   ipcTarget: "omarchy.monitor"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, panelColor)
+    : (bar ? panelColor : Commons.Color.foreground)
 
   manageIpc: false
 
@@ -673,7 +679,7 @@ Panel {
               id: heroIcon
               textFormat: Text.PlainText
               text: root.displayGlyph(root.current)
-              color: root.bar.panelForeground
+              color: root.panelColor
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.display
               anchors.left: parent.left
@@ -692,7 +698,7 @@ Panel {
               Text {
                 text: root.current ? root.current.title : Commons.I18n.t("monitor.display")
                 textFormat: Text.PlainText
-                color: root.bar.panelForeground
+                color: root.panelColor
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.title
                 font.bold: true
@@ -707,7 +713,7 @@ Panel {
                 text: root.currentBrightness >= 0
                   ? root.brightnessName(root.currentBrightness).toUpperCase()
                   : Commons.I18n.t("monitor.fixedBrightness")
-                color: Qt.darker(root.bar.panelForeground, 1.4)
+                color: Qt.darker(root.panelColor, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -735,7 +741,7 @@ Panel {
 
                   iconText: root.displayGlyph(modelData)
                   tooltipText: modelData.title + " · " + modelData.name
-                  foreground: root.bar.panelForeground
+                  foreground: root.panelColor
                   fontFamily: root.bar.fontFamily
                   horizontalPadding: Style.spacing.sm
                   verticalPadding: Style.spacing.controlPaddingY
@@ -754,7 +760,7 @@ Panel {
           // ---------- Brightness ----------
           PanelSeparator {
             visible: root.currentBrightness >= 0
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
           }
 
           Column {
@@ -769,7 +775,7 @@ Panel {
               PanelSectionHeader {
                 id: brightnessHeader
                 text: Commons.I18n.t("monitor.brightness")
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -779,7 +785,7 @@ Panel {
                 id: brightnessPercent
                 textFormat: Text.PlainText
                 text: Commons.I18n.formatNumber(Math.round(brightnessSlider.dragging ? brightnessSlider.liveValue : root.currentBrightness)) + "%"
-                color: Qt.darker(root.bar.panelForeground, 1.4)
+                color: Qt.darker(root.panelColor, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -795,15 +801,15 @@ Panel {
               height: brightnessSlider.implicitHeight + Style.spacing.controlGap
               hasCursor: root.cursorActive && root.focusSection === "brightness" && root.selectedIndex === -1
               onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(brightnessRow)
-              foreground: root.bar.panelForeground
+              foreground: root.panelColor
               outline: true
 
               PanelSlider {
                 id: brightnessSlider
                 bar: root.bar
-                trackColor: Qt.rgba(root.bar.panelForeground.r, root.bar.panelForeground.g, root.bar.panelForeground.b, 0.22)
-                fillColor: root.bar.panelForeground
-                knobColor: root.bar.panelForeground
+                trackColor: Qt.rgba(root.panelColor.r, root.panelColor.g, root.panelColor.b, 0.22)
+                fillColor: root.panelColor
+                knobColor: root.panelColor
                 anchors.fill: parent
                 anchors.leftMargin: Style.space(6)
                 anchors.rightMargin: Style.space(6)
@@ -827,7 +833,7 @@ Panel {
 
           // ---------- Text size ----------
           PanelSeparator {
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
           }
 
           Column {
@@ -841,7 +847,7 @@ Panel {
               PanelSectionHeader {
                 id: textSizeHeader
                 text: Commons.I18n.t("monitor.textSize")
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -853,7 +859,7 @@ Panel {
                 text: Commons.I18n.formatNumber(textSizeSlider.dragging
                        ? root.textSizeStops[Math.round(textSizeSlider.liveValue)]
                        : root.displayedTextPx()) + "px"
-                color: Qt.darker(root.bar.panelForeground, 1.4)
+                color: Qt.darker(root.panelColor, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -869,15 +875,15 @@ Panel {
               height: textSizeSlider.implicitHeight + Style.spacing.controlGap
               hasCursor: root.cursorActive && root.focusSection === "textsize" && root.selectedIndex === -1
               onHasCursorChanged: if (hasCursor) root.ensureCursorVisible(textSizeRow)
-              foreground: root.bar.panelForeground
+              foreground: root.panelColor
               outline: true
 
               PanelSlider {
                 id: textSizeSlider
                 bar: root.bar
-                trackColor: Qt.rgba(root.bar.panelForeground.r, root.bar.panelForeground.g, root.bar.panelForeground.b, 0.22)
-                fillColor: root.bar.panelForeground
-                knobColor: root.bar.panelForeground
+                trackColor: Qt.rgba(root.panelColor.r, root.panelColor.g, root.panelColor.b, 0.22)
+                fillColor: root.panelColor
+                knobColor: root.panelColor
                 anchors.fill: parent
                 anchors.leftMargin: Style.space(6)
                 anchors.rightMargin: Style.space(6)
@@ -899,7 +905,7 @@ Panel {
           // ---------- Scale ----------
           PanelSeparator {
             visible: root.current !== null && root.current.scales.length > 0
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
           }
 
           Column {
@@ -910,7 +916,7 @@ Panel {
 
             PanelSectionHeader {
               text: Commons.I18n.t("monitor.scale")
-              foreground: root.bar.panelForeground
+              foreground: root.panelColor
               fontFamily: root.bar.fontFamily
             }
 
@@ -940,7 +946,7 @@ Panel {
           // ---------- Resolution ----------
           PanelSeparator {
             visible: root.current !== null && root.current.resolutions.length > 0
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
           }
 
           // The pills only carry short names, so the exact mode sits by the header.
@@ -957,7 +963,7 @@ Panel {
               PanelSectionHeader {
                 id: resolutionHeader
                 text: Commons.I18n.t("monitor.resolution")
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -967,7 +973,7 @@ Panel {
                 id: resolutionCurrent
                 textFormat: Text.PlainText
                 text: root.current ? root.current.current.replace("x", "×") : ""
-                color: Qt.darker(root.bar.panelForeground, 1.4)
+                color: Qt.darker(root.panelColor, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -1003,7 +1009,7 @@ Panel {
           // ---------- Refresh rate ----------
           PanelSeparator {
             visible: root.current !== null && root.current.refreshes.length > 0
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
           }
 
           Column {
@@ -1019,7 +1025,7 @@ Panel {
               PanelSectionHeader {
                 id: refreshHeader
                 text: Commons.I18n.t("monitor.refreshRate")
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
                 fontFamily: root.bar.fontFamily
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
@@ -1029,7 +1035,7 @@ Panel {
                 id: refreshCurrent
                 textFormat: Text.PlainText
                 text: root.current ? Commons.I18n.formatNumber(Math.round(root.current.refreshRate)) + " Hz" : ""
-                color: Qt.darker(root.bar.panelForeground, 1.4)
+                color: Qt.darker(root.panelColor, 1.4)
                 font.family: root.bar.fontFamily
                 font.pixelSize: Style.font.caption
                 font.bold: true
@@ -1066,7 +1072,7 @@ Panel {
           // Shown for a single display too: right-clicking it is how it's rotated.
           PanelSeparator {
             visible: root.layoutRects.length > 0
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
           }
 
           Column {
@@ -1076,7 +1082,7 @@ Panel {
 
             PanelSectionHeader {
               text: Commons.I18n.t("monitor.layout")
-              foreground: root.bar.panelForeground
+              foreground: root.panelColor
               fontFamily: root.bar.fontFamily
             }
 
@@ -1169,7 +1175,7 @@ Panel {
 
     text: root.current ? Commons.I18n.formatNumber(Model.cleanScale(scaleValue, root.current.width, root.current.height)) + "x" : ""
     fontSize: Style.font.caption
-    foreground: root.bar.panelForeground
+    foreground: root.panelColor
     fontFamily: root.bar.fontFamily
     horizontalPadding: Style.spacing.sm
     verticalPadding: Style.spacing.controlPaddingY
@@ -1190,7 +1196,7 @@ Panel {
 
     text: Model.resolutionLabel(resolution)
     fontSize: Style.font.caption
-    foreground: root.bar.panelForeground
+    foreground: root.panelColor
     fontFamily: root.bar.fontFamily
     horizontalPadding: Style.spacing.sm
     verticalPadding: Style.spacing.controlPaddingY
@@ -1212,7 +1218,7 @@ Panel {
 
     text: Commons.I18n.formatNumber(Number(option.label))
     fontSize: Style.font.caption
-    foreground: root.bar.panelForeground
+    foreground: root.panelColor
     fontFamily: root.bar.fontFamily
     horizontalPadding: Style.spacing.sm
     verticalPadding: Style.spacing.controlPaddingY
@@ -1280,10 +1286,10 @@ Panel {
         z: dragging ? 1 : 0
         radius: Style.cornerRadius > 0 ? Style.space(3) : 0
         color: isCurrent
-          ? Style.selectedFillFor(root.bar.panelForeground, Commons.Color.accent)
-          : Style.hoverFillFor(root.bar.panelForeground, Commons.Color.accent)
+          ? Style.selectedFillFor(root.panelColor, Commons.Color.accent)
+          : Style.hoverFillFor(root.panelColor, Commons.Color.accent)
         border.width: isCurrent && map.hasCursor ? 2 : 1
-        border.color: isCurrent ? Commons.Color.accent : Qt.darker(root.bar.panelForeground, 1.6)
+        border.color: isCurrent ? Commons.Color.accent : Qt.darker(root.panelColor, 1.6)
 
         Text {
           anchors.centerIn: parent
@@ -1291,7 +1297,7 @@ Panel {
           horizontalAlignment: Text.AlignHCenter
           textFormat: Text.PlainText
           text: screenRect.modelData.name
-          color: root.bar.panelForeground
+          color: root.panelColor
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.caption
           font.bold: screenRect.isCurrent

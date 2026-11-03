@@ -14,9 +14,15 @@ Panel {
   moduleName: "omarchy.system"
   ipcTarget: "omarchy.system"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, panelColor)
+    : (bar ? panelColor : Commons.Color.foreground)
 
   readonly property int actionColumns: 2
   // Destructive actions use the theme's bright_red: the Solitude palette maps
@@ -189,7 +195,7 @@ Panel {
           Text {
             id: heroIcon
     text: ""
-            color: root.bar.panelForeground
+            color: root.panelColor
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.display
             anchors.left: parent.left
@@ -206,7 +212,7 @@ Panel {
 
             Text {
               text: "System"
-              color: root.bar.panelForeground
+              color: root.panelColor
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
               font.bold: true
@@ -216,7 +222,7 @@ Panel {
 
             Text {
               text: "POWER & SESSION"
-              color: Qt.darker(root.bar.panelForeground, 1.4)
+              color: Qt.darker(root.panelColor, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
               font.bold: true
@@ -238,7 +244,7 @@ Panel {
             width: parent.width
             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
             text: root.currentQuote
-            color: Qt.darker(root.bar.panelForeground, 1.35)
+            color: Qt.darker(root.panelColor, 1.35)
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.body
             font.italic: true
@@ -250,7 +256,7 @@ Panel {
 
         // ---------- Session actions ----------
         PanelSeparator {
-          foreground: root.bar.panelForeground
+          foreground: root.panelColor
         }
 
         Column {
@@ -259,7 +265,7 @@ Panel {
 
           PanelSectionHeader {
             text: "ACTIONS"
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
             fontFamily: root.bar.fontFamily
           }
 
@@ -287,7 +293,7 @@ Panel {
                   iconSize: Style.font.title
                   text: modelData.label
                   fontSize: Style.font.body
-                  foreground: modelData.urgent ? root.destructiveColor : root.bar.panelForeground
+                  foreground: modelData.urgent ? root.destructiveColor : root.panelColor
                   fontFamily: root.bar.fontFamily
                   horizontalPadding: Style.spacing.controlPaddingX
                   verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
@@ -311,7 +317,7 @@ Panel {
               iconSize: Style.font.title
               text: root.actions[root.actions.length - 1].label
               fontSize: Style.font.body
-              foreground: root.actions[root.actions.length - 1].urgent ? root.destructiveColor : root.bar.panelForeground
+              foreground: root.actions[root.actions.length - 1].urgent ? root.destructiveColor : root.panelColor
               fontFamily: root.bar.fontFamily
               horizontalPadding: Style.spacing.controlPaddingX
               verticalPadding: Style.spacing.controlPaddingY + Style.space(2)

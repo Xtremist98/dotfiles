@@ -12,9 +12,15 @@ Panel {
   moduleName: "omarchy.power"
   ipcTarget: "omarchy.power"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, panelColor)
+    : (bar ? panelColor : Commons.Color.foreground)
 
   // manageIpc: false so this panel can own the single IpcHandler the target
   // permits — needed for the togglePercentage method below.
@@ -94,7 +100,7 @@ Panel {
   }
 
   readonly property color batteryFillColor: {
-    return root.bar ? root.bar.panelForeground : Commons.Color.foreground
+    return root.bar ? root.panelColor : Commons.Color.foreground
   }
 
   // Cute agent-flavored phrases shown in the hero status line, rotated on a
@@ -346,7 +352,7 @@ Panel {
             id: heroIcon
             textFormat: Text.PlainText
             text: root.batteryIcon()
-            color: root.bar.panelForeground
+            color: root.panelColor
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.display
             anchors.left: parent.left
@@ -367,7 +373,7 @@ Panel {
             Text {
               text: Commons.I18n.t("power.battery")
               textFormat: Text.PlainText
-              color: root.bar.panelForeground
+              color: root.panelColor
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
               font.bold: true
@@ -379,7 +385,7 @@ Panel {
               id: heroStatus
               textFormat: Text.PlainText
               text: root.heroStatusText.toUpperCase()
-              color: Qt.darker(root.bar.panelForeground, 1.4)
+              color: Qt.darker(root.panelColor, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
               font.bold: true
@@ -393,7 +399,7 @@ Panel {
             id: heroPercent
             textFormat: Text.PlainText
             text: root.reading(root.batteryInfo.percentage) || "—"
-            color: root.bar.panelForeground
+            color: root.panelColor
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.displayLarge
             font.bold: true
@@ -413,7 +419,7 @@ Panel {
             id: barTrack
             anchors.fill: parent
             radius: height / 2
-            color: Qt.rgba(root.bar.panelForeground.r, root.bar.panelForeground.g, root.bar.panelForeground.b, 0.12)
+            color: Qt.rgba(root.panelColor.r, root.panelColor.g, root.panelColor.b, 0.12)
           }
 
           Rectangle {
@@ -473,7 +479,7 @@ Panel {
 
         // ---------- Power profile picker ----------
         PanelSeparator {
-          foreground: root.bar.panelForeground
+          foreground: root.panelColor
         }
 
         Column {
@@ -482,7 +488,7 @@ Panel {
 
           PanelSectionHeader {
             text: Commons.I18n.t("power.powerProfile")
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
             fontFamily: root.bar.fontFamily
           }
 
@@ -505,7 +511,7 @@ Panel {
                 iconSize: Style.font.title
                 text: Model.profileLabel(modelData, Commons.I18n.t)
                 fontSize: Style.font.bodySmall
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
                 fontFamily: root.bar.fontFamily
                 horizontalPadding: Style.spacing.controlPaddingX
                 verticalPadding: Style.spacing.controlPaddingY + Style.space(2)
@@ -541,7 +547,7 @@ Panel {
 
   component InfoLabel: Text {
     textFormat: Text.PlainText
-    color: root.bar.panelForeground
+    color: root.panelColor
     opacity: 0.6
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall
@@ -549,7 +555,7 @@ Panel {
 
   component InfoValue: Text {
     textFormat: Text.PlainText
-    color: root.bar.panelForeground
+    color: root.panelColor
     font.family: root.bar.fontFamily
     font.pixelSize: Style.font.bodySmall
   }

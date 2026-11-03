@@ -74,7 +74,8 @@ BarWidget {
   readonly property int pillHeight: root.bar
     ? Math.max(1, root.bar.barSize - 2 * (root.bar.boxOuterMargin || 4))
     : Style.space(30)
-  readonly property int pillRadius: root.bar ? root.bar.boxRadius : Style.space(15)
+  readonly property int pillRadius: root.bar && root.bar.boxRadius !== undefined
+    ? root.bar.boxRadius : Style.space(15)
   readonly property int chevronSize: root.bar ? root.bar.barSize : Style.space(38)
   readonly property int traySlot: root.trayItemExtent
 

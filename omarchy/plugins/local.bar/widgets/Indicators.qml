@@ -9,6 +9,12 @@ BarWidget {
   id: root
   moduleName: "omarchy.indicators"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property var defaultIndicatorEntries: [ "PasswordlessSudo", "ScreenRecording", "Reminder", "NightLight", "Dnd", "StayAwake", "TextExtraction" ]
   readonly property var indicatorEntries: indicatorEntriesFromSettings(settings)
   property var activeIndicatorIds: []
@@ -415,8 +421,8 @@ BarWidget {
     readonly property var indicatorSettings: root.entrySettings(entry)
     readonly property var barRef: root.bar
     readonly property color glyphColor: root.bar && root.bar.widgetGlyphColor
-      ? root.bar.widgetGlyphColor(indicatorSlot.indicatorSettings, root.bar.panelForeground)
-      : (root.bar ? root.bar.panelForeground : Commons.Color.foreground)
+      ? root.bar.widgetGlyphColor(indicatorSlot.indicatorSettings, root.panelColor)
+      : (root.bar ? root.panelColor : Commons.Color.foreground)
 
     implicitWidth: indicatorSource.item && indicatorSource.item.visible ? indicatorSource.item.implicitWidth : 0
     implicitHeight: indicatorSource.item && indicatorSource.item.visible ? indicatorSource.item.implicitHeight : 0

@@ -15,9 +15,15 @@ Panel {
   moduleName: "omarchy.bluetooth"
   ipcTarget: "omarchy.bluetooth"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, panelColor)
+    : (bar ? panelColor : Commons.Color.foreground)
 
   // manageIpc: false so this panel can own the single IpcHandler the target
   // permits — needed for the toggleBluetooth method below.
@@ -111,10 +117,10 @@ Panel {
   readonly property string toggleHint: root.adapter && root.adapter.enabled ? Commons.I18n.t("bluetooth.turnOff") : Commons.I18n.t("bluetooth.turnOn")
 
   readonly property color hoverFill: bar
-    ? Style.hoverFillFor(bar.panelForeground, Commons.Color.accent)
+    ? Style.hoverFillFor(panelColor, Commons.Color.accent)
     : "transparent"
   readonly property color selectedFill: bar
-    ? Style.selectedFillFor(bar.panelForeground, Commons.Color.accent)
+    ? Style.selectedFillFor(panelColor, Commons.Color.accent)
     : "transparent"
 
   function sectionCount(section) {
@@ -724,7 +730,7 @@ Panel {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: root.icon
-            color: root.bar.panelForeground
+            color: root.panelColor
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.display
             opacity: root.adapter && root.adapter.enabled ? 1.0 : 0.5
@@ -737,7 +743,7 @@ Panel {
             visible: !!root.adapter
             checked: !!root.adapter && root.adapter.enabled
             hasCursor: root.headerHasCursor
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             onHovered: function(on) { if (on) root.setHeaderCursor() }
@@ -762,7 +768,7 @@ Panel {
             Text {
               text: Commons.I18n.t("bluetooth.title")
               textFormat: Text.PlainText
-              color: root.bar.panelForeground
+              color: root.panelColor
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.title
               font.bold: true
@@ -774,7 +780,7 @@ Panel {
               id: heroStatus
               textFormat: Text.PlainText
               text: root.heroStatusText.toUpperCase()
-              color: Qt.darker(root.bar.panelForeground, 1.4)
+              color: Qt.darker(root.panelColor, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.caption
               font.bold: true
@@ -788,7 +794,7 @@ Panel {
         // Scrollable device list — capped so a noisy neighborhood doesn't
         // grow the popup past the screen.
         PanelSeparator {
-          foreground: root.bar.panelForeground
+          foreground: root.panelColor
         }
 
         Column {
@@ -799,7 +805,7 @@ Panel {
 
           PanelSectionHeader {
             text: Commons.I18n.t("bluetooth.connected")
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
             fontFamily: root.bar.fontFamily
           }
 
@@ -819,7 +825,7 @@ Panel {
 
         PanelSeparator {
           visible: root.connectedDevices.length > 0 && root.scrollRows.length > 0
-          foreground: root.bar.panelForeground
+          foreground: root.panelColor
         }
 
         // ListView, not a Flickable: it owns the scroll position, so it keeps
@@ -865,14 +871,14 @@ Panel {
               PanelSeparator {
                 visible: index > 0 && sectionTitle !== ""
                 height: visible ? implicitHeight : 0
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
               }
 
               PanelSectionHeader {
                 visible: sectionTitle !== ""
                 height: visible ? implicitHeight : 0
                 text: sectionTitle
-                foreground: root.bar.panelForeground
+                foreground: root.panelColor
                 fontFamily: root.bar.fontFamily
               }
 
@@ -893,7 +899,7 @@ Panel {
           text: !root.adapter ? Commons.I18n.t("bluetooth.noBluetoothAdapter")
               : !root.adapter.enabled ? Commons.I18n.t("bluetooth.turnOnToScan")
               : Commons.I18n.t("bluetooth.scanning")
-          color: Qt.darker(root.bar.panelForeground, 1.5)
+          color: Qt.darker(root.panelColor, 1.5)
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.bodySmall
           wrapMode: Text.WordWrap
@@ -928,7 +934,7 @@ Panel {
 
     hasCursor: rowSelected && !root.actionFocused
     current: isConnected
-    foreground: root.bar.panelForeground
+    foreground: root.panelColor
     fill: root.hoverFill
     currentFill: root.selectedFill
 
@@ -946,9 +952,9 @@ Panel {
     }
 
     readonly property color statusColor: {
-      if (isConnected) return root.bar.panelForeground
-      if (action !== "" || devState === 3 || dev.pairing === true) return root.bar.panelForeground
-      return Qt.darker(root.bar.panelForeground, 1.5)
+      if (isConnected) return root.panelColor
+      if (action !== "" || devState === 3 || dev.pairing === true) return root.panelColor
+      return Qt.darker(root.panelColor, 1.5)
     }
 
     implicitHeight: rowContent.implicitHeight + Style.spacing.rowPaddingX
@@ -1018,7 +1024,7 @@ Panel {
         Text {
           textFormat: Text.PlainText
           text: root.deviceLabel(row.dev) || Commons.I18n.t("bluetooth.device")
-          color: root.bar.panelForeground
+          color: root.panelColor
           font.family: root.bar.fontFamily
           font.pixelSize: Style.font.body
           elide: Text.ElideRight
@@ -1043,8 +1049,8 @@ Panel {
         visible: row.showForgetButton
         iconText: "󰅙"
         tooltipText: Commons.I18n.t("bluetooth.forget")
-        foreground: root.bar.panelForeground
-        hoverColor: root.bar.panelForeground
+        foreground: root.panelColor
+        hoverColor: root.panelColor
         fontFamily: root.bar.fontFamily
         hasCursor: row.rowSelected && root.actionFocused
         onHovered: function(isHovered) {

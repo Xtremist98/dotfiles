@@ -15,6 +15,12 @@ PanelWindow {
 
   required property Item anchorItem
   required property QtObject bar
+
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.accent
   property var owner: null
   property int margin: Commons.Style.gapsOut
   property int padding: Commons.Style.spacing.popupPadding
@@ -73,7 +79,7 @@ PanelWindow {
     ? controlRadiusOverride : Commons.Style.cornerRadius
   readonly property color controlForeground: surfaceOverrideEnabled
     ? controlForegroundOverride : bar
-    ? bar.panelForeground : Commons.Color.accent
+    ? panelColor : Commons.Color.accent
   readonly property color controlAccent: surfaceOverrideEnabled
     ? controlAccentOverride : Commons.Color.accent
   readonly property color controlMuted: tokens

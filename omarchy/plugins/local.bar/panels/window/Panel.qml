@@ -15,9 +15,15 @@ Panel {
   moduleName: "window-info"
   ipcTarget: "window-info"
 
+  // The shell briefly injects the stock bar's plugin facade while
+  // local.bar is discovered; it has no panelForeground, which would
+  // make color bindings undefined.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+
   readonly property color glyphColor: bar && bar.widgetGlyphColor
-    ? bar.widgetGlyphColor(settings, bar.panelForeground)
-    : (bar ? bar.panelForeground : Commons.Color.foreground)
+    ? bar.widgetGlyphColor(settings, panelColor)
+    : (bar ? panelColor : Commons.Color.foreground)
 
   readonly property var toplevel: Hyprland.activeToplevel
 
@@ -699,7 +705,7 @@ Panel {
           Text {
             id: heroIcon
             text: root.buttonInfo[0]
-            color: root.bar.panelForeground
+            color: root.panelColor
             font.family: root.bar.fontFamily
             font.pixelSize: 42
             anchors.left: parent.left
@@ -716,7 +722,7 @@ Panel {
 
             Text {
               text: root.buttonInfo[1]
-              color: root.bar.panelForeground
+              color: root.panelColor
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.heading
               font.bold: true
@@ -727,7 +733,7 @@ Panel {
             Text {
               visible: !root.isBrowserWindow && root.win && root.win.title !== "" && root.win.title !== root.buttonInfo[1]
               text: root.win ? root.win.title : ""
-              color: Qt.darker(root.bar.panelForeground, 1.4)
+              color: Qt.darker(root.panelColor, 1.4)
               font.family: root.bar.fontFamily
               font.pixelSize: Style.font.body
               elide: Text.ElideRight
@@ -738,7 +744,7 @@ Panel {
 
         // ---------- Window details ----------
         PanelSeparator {
-          foreground: root.bar.panelForeground
+          foreground: root.panelColor
         }
 
         Column {
@@ -747,7 +753,7 @@ Panel {
 
           PanelSectionHeader {
             text: "WINDOW"
-            foreground: root.bar.panelForeground
+            foreground: root.panelColor
             fontFamily: root.bar.fontFamily
           }
 
@@ -766,7 +772,7 @@ Panel {
 
                 Text {
                   text: modelData.key
-                  color: Qt.darker(root.bar.panelForeground, 1.45)
+                  color: Qt.darker(root.panelColor, 1.45)
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.caption
                   font.bold: true
@@ -776,7 +782,7 @@ Panel {
 
                 Text {
                   text: modelData.value
-                  color: root.bar.panelForeground
+                  color: root.panelColor
                   font.family: root.bar.fontFamily
                   font.pixelSize: Style.font.body
                   elide: Text.ElideRight
