@@ -1,0 +1,3 @@
+# Written by hikari-update.lua: when hikari last looked for a new version. Safe to delete.
+last_check=1793697810
+latest=0.11.5

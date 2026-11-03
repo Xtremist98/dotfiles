@@ -1,0 +1,327 @@
+-- hikari-language: the language of hikari's texts, and of uosc's.
+--
+-- Opens a menu with the 13 languages of uosc 5.13, each by its own name,
+-- Spanish and Portuguese once per regional variant: Español (España), Español
+-- (Latinoamérica), Português (Brasil), Português (Portugal). Both variants
+-- show the same texts; the variant decides which audio and subtitle tracks
+-- hikari prefers (hikari-media-language.lua).
+-- Picking one switches every hikari text at once (open menus are refreshed,
+-- the skip button is redrawn, the tooltips of hikari's buttons change), saves
+-- the choice to `~~/hikari-language.conf`, which mpv.conf includes on the next
+-- start, and says (in the new language) that mpv must be restarted for uosc's
+-- own menus.
+--
+-- mpv turns this file name into the script name `hikari_language`, so:
+--   input.conf:  Alt+l script-binding hikari_language/open-menu
+--   options:     script-opts=hikari-language=<code>   (shared by every hikari
+--                script, see script-modules/hikari-i18n.lua)
+--
+-- Decisions:
+-- - The saved file sets two script options:
+--     script-opts-append=hikari-language=es-ES
+--     script-opts-append=uosc-languages=es,en
+--   The first one is what every hikari script reads: the menu entry, a
+--   regional variant for Spanish and Portuguese (a bare `es` or `pt`, as
+--   hikari 0.5 saved it, still works: see script-modules/hikari-i18n.lua).
+--   The second one is uosc's
+--   own `languages` option (default `slang,en`, src/uosc/lib/intl.lua), so uosc
+--   speaks the same language as hikari instead of following the subtitle
+--   language; uosc has no regional variants, so both get `es` (or `pt`).
+--   uosc reads its translations only once, when it starts: a switch at run
+--   time cannot reach its texts, hence the "restart mpv" notice, shown only
+--   when the language of the texts differs from the one uosc started with.
+-- - zh-HK: uosc 5.13 looks for `intl/<code lower-cased>.json`, but the file is
+--   `intl/zh-HK.json`, so on a case-sensitive file system (Linux) `zh-HK`
+--   alone finds nothing. uosc also takes paths ending in `.json`, so the value
+--   is `~~/scripts/uosc/intl/zh-HK.json,zh-HK,en`: uosc goes through the list
+--   from the end, `en` first, then `zh-HK` (enough on Windows and macOS), then
+--   the file by its real name; a path that does not exist is skipped quietly.
+-- - Tooltips of hikari's buttons. uosc 5.13 passes the tooltips of its own
+--   buttons through its t(), but for a `command:<icon>:<command>?<tooltip>`
+--   button it uses the text after `?` as it is (elements/Controls.lua). A
+--   translation file in `languages` therefore cannot reach them. Instead, this
+--   script rewrites `controls` at run time through the `uosc-controls` script
+--   option, as hikari-palettes does with `uosc-color`: it takes the controls
+--   in effect (`uosc-controls` from script-opts when set, otherwise the
+--   `controls=` line of script-opts/uosc.conf, read the way mp.options reads
+--   it), gives every button whose command opens one of hikari's menus the
+--   tooltip in the current language, and leaves everything else as written
+--   (order, conditions, your own buttons). uosc rebuilds its controls on any
+--   option change (Controls:on_options), so the new tooltips show at once.
+--   Nothing is set when no tooltip changes (English with the shipped uosc.conf).
+-- - No entry in uosc's main menu: uosc builds that menu from the `#!`
+--   comments of input.conf, but a single `#!` line replaces uosc's whole
+--   default menu (lib/menus.lua, get_menu_items), and its title would be fixed
+--   text. Alt+l is listed in uosc's "Key bindings" menu like any other key.
+-- - Without uosc (script-modules/hikari-menu.lua): the menu opens in mpv's
+--   own selector, and hikari's texts switch the same. What is only for uosc
+--   is left out: no `uosc-controls`, no "restart mpv" notice. The saved file
+--   keeps its `uosc-languages` line all the same (the installers write the
+--   same bytes), ready for when uosc is back. Whether uosc is there comes
+--   from menu.uosc(); at start-up uosc may not have started yet, so the
+--   tooltips are also set when uosc announces itself (menu.on_uosc).
+
+local msg = require('mp.msg')
+
+-- hikari's modules in ~~/script-modules. Single-file scripts get no mpv folder
+-- in package.path, so the folder is added for each require and taken out again
+-- (see the header of hikari-i18n.lua). An optional one that cannot be loaded
+-- is a warning and nil, not an error.
+local function load_module(name, optional)
+	local dir = mp.command_native({'expand-path', '~~/script-modules'})
+	if type(dir) ~= 'string' or dir == '' or dir:find('[;?]') then
+		if optional then return nil end
+		error('hikari: unusable script-modules folder: ' .. tostring(dir))
+	end
+	local saved = package.path
+	package.path = dir .. '/?.lua;' .. saved
+	local ok, module = pcall(require, name)
+	package.path = saved
+	if not ok then
+		local text = 'hikari: cannot load script-modules/' .. name .. '.lua (reinstall hikari): ' .. tostring(module)
+		if optional then
+			msg.warn(text)
+			return nil
+		end
+		error(text)
+	end
+	return module
+end
+
+-- Texts in the chosen language: ~~/script-modules/hikari-i18n.lua.
+local i18n = load_module('hikari-i18n')
+
+-- Menus: ~~/script-modules/hikari-menu.lua (uosc's, or mpv's own selector
+-- without uosc), loaded like the texts above.
+local menu = load_module('hikari-menu')
+
+local script_name = mp.get_script_name()
+
+local PERSIST_PATH = '~~/hikari-language.conf'
+local MENU_TYPE = 'hikari-language'
+-- Where the installers put uosc (a folder script), for the zh-HK file.
+local UOSC_INTL_DIR = '~~/scripts/uosc/intl/'
+-- Bounds on what is read from uosc.conf and on the controls string.
+local MAX_CONF_BYTES = 256 * 1024
+local MAX_CONTROLS = 8192
+
+-- hikari's buttons in uosc's `controls`, by the command they run, and the key
+-- of their tooltip text.
+local BUTTONS = {
+	['script-binding hikari_subs/open-menu'] = 'tooltip_subs',
+	['script-binding hikari_upscale/open-menu'] = 'tooltip_upscale',
+	['script-binding hikari_speed/open-menu'] = 'tooltip_speed',
+	['script-binding hikari_resume/open-menu'] = 'tooltip_resume',
+	['script-binding hikari_palettes/open-menu'] = 'tooltip_palettes',
+	['script-binding hikari_update/open-menu'] = 'tooltip_update',
+	['script-binding hikari_skip/open-menu'] = 'tooltip_skip',
+	['script-binding hikari_language/open-menu'] = 'tooltip_language',
+}
+
+-- The value of uosc's `languages` option for an entry of the menu.
+local function uosc_languages(code)
+	code = i18n.language_of(code) or code
+	if code == 'en' then return 'en' end
+	if code == 'zh-HK' then return UOSC_INTL_DIR .. 'zh-HK.json,zh-HK,en' end
+	return code .. ',en'
+end
+
+-- The hikari language code uosc started with, from `uosc-languages`: its
+-- first entry (a code, or a path whose file name is the code). nil when the
+-- option is not set (uosc then follows the subtitle language).
+local function uosc_language_of(value)
+	if type(value) ~= 'string' or value == '' then return nil end
+	local first = value:match('^([^,]*)')
+	local from_path = first:match('([%w%-]+)%.json$')
+	return i18n.normalize(from_path or first)
+end
+
+-- Content of the saved file, or nil for a code that is no entry of the menu.
+-- The installers write the same bytes for the language they detect (their
+-- tests compare them).
+local function persist_content(code)
+	if not i18n.is_variant(code) then return nil end
+	return '# Generated by hikari-language.lua. Language: ' .. code .. '\n'
+		.. 'script-opts-append=' .. i18n.OPTION .. '=' .. code .. '\n'
+		.. 'script-opts-append=uosc-languages=' .. uosc_languages(code) .. '\n'
+end
+
+-- Writes a whole file or none (script-modules/hikari-files.lua).
+local write_file_atomic = load_module('hikari-files').write_file_atomic
+
+-- uosc's controls ------------------------------------------------------------
+
+-- Splits a `controls` value into items as uosc 5.13 does (Controls:init_options):
+-- `,` ends an item except inside the `<...>` conditions at its start. Each item
+-- keeps its conditions as written (`prefix`) apart from the rest (`config`).
+-- `trailing` is true when the value ends with a `,`.
+local function split_controls(text)
+	local items, item, in_disposition = {}, nil, false
+	for c in text:gmatch('.') do
+		if not item then item = {prefix = {}, config = {}} end
+		if c == '<' and #item.config == 0 then
+			in_disposition = true
+			item.prefix[#item.prefix + 1] = c
+		elseif c == '>' and #item.config == 0 then
+			in_disposition = false
+			item.prefix[#item.prefix + 1] = c
+		elseif c == ',' and not in_disposition then
+			items[#items + 1] = item
+			item = nil
+		elseif in_disposition then
+			item.prefix[#item.prefix + 1] = c
+		else
+			item.config[#item.config + 1] = c
+		end
+	end
+	local trailing = item == nil and #items > 0
+	if item then items[#items + 1] = item end
+	for i, it in ipairs(items) do
+		items[i] = {prefix = table.concat(it.prefix), config = table.concat(it.config)}
+	end
+	return items, trailing
+end
+
+-- The tooltip text for a button key, without the characters uosc would read
+-- as separators.
+local function tooltip_text(key, lang)
+	return (i18n.t(key, nil, lang):gsub('[,?]', ''))
+end
+
+-- One item's config with hikari's tooltip in `lang`, or as it was when it is
+-- not one of hikari's buttons. As in uosc: the tooltip is what follows the
+-- first `?`, and a `#badge` may follow the command.
+local function localize_config(config, lang)
+	local q = config:find('?', 1, true)
+	local head = q and config:sub(1, q - 1) or config
+	local command = head:match('^%s*command%s*:%s*[^:]-%s*:%s*(.-)%s*$')
+	if not command then return config end
+	local key = BUTTONS[(command:gsub('%s*#.*$', ''))]
+	if not key then return config end
+	return head:gsub('%s+$', '') .. '?' .. tooltip_text(key, lang)
+end
+
+-- `controls` with the tooltips of hikari's buttons in `lang`.
+local function localize_controls(controls, lang)
+	local items, trailing = split_controls(controls)
+	local parts = {}
+	for i, item in ipairs(items) do parts[i] = item.prefix .. localize_config(item.config, lang) end
+	return table.concat(parts, ',') .. (trailing and ',' or '')
+end
+
+-- The `controls=` value of script-opts/uosc.conf (the last one wins), read as
+-- mp.options reads it: lines starting with `#` are comments, the key is
+-- everything before the first `=`. nil when there is none.
+local function conf_controls()
+	local path = mp.find_config_file('script-opts/uosc.conf')
+	if not path then return nil end
+	local file = io.open(path, 'rb')
+	if not file then return nil end
+	local content = file:read(MAX_CONF_BYTES) or ''
+	file:close()
+	local value
+	for line in (content .. '\n'):gmatch('([^\n]*)\n') do
+		line = line:gsub('\r$', '')
+		if line:sub(1, 1) ~= '#' then
+			local eq = line:find('=', 1, true)
+			if eq and line:sub(1, eq - 1) == 'controls' then value = line:sub(eq + 1) end
+		end
+	end
+	return value
+end
+
+-- The controls uosc uses now: script-opts first, as in mp.options.
+local function current_controls()
+	local script_opts = mp.get_property_native('options/script-opts')
+	local value = type(script_opts) == 'table' and script_opts['uosc-controls'] or nil
+	if type(value) ~= 'string' then value = conf_controls() end
+	if type(value) ~= 'string' or value == '' or #value > MAX_CONTROLS then return nil end
+	return value
+end
+
+-- Gives hikari's buttons their tooltips in the current language. Returns true
+-- when it changed the controls.
+local function apply_tooltips()
+	local controls = current_controls()
+	if not controls then return false end
+	local localized = localize_controls(controls, i18n.language())
+	if localized == controls then return false end
+	mp.commandv('change-list', 'script-opts', 'append', 'uosc-controls=' .. localized)
+	return true
+end
+
+-- Menu -------------------------------------------------------------------------
+
+local function menu_data()
+	local current = i18n.variant()
+	local items = {}
+	for _, variant in ipairs(i18n.VARIANTS) do
+		local is_current = variant.code == current
+		items[#items + 1] = {
+			title = variant.name,
+			hint = is_current and i18n.t('current') or nil,
+			active = is_current,
+			value = {'script-message-to', script_name, 'select-language', variant.code},
+		}
+	end
+	-- keep_open: the menu stays and is redrawn in the new language.
+	return {type = MENU_TYPE, title = i18n.t('language_title'), keep_open = true, items = items}
+end
+
+local function open_menu() menu.open(menu_data()) end
+
+-- The language uosc started with (it does not change until mpv restarts).
+local uosc_language = (function()
+	local script_opts = mp.get_property_native('options/script-opts')
+	return uosc_language_of(type(script_opts) == 'table' and script_opts['uosc-languages'] or nil)
+end)()
+
+local function save(code)
+	local content = persist_content(code)
+	local path = mp.command_native({'expand-path', PERSIST_PATH})
+	local ok, err = false, 'invalid language'
+	if content and type(path) == 'string' and path ~= '' then ok, err = write_file_atomic(path, content) end
+	if not ok then
+		msg.warn('Could not save the language to ' .. tostring(path) .. ': ' .. tostring(err))
+		mp.osd_message(i18n.t('language_save_failed', nil, code), 3)
+	end
+	return ok
+end
+
+-- Handler for menu selections. The code comes from outside, so it must be one
+-- of the entries of the menu. Every script (this one too) follows through the
+-- option.
+local function select_language(code)
+	if not i18n.is_variant(code) then
+		msg.warn('Ignoring unknown language: ' .. (tostring(code):sub(1, 64):gsub('%c', '?')))
+		return
+	end
+	if code ~= i18n.variant() then
+		mp.commandv('change-list', 'script-opts', 'append', i18n.OPTION .. '=' .. code)
+	end
+	if save(code) and i18n.language_of(code) ~= uosc_language and menu.uosc() then
+		mp.osd_message(i18n.t('language_restart', nil, code), 4)
+	end
+end
+
+mp.register_script_message('select-language', select_language)
+mp.add_key_binding(nil, 'open-menu', open_menu)
+i18n.on_change(function()
+	if menu.uosc() then apply_tooltips() end
+	if menu.is_open(MENU_TYPE) then menu.update(menu_data()) end
+end)
+-- uosc's controls, only with uosc: now if it is already there, and when it
+-- announces itself (setting them twice changes nothing the second time).
+menu.on_uosc(apply_tooltips)
+if menu.uosc() then apply_tooltips() end
+
+if HIKARI_LANGUAGE_TEST then
+	return {
+		BUTTONS = BUTTONS, i18n = i18n, uosc_languages = uosc_languages, uosc_language_of = uosc_language_of,
+		persist_content = persist_content, write_file_atomic = write_file_atomic,
+		split_controls = split_controls, localize_config = localize_config, localize_controls = localize_controls,
+		conf_controls = conf_controls, current_controls = current_controls, apply_tooltips = apply_tooltips,
+		menu_data = menu_data, open_menu = open_menu, select_language = select_language,
+		get_uosc_language = function() return uosc_language end,
+	}
+end
