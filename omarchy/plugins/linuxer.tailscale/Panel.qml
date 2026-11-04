@@ -49,7 +49,11 @@ Panel {
   ]
   readonly property string heroPhraseText: activePhrases[phraseIndex % activePhrases.length]
 
-  readonly property color foreground: bar ? bar.foreground : Commons.Color.foreground
+  // Match the local.bar panels: content follows the panel accent, while the
+  // bar icon follows this widget's own `color` setting.
+  readonly property color panelColor: bar && bar.panelForeground !== undefined
+    ? bar.panelForeground : Commons.Color.foreground
+  readonly property color foreground: panelColor
   readonly property color urgent: bar ? bar.urgent : Commons.Color.urgent
   readonly property color dim: Qt.darker(foreground, 1.55)
   readonly property string fontFamily: bar ? bar.fontFamily : Style.font.family
@@ -68,10 +72,10 @@ Panel {
   // Resolve the bar icon through the bar's per-widget palette, so a `color`
   // set in shell.json (e.g. color02) applies here like the other bar icons.
   readonly property color configuredBarColor: bar && typeof bar.widgetGlyphColor === "function"
-    ? bar.widgetGlyphColor(settings, barForeground) : barForeground
+    ? bar.widgetGlyphColor(settings, panelColor) : panelColor
   readonly property color barIconColor: tailscale.active ? configuredBarColor : Qt.darker(configuredBarColor, 1.55)
-  readonly property color hoverFill: bar ? Style.hoverFillFor(bar.foreground, Commons.Color.accent) : "transparent"
-  readonly property color selectedFill: bar ? Style.selectedFillFor(bar.foreground, Commons.Color.accent) : "transparent"
+  readonly property color hoverFill: bar ? Style.hoverFillFor(panelColor, Commons.Color.accent) : "transparent"
+  readonly property color selectedFill: bar ? Style.selectedFillFor(panelColor, Commons.Color.accent) : "transparent"
 
   // Large tailnets: the machine list renders through a virtualized
   // ListView over this filtered view instead of one eager row per peer.
@@ -615,13 +619,13 @@ Panel {
               // header's only cursor target. The service already flips `active`
               // optimistically, so the knob throws the instant you click it.
               trailingControl: Component {
-                ToggleSwitch {
+                ThemedToggle {
                   id: powerSwitch
                   visible: tailscale.installed
                   checked: tailscale.active
                   busy: tailscale.busy
                   hasCursor: header.ringVisible
-                  foreground: hero.foreground
+                  foreground: root.panelColor
                   onHovered: function(on) { if (on) header.focusHero() }
                   onToggled: tailscale.toggleTailscale()
 
