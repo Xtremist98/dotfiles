@@ -49,7 +49,12 @@ Item {
     return name ? encodeURIComponent(name) : ""
   }
 
-  readonly property string requestUrl: {
+  // These are functions, not readonly properties, on purpose. When
+  // configuredLocation changes, onLocationQueryChanged runs before dependent
+  // bindings such as requestUrl are re-evaluated, so refresh() would see an
+  // empty URL, try geocoding, and never start the actual fetch. Reading the
+  // live coordinates here makes the URL correct whenever refresh() runs.
+  function requestUrl() {
     const latitude = parseFloat(String(configuredLocation.latitude))
     const longitude = parseFloat(String(configuredLocation.longitude))
     if (isNaN(latitude) || isNaN(longitude)) return ""
@@ -62,14 +67,14 @@ Item {
       + "&timezone=auto&forecast_days=3&wind_speed_unit=kmh"
   }
 
-  readonly property string wttrUrl: {
+  function wttrUrl() {
     const latitude = parseFloat(String(configuredLocation.latitude))
     const longitude = parseFloat(String(configuredLocation.longitude))
     if (isNaN(latitude) || isNaN(longitude)) return ""
     return "https://wttr.in/" + latitude + "," + longitude + "?format=j1"
   }
 
-  readonly property string geocodeUrl: {
+  function geocodeUrl() {
     const name = String(configuredLocation.name || "").trim()
     if (!name) return ""
     return "https://geocoding-api.open-meteo.com/v1/search?name="
@@ -139,8 +144,8 @@ Item {
 
   function refresh(force) {
     if (!enabled) return
-    if (!root.requestUrl) {
-      if (root.geocodeUrl && !geocodeProc.running && !root.geocodeAttempted) {
+    if (!root.requestUrl()) {
+      if (root.geocodeUrl() && !geocodeProc.running && !root.geocodeAttempted) {
         root.geocodeAttempted = true
         geocodeProc.running = true
       }
@@ -188,8 +193,8 @@ Item {
   }
 
   function providerUrl(name) {
-    if (name === "wttr") return root.wttrUrl
-    if (name === "open-meteo") return root.requestUrl
+    if (name === "wttr") return root.wttrUrl()
+    if (name === "open-meteo") return root.requestUrl()
     return ""
   }
 
@@ -440,7 +445,7 @@ Item {
   Process {
     id: geocodeProc
     command: ["curl", "-fsS", "--max-time", "10", "-A", "omarchy-weather",
-      root.geocodeUrl]
+      root.geocodeUrl()]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.parseGeocode(text)
