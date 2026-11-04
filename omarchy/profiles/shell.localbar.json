@@ -26,10 +26,10 @@
         ],
         [
           "flux",
-          "omarchy.tailscale"
+          "linuxer.tailscale",
+          "wian47.removable-drives"
         ],
         [
-          "wian47.removable-drives",
           "io.github.birajdotdev.omacore"
         ]
       ],
@@ -130,10 +130,12 @@
           "type": "qml"
         },
         {
+          "color": "color02",
           "id": "flux"
         },
         {
-          "id": "omarchy.tailscale"
+          "color": "color02",
+          "id": "linuxer.tailscale"
         },
         {
           "color": "color02",
