@@ -21,6 +21,15 @@ o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
 -- Omagrab Windowsrules
 o.window("^omagrab$", {float = true, center = true, {size = 520, 260} })
 
+-- FluxDown: keep auxiliary windows wide and short (IDM-style), main window tiled.
+-- The complete-window title is the file name, so float every com.fluxdown.app window,
+-- then force the main window back to tiling.
+o.window("com.fluxdown.app", { float = true, center = true, size = { 600, 220 } })
+o.window({ class = "com.fluxdown.app", title = "New Download" }, { float = true, center = true, size = { 640, 280 } })
+o.window({ class = "com.fluxdown.app", title = "Download progress" }, { float = true, center = true, size = { 640, 360 } })
+o.window({ class = "com.fluxdown.app", title = "Settings" }, { float = true, center = true, size = { 948, 505 } })
+o.window({ class = "com.fluxdown.app", title = "FluxDown" }, { tile = true, float = false })
+
 -- GTK (follows the active Omarchy theme; falls back to Adwaita-dark)
 hl.exec_cmd("theme=$(cat ~/.local/state/omarchy/current/theme.name 2>/dev/null | tr -cd 'A-Za-z0-9-_'); if [ -z \"$theme\" ] || { [ ! -d /usr/share/themes/$theme ] && [ ! -d ~/.local/share/themes/$theme ]; }; then theme=Adwaita-dark; fi; gsettings set org.gnome.desktop.interface gtk-theme \"$theme\"")
 hl.exec_cmd("gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'")
