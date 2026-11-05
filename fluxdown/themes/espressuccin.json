@@ -1,0 +1,189 @@
+{
+  "$schema": "https://fluxdown.com/schemas/gpui-theme.v2.json",
+  "format": "fluxdown.gpui-theme",
+  "schemaVersion": 2,
+  "meta": {
+    "id": "espressuccin",
+    "name": "Espressuccin",
+    "author": "Omarchy",
+    "version": "1.0.0",
+    "description": "Flat espresso-dark theme matching the Omarchy Espressuccin palette."
+  },
+  "extends": "builtin:default-dark",
+  "tokens": {
+    "radius": {
+      "none": 0,
+      "sm": 6,
+      "md": 8,
+      "lg": 10,
+      "xl": 14,
+      "full": 9999
+    },
+    "spacing": {
+      "xxs": 2,
+      "xs": 4,
+      "sm": 8,
+      "md": 12,
+      "lg": 16,
+      "xl": 24,
+      "xxl": 32
+    },
+    "typography": {
+      "sans": "Noto Sans",
+      "mono": "monospace",
+      "xs": {
+        "size": 12,
+        "lineHeight": 16,
+        "weight": 400
+      },
+      "sm": {
+        "size": 13,
+        "lineHeight": 18,
+        "weight": 400
+      },
+      "md": {
+        "size": 16,
+        "lineHeight": 24,
+        "weight": 400
+      },
+      "lg": {
+        "size": 18,
+        "lineHeight": 28,
+        "weight": 400
+      },
+      "xl": {
+        "size": 20,
+        "lineHeight": 28,
+        "weight": 400
+      },
+      "monoMd": {
+        "size": 13,
+        "lineHeight": 20,
+        "weight": 400
+      },
+      "caption": {
+        "size": 11,
+        "lineHeight": 14,
+        "weight": 400
+      },
+      "title": {
+        "size": 15,
+        "lineHeight": 20,
+        "weight": 600
+      }
+    },
+    "shadow": {
+      "sm": [],
+      "md": [],
+      "lg": []
+    },
+    "stroke": {
+      "thin": 1,
+      "strong": 2
+    },
+    "focusRing": {
+      "width": 2,
+      "offset": 1
+    },
+    "icon": {
+      "sm": 12,
+      "md": 14,
+      "lg": 16
+    },
+    "density": {
+      "control": 28,
+      "navRow": 28,
+      "toolbarButton": 28,
+      "titleBar": 40,
+      "statusBar": 28,
+      "statusControl": 22,
+      "sectionHeader": 24,
+      "taskRow": 44,
+      "taskRowCompact": 30,
+      "checkMark": 16
+    },
+    "components": {
+      "button": {
+        "radius": "{radius.md}"
+      },
+      "input": {
+        "radius": "{radius.md}"
+      },
+      "dialog": {
+        "radius": "{radius.lg}"
+      },
+      "card": {
+        "radius": "{radius.lg}"
+      },
+      "badge": {
+        "radius": "{radius.full}"
+      },
+      "navItem": {
+        "radius": "{radius.md}"
+      },
+      "progress": {
+        "radius": "{radius.full}",
+        "height": 4
+      },
+      "taskRow": {
+        "radius": "{radius.md}"
+      },
+      "checkbox": {
+        "radius": 4
+      },
+      "tab": {
+        "radius": "{radius.md}"
+      },
+      "menu": {
+        "radius": "{radius.md}"
+      },
+      "tooltip": {
+        "radius": "{radius.md}"
+      }
+    }
+  },
+  "dark": {
+    "colors": {
+      "background": "#1a1713",
+      "foreground": "#d1c4a9",
+      "surface": "#1a1713",
+      "surfaceForeground": "#d1c4a9",
+      "primary": "#A7C080",
+      "primaryForeground": "#1a1713",
+      "secondary": "#1a1713",
+      "secondaryForeground": "#d1c4a9",
+      "muted": "#1a1713",
+      "mutedForeground": "#8a8274",
+      "accent": "#A7C0802e",
+      "accentForeground": "#A7C080",
+      "destructive": "#E67E80",
+      "destructiveForeground": "#1a1713",
+      "border": "#2e2a24",
+      "input": "#2e2a24",
+      "ring": "#A7C080",
+      "success": "#A7C080",
+      "warning": "#DBBC7F",
+      "info": "#7FBBB3",
+      "textTertiary": "#7c7468",
+      "hairline": "#2e2a2499",
+      "rowHover": "#2e2a24cc",
+      "chrome": "#1a1713",
+      "navHover": "#2e2a24cc",
+      "navSelected": "#2e2a24",
+      "navSelectedForeground": "#d1c4a9",
+      "navSelectedIcon": "#A7C080",
+      "accentText": "#A7C080",
+      "caret": "#d1c4a9",
+      "textSelection": "#2e2a24",
+      "dragBorder": "#A7C080a6",
+      "dropTarget": "#A7C08033",
+      "statusDownloading": "#A7C080",
+      "statusCompleted": "#7c7468",
+      "statusFailed": "#E67E80",
+      "statusPaused": "#DBBC7F",
+      "statusQueued": "#8a8274",
+      "progressTrack": "#2e2a24",
+      "progressFill": "#A7C080"
+    }
+  }
+}
