@@ -613,7 +613,9 @@ def main() -> int:
         base = lighter
     else:
         base = mix(background, foreground, 0.08)
-    fill = ensure_ratio(base, background, 1.4)
+    # Folio's page/file stand-ins use this value directly. The folder card
+    # uses the same ink so every icon in Dolphin matches Folio exactly.
+    fill = base
 
     if os.environ.get("FOLIO_FOLDER_FILL"):
         fill = os.environ["FOLIO_FOLDER_FILL"]
