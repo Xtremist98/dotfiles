@@ -1,0 +1,63 @@
+mode = "dark"
+
+# Espressuccin — a warm café-dark theme.
+# Single ink: one flat #d1c4a9 foreground everywhere, no two-tier.
+accent = "#A7C080"
+focus_red = "#E67E80"
+selection = "#2e2a24"
+selection_background = "#2e2a24"
+selection_foreground = "#d1c4a9"
+muted = "#7c7468"
+
+# Warm espresso surfaces — fully flat #1a1713
+background = "#1a1713"
+dark_background = "#1a1713"
+darker_background = "#1a1713"
+lighter_background = "#1a1713"
+
+# Single creamy ink across the whole theme
+foreground = "#d1c4a9"
+dark_foreground = "#8a8274"
+light_foreground = "#d1c4a9"
+bright_foreground = "#d1c4a9"
+cursor = "#d1c4a9"
+
+# Hyprland active border: single Sage Green
+hyprland_active_border = "rgba(A7C080ff)"
+hyprland_inactive_border = "rgba(2E2A24aa)"
+
+# Syntax accents
+red = "#E67E80"
+green = "#A7C080"
+yellow = "#DBBC7F"
+blue = "#7FBBB3"
+magenta = "#D699B6"
+cyan = "#83C092"
+orange = "#E69875"
+brown = "#A19983"
+
+# Bright highlights
+bright_red = "#F18F91"
+bright_green = "#B7D090"
+bright_yellow = "#E7C78B"
+bright_blue = "#8FCAC2"
+bright_magenta = "#E3A8C3"
+bright_cyan = "#98D1A6"
+
+# Complete ANSI 16-color table for terminals (warm blacks, single ink for whites)
+color0 = "#241f19"
+color1 = "#E67E80"
+color2 = "#A7C080"
+color3 = "#DBBC7F"
+color4 = "#7FBBB3"
+color5 = "#D699B6"
+color6 = "#83C092"
+color7 = "#d1c4a9"
+color8 = "#5c584e"
+color9 = "#F18F91"
+color10 = "#B7D090"
+color11 = "#E7C78B"
+color12 = "#8FCAC2"
+color13 = "#E3A8C3"
+color14 = "#98D1A6"
+color15 = "#d1c4a9"
