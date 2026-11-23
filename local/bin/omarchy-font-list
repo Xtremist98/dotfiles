@@ -1,0 +1,8 @@
+#!/bin/bash
+# Omarchy's stock font list filters with `fc-list :spacing=100`.
+# Noto Sans Mono's font files lack that spacing tag, so add it explicitly
+# to keep it visible in the Appearance > Fonts menu and `omarchy font list`.
+{
+  /usr/share/omarchy/bin/omarchy-font-list "$@"
+  printf '%s\n' "Noto Sans Mono"
+} | grep -v -i -E 'emoji|signwriting|omarchy' | sort -u

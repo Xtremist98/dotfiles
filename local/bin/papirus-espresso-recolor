@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Recolor the Papirus-espresso theme folder tones (idempotent).
+# Usage: papirus-espresso-recolor [FRONT_HEX] [BACK_HEX] [TAB_HEX]
+# Defaults = wartybrown deep palette:
+#   FRONT #8a6746  BACK #634a30  TAB #a48260
+# Also maps the 16x16 ColorScheme-Text grey (#444444) to FRONT.
+set -u
+THEME="${HOME}/.local/share/icons/Papirus-espresso"
+FRONT="${1:-#8a6746}"
+BACK="${2:-#634a30}"
+TAB="${3:-#a48260}"
+[ -d "$THEME" ] || { echo "theme dir missing: $THEME" >&2; exit 1; }
+
+find "$THEME" -name '*.svg' -type f -print0 | xargs -0 sed -i \
+  -e "s/#d1c4a9/$FRONT/gi" \
+  -e "s/#bfad88/$BACK/gi" \
+  -e "s/#e1d8c7/$TAB/gi" \
+  -e "s/#8a6746/$FRONT/gi" \
+  -e "s/#634a30/$BACK/gi" \
+  -e "s/#a48260/$TAB/gi"
+
+gtk-update-icon-cache -f -t "$THEME" >/dev/null 2>&1 || gtk-update-icon-cache -f "$THEME"
+echo "Papirus-espresso recolored: front=$FRONT back=$BACK tab=$TAB"
