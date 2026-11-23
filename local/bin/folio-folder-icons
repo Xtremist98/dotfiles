@@ -1,0 +1,660 @@
+#!/usr/bin/env python3
+"""Draw Folio-style folders and line icons for the current Omarchy theme.
+
+Folio (Omarchy's file manager) doesn't use an icon theme: it paints one folder
+silhouette per tile and draws its toolbar icons as paths, all in the theme's
+colors. This script recreates that look as a real icon theme for Dolphin and
+the rest of Qt, and rewrites it from
+~/.local/state/omarchy/current/theme/colors.toml so it follows every theme
+switch.
+
+Installed at ~/.local/share/icons/Folio (it inherits Papirus-espresso, so
+everything it doesn't draw still comes from Papirus). Run by
+~/.config/omarchy/hooks/theme-set.d/70-folio-folder-icons.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+THEME = f"{HOME}/.local/state/omarchy/current/theme"
+COLORS = f"{THEME}/colors.toml"
+ICONS = f"{HOME}/.local/share/icons/Folio"
+PLACES = f"{ICONS}/scalable/places"
+MIMETYPES = f"{ICONS}/scalable/mimetypes"
+ACTIONS = f"{ICONS}/scalable/actions"
+INHERITED = [
+    f"{HOME}/.local/share/icons/Papirus-espresso/48x48/places",
+    "/usr/share/icons/Papirus/48x48/places",
+]
+MIME_DIRS = [
+    "/usr/share/icons/Papirus/48x48/mimetypes",
+    "/usr/share/icons/Papirus/24x24/mimetypes",
+    "/usr/share/icons/Papirus/16x16/mimetypes",
+]
+KDEGLOBALS = f"{HOME}/.config/kdeglobals"
+QTENGINE = f"{HOME}/.config/qtengine/config.json"
+
+
+# --- Folio's color math (src/theme.cpp) -----------------------------------
+
+def _linear(v: float) -> float:
+    return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+
+
+def luminance(hex_color: str) -> float:
+    r, g, b = (int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    return 0.2126 * _linear(r) + 0.7152 * _linear(g) + 0.0722 * _linear(b)
+
+
+def ratio(a: str, b: str) -> float:
+    x, y = luminance(a), luminance(b)
+    return (max(x, y) + 0.05) / (min(x, y) + 0.05)
+
+
+def mix(a: str, b: str, t: float) -> str:
+    ca = [int(a[i:i + 2], 16) for i in (1, 3, 5)]
+    cb = [int(b[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(x * (1 - t) + y * t):02x}" for x, y in zip(ca, cb))
+
+
+def ensure_ratio(ink: str, ground: str, need: float) -> str:
+    """The ink if it reads on the ground, else the least mix toward black/white."""
+    if ratio(ink, ground) >= need:
+        return ink
+    toward = "#000000" if luminance(ground) > 0.179 else "#ffffff"
+    low, high = 0.0, 1.0
+    best = toward
+    for _ in range(18):
+        middle = (low + high) / 2
+        candidate = mix(ink, toward, middle)
+        if ratio(candidate, ground) >= need:
+            best, high = candidate, middle
+        else:
+            low = middle
+    return mix(ink, toward, high)
+
+
+def read_colors(path: str) -> dict[str, str]:
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    return dict(re.findall(r'^\s*([a-z_]+)\s*=\s*["\'](#[0-9a-fA-F]{6})["\']', text, re.M))
+
+
+# --- Folio's folder silhouette (src/FileTile.qml) --------------------------
+
+def _num(value: float) -> str:
+    return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+def folder_path(radius: int) -> str:
+    if radius <= 0:
+        return "M4.5 88.5V0.5H46L50 6.5H123.5V88.5Z"
+    r = radius
+    t = min(r, 3)
+    n = _num
+    return (
+        f"M4.5 {n(88.5 - r)}V{n(0.5 + r)}Q4.5 0.5 {n(4.5 + r)} 0.5"
+        f"H{n(46 - t)}Q46 0.5 {n(46 + t * 0.6)} {n(0.5 + t * 0.9)}"
+        f"L{n(50 - t * 0.6)} {n(6.5 - t * 0.9)}"
+        f"Q50 6.5 {n(50 + t)} 6.5H{n(123.5 - r)}Q123.5 6.5 123.5 {n(6.5 + r)}"
+        f"V{n(88.5 - r)}Q123.5 88.5 {n(123.5 - r)} 88.5H{n(4.5 + r)}"
+        f"Q4.5 88.5 4.5 {n(88.5 - r)}Z"
+    )
+
+
+def hyprland_rounding() -> int:
+    try:
+        out = subprocess.run(
+            ["hyprctl", "getoption", "decoration:rounding", "-j"],
+            capture_output=True, text=True, timeout=2,
+        ).stdout
+        return int(json.loads(out).get("int", 0))
+    except Exception:
+        return 0
+
+
+def write_if_changed(path: str, content: bytes) -> bool:
+    try:
+        with open(path, "rb") as f:
+            if f.read() == content:
+                return False
+    except FileNotFoundError:
+        pass
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(content)
+    os.replace(tmp, path)
+    return True
+
+
+def write_svg(path: str, fill: str) -> bool:
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="92" '
+        'viewBox="0 0 128 92">\n'
+        f'  <path d="{folder_path(hyprland_rounding())}" fill="{fill}"/>\n'
+        '</svg>\n'
+    )
+    return write_if_changed(path, svg.encode())
+
+
+# --- Folio's line icons (src/Glyph.qml) ------------------------------------
+
+def _box(x: float, y: float, w: float, h: float, rad: float = 0) -> str:
+    n = _num
+    if rad <= 0:
+        return f"M{n(x)} {n(y)}h{n(w)}v{n(h)}h{n(-w)}z"
+    x2, y2 = x + w, y + h
+    return (
+        f"M{n(x + rad)} {n(y)}H{n(x2 - rad)}Q{n(x2)} {n(y)} {n(x2)} {n(y + rad)}"
+        f"V{n(y2 - rad)}Q{n(x2)} {n(y2)} {n(x2 - rad)} {n(y2)}"
+        f"H{n(x + rad)}Q{n(x)} {n(y2)} {n(x)} {n(y2 - rad)}"
+        f"V{n(y + rad)}Q{n(x)} {n(y)} {n(x + rad)} {n(y)}Z"
+    )
+
+
+def _circle(cx: float, cy: float, r: float) -> str:
+    n = _num
+    return (
+        f"M{n(cx - r)} {n(cy)}a{n(r)} {n(r)} 0 1 0 {n(2 * r)} 0"
+        f"a{n(r)} {n(r)} 0 1 0 {n(-2 * r)} 0"
+    )
+
+
+# Only the names Dolphin's toolbar and common actions ask for; everything else
+# keeps its Papirus icon. Each path lives on the same 24-unit grid, with the
+# same 1.6 stroke, so the set reads as one hand.
+def action_paths(radius: int) -> dict[str, list[str]]:
+    r = min(radius, 2)
+    return {
+        "go-previous": ["M15 6l-6 6 6 6"],
+        "go-next": ["M9 6l6 6-6 6"],
+        "go-up": ["M6 15l6-6 6 6"],
+        "go-down": ["M6 9l6 6 6-6"],
+        "edit-find": [_circle(10.5, 10.5, 6), "M15 15l5.5 5.5"],
+        "edit-clear": ["M6 6l12 12M18 6L6 18"],
+        "view-split-left-right": [_box(3.5, 4.5, 17, 15, r), "M12 4.5v15"],
+        "open-menu": ["M4 7h16M4 12h16M4 17h16"],
+        "application-menu": ["M4 7h16M4 12h16M4 17h16"],
+        "view-list": [
+            _box(4, 5, 3.5, 3.5, r / 2), "M10 6.75h10",
+            _box(4, 10.25, 3.5, 3.5, r / 2), "M10 12h10",
+            _box(4, 15.5, 3.5, 3.5, r / 2), "M10 17.25h10",
+        ],
+        "view-list-details": [
+            _box(4, 5, 3.5, 3.5, r / 2), "M10 6.75h10",
+            _box(4, 10.25, 3.5, 3.5, r / 2), "M10 12h10",
+            _box(4, 15.5, 3.5, 3.5, r / 2), "M10 17.25h10",
+        ],
+        "view-list-compact": [
+            _box(4, 5, 3.5, 3.5, r / 2), "M10 6.75h10",
+            _box(4, 10.25, 3.5, 3.5, r / 2), "M10 12h10",
+            _box(4, 15.5, 3.5, 3.5, r / 2), "M10 17.25h10",
+        ],
+        "view-list-icons": [
+            _box(4, 4, 6, 6, r / 2), _box(14, 4, 6, 6, r / 2),
+            _box(4, 14, 6, 6, r / 2), _box(14, 14, 6, 6, r / 2),
+        ],
+        "view-list-tree": [
+            _box(4, 5, 5, 4, r / 2), _box(4, 10, 5, 4, r / 2),
+            _box(4, 15, 5, 4, r / 2), "M11 7h9M11 12h9M11 17h9",
+        ],
+        "format-list-unordered": [
+            _circle(5.5, 6.5, 1.4), "M10 6.5h10",
+            _circle(5.5, 12, 1.4), "M10 12h10",
+            _circle(5.5, 17.5, 1.4), "M10 17.5h10",
+        ],
+        "format-list-ordered": ["M4 6h16M4 12h16M4 18h16"],
+        "view-media-playlist": ["M4 6h16M4 12h16M4 18h16"],
+        "menu_new": ["M4 7h16M4 12h16M4 17h16"],
+        "show-menu": ["M4 7h16M4 12h16M4 17h16"],
+        "overflow-menu": [_circle(12, 5.5, 1.5), _circle(12, 12, 1.5), _circle(12, 18.5, 1.5)],
+        "view-more": [_circle(12, 5.5, 1.5), _circle(12, 12, 1.5), _circle(12, 18.5, 1.5)],
+        "view-filter": ["M4 5h16l-6 7v6l-4 2v-8z"],
+        "view_mode": [
+            _box(4, 4, 6, 6, r / 2), _box(14, 4, 6, 6, r / 2),
+            _box(4, 14, 6, 6, r / 2), _box(14, 14, 6, 6, r / 2),
+        ],
+        "view-list-text": ["M4 6h16M4 12h16M4 18h16"],
+        "view-list-images": [
+            _box(4, 4, 6, 6, r / 2), _box(14, 4, 6, 6, r / 2),
+            _box(4, 14, 6, 6, r / 2), _box(14, 14, 6, 6, r / 2),
+        ],
+        "view-list-video": [_box(3.5, 5, 17, 14, r), "M10 9v6l5-3z"],
+        "view-more-horizontal": [_circle(5.5, 12, 1.5), _circle(12, 12, 1.5), _circle(18.5, 12, 1.5)],
+        "overflow-menu-left": [_circle(12, 5.5, 1.5), _circle(12, 12, 1.5), _circle(12, 18.5, 1.5)],
+        "overflow-menu-right": [_circle(12, 5.5, 1.5), _circle(12, 12, 1.5), _circle(12, 18.5, 1.5)],
+        "menu_new_sep": ["M4 12h16"],
+        "list-add": ["M12 5v14M5 12h14"],
+        "list-remove": ["M5 12h14"],
+        "list-remove-all": ["M5 12h14"],
+        "edit-clear-list": ["M6 6l12 12M18 6L6 18"],
+        "format-indent-more": ["M4 6h16M10 12h10M4 18h16M4 10l3 2-3 2"],
+        "format-precision-more": ["M4 6h16M4 12h16M4 18h16"],
+        "insert-more-mark": ["M12 5v14M5 12h14"],
+        "usermenu-down": ["M6 9l6 6 6-6"],
+        "usermenu-up": ["M6 15l6-6 6 6"],
+        "usermenu-delete": ["M6 6l12 12M18 6L6 18"],
+        "system-user-list": ["M4 6h16M4 12h16M4 18h16"],
+        "view-calendar-list": [_box(3.5, 4.5, 17, 15, r), "M3.5 9h17M8 4.5v15"],
+        "media-playlist-normal": ["M4 6h16M4 12h16M4 18h16"],
+        "media-playlist-repeat": ["M4 6h16M4 12h16M4 18h16"],
+        "media-playlist-shuffle": ["M4 6h16M4 12h16M4 18h16"],
+        "player_playlist": ["M4 6h16M4 12h16M4 18h16"],
+        "playlist-sort": ["M4 6h16M4 12h16M4 18h16"],
+    }
+
+
+def write_action_svg(path: str, ink: str, paths: list[str], radius: int) -> bool:
+    cap = "round" if radius > 0 else "square"
+    join = "round" if radius > 0 else "miter"
+    body = "\n".join(f'    <path d="{d}"/>' for d in paths)
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" '
+        'viewBox="0 0 24 24">\n'
+        f'  <g fill="none" stroke="{ink}" stroke-width="1.6" '
+        f'stroke-linecap="{cap}" stroke-linejoin="{join}">\n'
+        f'{body}\n'
+        '  </g>\n'
+        '</svg>\n'
+    )
+    return write_if_changed(path, svg.encode())
+
+
+def write_action_icons(ink: str) -> int:
+    rounding = hyprland_rounding()
+    os.makedirs(ACTIONS, exist_ok=True)
+    icons = action_paths(rounding)
+    for name, paths in icons.items():
+        write_action_svg(f"{ACTIONS}/{name}.svg", ink, paths, rounding)
+        # KDE asks for the -symbolic name first when a theme follows the color
+        # scheme; give it the same drawing so the lookup never falls through to
+        # Papirus' hardcoded #444.
+        write_action_svg(f"{ACTIONS}/{name}-symbolic.svg", ink, paths, rounding)
+    return len(icons)
+
+
+# --- Folio's file stand-in (src/FileTile.qml pageArt) ----------------------
+
+def mime_kind(name: str) -> str:
+    """Folio's FolderModel::kindForMime, applied to an icon name."""
+    n = name[:-4] if name.endswith(".svg") else name
+    if n == "application-pdf":
+        return "pdf"
+    if n.startswith("image-"):
+        return "image"
+    if n.startswith("video-"):
+        return "video"
+    if n.startswith("audio-"):
+        return "audio"
+    if n.startswith("text-"):
+        return "text"
+    archives = {
+        "application-zip", "application-x-tar", "application-gzip",
+        "application-x-xz", "application-zstd", "application-x-7z-compressed",
+        "application-x-compressed-tar", "application-x-zstd-compressed-tar",
+        "application-vnd.rar", "application-x-iso9660-image",
+        "application-x-bzip2", "application-x-bzip-compressed-tar",
+        "application-x-lzip", "application-x-lzma", "application-x-lzop",
+        "application-x-rar", "application-x-arj", "application-x-zoo",
+    }
+    if n in archives or n.endswith("-compressed-tar") or n.endswith("+zip"):
+        return "archive"
+    # Source / config / markup types that QMimeDatabase calls text/plain.
+    textish = (
+        "json", "xml", "javascript", "shellscript", "python", "perl", "ruby",
+        "yaml", "toml", "csv", "sql", "html", "css", "x-desktop", "x-ini",
+        "x-makefile", "x-cmake", "x-meson", "markdown", "x-rust", "x-go",
+        "x-java", "x-csrc", "x-chdr", "x-c++src", "x-c++hdr", "x-php",
+        "x-lua", "x-tcl", "x-scheme", "x-haskell", "x-scala", "x-kotlin",
+    )
+    if any(t in n for t in textish):
+        return "text"
+    return "other"
+
+
+def mime_badge(name: str) -> str:
+    n = name[:-4] if name.endswith(".svg") else name
+    badges = {
+        "application-zip": "ZIP", "application-x-7z-compressed": "7Z",
+        "application-vnd.rar": "RAR", "application-x-rar": "RAR",
+        "application-x-tar": "TAR", "application-gzip": "GZ",
+        "application-x-xz": "XZ", "application-zstd": "ZST",
+        "application-x-compressed-tar": "GZ",
+        "application-x-zstd-compressed-tar": "ZST",
+        "application-x-bzip-compressed-tar": "BZ2",
+        "application-x-bzip2": "BZ2", "application-x-iso9660-image": "ISO",
+        "application-epub+zip": "EPUB",
+    }
+    return badges.get(n, "")
+
+
+def write_page_svg(path: str, fill: str, fg: str, bg: str, heading: str,
+                   badge: str, radius: int) -> bool:
+    r = min(radius, 10)
+    rx = f' rx="{r}"' if r > 0 else ""
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="66" height="92" '
+        'viewBox="0 0 66 92">',
+        f'  <rect x="0.5" y="0.5" width="65" height="91"{rx} fill="{fill}" '
+        f'stroke="{fg}" stroke-opacity="0.16"/>',
+        f'  <rect x="9" y="11" width="34" height="4" fill="{heading}"/>',
+        f'  <g fill="{fg}" fill-opacity="0.3">',
+        '    <rect x="9" y="21" width="48" height="2"/>',
+        '    <rect x="9" y="29" width="48" height="2"/>',
+        '    <rect x="9" y="37" width="40" height="2"/>',
+        '    <rect x="9" y="45" width="48" height="2"/>',
+        '    <rect x="9" y="53" width="30" height="2"/>',
+        '  </g>',
+    ]
+    if badge:
+        bw = len(badge) * 6 + 8
+        parts.append(f'  <rect x="0" y="72" width="{bw}" height="14" fill="{heading}"/>')
+        parts.append(
+            f'  <text x="{bw / 2:g}" y="82.5" text-anchor="middle" '
+            f'font-family="sans-serif" font-size="9" font-weight="bold" '
+            f'fill="{bg}">{badge}</text>'
+        )
+    parts.append('</svg>')
+    return write_if_changed(path, ("\n".join(parts) + "\n").encode())
+
+
+def mime_extension(name: str) -> str:
+    """Audio extensions, for Folio's bottom-right label on the waveform."""
+    n = name[:-4] if name.endswith(".svg") else name
+    if "m4a" in n or n in ("audio-mp4", "audio-x-mpeg"):
+        return "M4A"
+    if "mp3" in n:
+        return "MP3"
+    if "flac" in n:
+        return "FLAC"
+    if "ogg" in n or "opus" in n:
+        return "OPUS"
+    if "wav" in n or "wave" in n:
+        return "WAV"
+    if "aiff" in n:
+        return "AIFF"
+    if "wma" in n:
+        return "WMA"
+    if "midi" in n:
+        return "MIDI"
+    return ""
+
+
+def write_wave_svg(path: str, fill: str, secondary: str, ink: str,
+                   ext: str, radius: int) -> bool:
+    """Folio's waveArt: a card of seeded bars, with the extension at bottom right."""
+    r = min(radius, 10)
+    rx = f' rx="{r}"' if r > 0 else ""
+    # Deterministic but irregular bar heights, like Folio hashing the name.
+    heights = [18, 26, 14, 34, 22, 42, 30, 16, 38, 24, 44, 20, 32, 12, 28, 40, 18, 26]
+    bars = []
+    x = (128 - (18 * 3 + 17 * 3)) / 2
+    for h in heights:
+        y = (92 - h) / 2
+        bars.append(f'    <rect x="{_num(x)}" y="{_num(y)}" width="3" height="{h}"/>')
+        x += 6
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="92" '
+        'viewBox="0 0 128 92">',
+        f'  <rect x="0.5" y="0.5" width="127" height="91"{rx} fill="{fill}"/>',
+        f'  <g fill="{ink}">',
+        "\n".join(bars),
+        "  </g>",
+    ]
+    if ext:
+        parts.append(
+            f'  <text x="122" y="87" text-anchor="end" '
+            f'font-family="sans-serif" font-size="9" fill="{secondary}">{ext}</text>'
+        )
+    parts.append('</svg>')
+    return write_if_changed(path, ("\n".join(parts) + "\n").encode())
+
+
+def write_reel_svg(path: str, dark_bg: str, ink: str, radius: int) -> bool:
+    """Folio's reelArt: dark card with a centred play mark."""
+    r = min(radius, 10)
+    rx = f' rx="{r}"' if r > 0 else ""
+    svg = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="92" '
+        'viewBox="0 0 128 92">\n'
+        f'  <rect x="0.5" y="0.5" width="127" height="91"{rx} fill="{dark_bg}"/>\n'
+        f'  <path d="M57 33l26 13-26 13z" fill="{ink}"/>\n'
+        '</svg>\n'
+    )
+    return write_if_changed(path, svg.encode())
+
+
+def write_mimetype_icons(fill: str, fg: str, bg: str, dark_bg: str,
+                         kind_colors: dict[str, str], radius: int) -> int:
+    os.makedirs(MIMETYPES, exist_ok=True)
+    names: set[str] = set()
+    for directory in MIME_DIRS:
+        try:
+            entries = os.listdir(directory)
+        except FileNotFoundError:
+            continue
+        for entry in entries:
+            if entry.endswith(".svg") and not entry.startswith("inode-"):
+                names.add(entry)
+
+    # One drawing per (kind, badge); every mimetype name links to its drawing.
+    bases: dict[tuple[str, str], str] = {}
+    secondary = mix(bg, fg, 0.68)
+    for name in sorted(names):
+        kind = mime_kind(name)
+        if kind == "audio":
+            badge = mime_extension(name)
+        elif kind == "archive":
+            badge = mime_badge(name)
+        else:
+            badge = ""
+        key = (kind, badge)
+        if key not in bases:
+            suffix = f"-{badge.lower()}" if badge else ""
+            if kind == "audio":
+                base = f"wave{suffix}.svg"
+                write_wave_svg(f"{MIMETYPES}/{base}", fill, secondary,
+                               kind_colors[kind], badge, radius)
+            elif kind == "video":
+                base = "reel.svg"
+                write_reel_svg(f"{MIMETYPES}/{base}", dark_bg,
+                               kind_colors[kind], radius)
+            else:
+                base = f"page-{kind}{suffix}.svg"
+                write_page_svg(f"{MIMETYPES}/{base}", fill, fg, bg,
+                               kind_colors[kind], badge, radius)
+            bases[key] = base
+        target = bases[key]
+        path = f"{MIMETYPES}/{name}"
+        if os.path.islink(path) and os.readlink(path) == target:
+            continue
+        if os.path.lexists(path):
+            os.unlink(path)
+        os.symlink(target, path)
+
+    # Drop links for names no longer drawn.
+    wanted = set(names) | set(bases.values())
+    for entry in os.listdir(MIMETYPES):
+        if entry in wanted or entry == "inode-directory.svg":
+            continue
+        path = os.path.join(MIMETYPES, entry)
+        if os.path.isfile(path) or os.path.islink(path):
+            os.unlink(path)
+    return len(names)
+
+
+def folder_names() -> list[str]:
+    """Every folder icon name Papirus knows, so emblems and colour variants flatten too."""
+    names: set[str] = {"folder.svg", "inode-directory.svg", "folder-open.svg"}
+    for directory in INHERITED:
+        try:
+            entries = os.listdir(directory)
+        except FileNotFoundError:
+            continue
+        for entry in entries:
+            if entry.endswith(".svg") and (entry.startswith("folder") or entry == "inode-directory.svg"):
+                names.add(entry)
+    return sorted(names)
+
+
+def link_names(folder_svg: str, names: list[str]) -> None:
+    os.makedirs(PLACES, exist_ok=True)
+    for name in names:
+        path = os.path.join(PLACES, name)
+        if name == "folder.svg":
+            continue
+        target = "folder.svg"
+        if os.path.islink(path) and os.readlink(path) == target:
+            continue
+        if os.path.lexists(path):
+            os.unlink(path)
+        os.symlink(target, path)
+    # Drop links for names this theme no longer draws.
+    wanted = set(names)
+    for entry in os.listdir(PLACES):
+        if entry == "folder.svg" or entry in wanted:
+            continue
+        path = os.path.join(PLACES, entry)
+        if os.path.isfile(path) or os.path.islink(path):
+            os.unlink(path)
+
+
+def write_index() -> None:
+    index = (
+        "[Icon Theme]\n"
+        "Name=Folio\n"
+        "Comment=Flat folder cards in the style of Omarchy Folio, drawn from the current theme\n"
+        "Inherits=Papirus-espresso,Papirus,Adwaita,hicolor\n"
+        "Example=folder\n"
+        "Directories=scalable/places,scalable/mimetypes,scalable/actions\n"
+        "\n"
+        "[scalable/places]\n"
+        "Size=64\n"
+        "MinSize=16\n"
+        "MaxSize=512\n"
+        "Type=Scalable\n"
+        "Context=Places\n"
+        "\n"
+        "[scalable/mimetypes]\n"
+        "Size=64\n"
+        "MinSize=16\n"
+        "MaxSize=512\n"
+        "Type=Scalable\n"
+        "Context=MimeTypes\n"
+        "\n"
+        "[scalable/actions]\n"
+        "Size=24\n"
+        "MinSize=16\n"
+        "MaxSize=512\n"
+        "Type=Scalable\n"
+        "Context=Actions\n"
+    )
+    write_if_changed(f"{ICONS}/index.theme", index.encode())
+
+
+def refresh_caches() -> None:
+    subprocess.run(
+        ["gtk-update-icon-cache", "-f", "-t", "--quiet", ICONS],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    # KDE's loader falls back to this cache; letting it rebuild picks up the
+    # rewritten SVGs even in apps that were already running.
+    try:
+        os.unlink(f"{HOME}/.cache/icon-cache.kcache")
+    except FileNotFoundError:
+        pass
+
+
+def point_apps_at_folio() -> None:
+    subprocess.run(
+        ["kwriteconfig6", "--file", "kdeglobals", "--group", "Icons", "--key", "Theme", "Folio"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    try:
+        with open(QTENGINE, encoding="utf-8") as f:
+            config = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return
+    theme = config.setdefault("theme", {})
+    if theme.get("iconTheme") == "Folio":
+        return
+    theme["iconTheme"] = "Folio"
+    tmp = QTENGINE + ".folio-tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2)
+        f.write("\n")
+    os.replace(tmp, QTENGINE)
+
+
+def main() -> int:
+    if not os.path.exists(COLORS):
+        print(f"folio-folder-icons: no colors at {COLORS}", file=sys.stderr)
+        return 1
+
+    colors = read_colors(COLORS)
+    background = colors.get("background", "#1a1713")
+    foreground = colors.get("foreground", "#d1c4a9")
+    lighter = colors.get("lighter_background", background)
+
+    # Folio's lighterBackground(): the theme's own lighter surface when it is
+    # actually lighter, else 8% of the foreground over the background.
+    if abs(luminance(lighter) - luminance(background)) > 0.004:
+        base = lighter
+    else:
+        base = mix(background, foreground, 0.08)
+    fill = ensure_ratio(base, background, 1.4)
+
+    if os.environ.get("FOLIO_FOLDER_FILL"):
+        fill = os.environ["FOLIO_FOLDER_FILL"]
+
+    os.makedirs(PLACES, exist_ok=True)
+    os.makedirs(MIMETYPES, exist_ok=True)
+
+    folder_svg = f"{PLACES}/folder.svg"
+    write_svg(folder_svg, fill)
+    names = folder_names()
+    link_names(folder_svg, names)
+    actions = write_action_icons(foreground)
+
+    # Folio's page stand-in: the lighter surface (not the contrast-lifted
+    # folder card), a kind-coloured heading, and an extension badge on archives.
+    kind_colors = {
+        "text": colors.get("blue", "#7fbbb3"),
+        "image": colors.get("cyan", "#83c092"),
+        "audio": colors.get("magenta", "#d699b6"),
+        "video": colors.get("orange", "#e69875"),
+        "pdf": colors.get("red", "#e67e80"),
+        "archive": colors.get("yellow", "#dbbc7f"),
+        "other": mix(background, foreground, 0.68),
+    }
+    mimes = write_mimetype_icons(base, foreground, background,
+                                 colors.get("dark_background", background),
+                                 kind_colors, hyprland_rounding())
+    write_index()
+
+    # Apps that look folders up as a MIME icon rather than a place.
+    write_svg(f"{MIMETYPES}/inode-directory.svg", fill)
+
+    refresh_caches()
+    point_apps_at_folio()
+
+    print(
+        f"folio-folder-icons: {len(names)} folder names drawn in {fill}, "
+        f"{actions} action icons in {foreground}, {mimes} file icons in {base}"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

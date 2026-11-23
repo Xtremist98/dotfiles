@@ -101,7 +101,7 @@ TerminalApplication=foot
 TerminalService=foot.desktop
 
 [Icons]
-Theme=Papirus-espresso
+Theme=Folio
 
 [KDE]
 ShowDeleteCommand=true

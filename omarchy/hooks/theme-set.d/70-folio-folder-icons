@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Regenerate the Folio-style icon theme for the current Omarchy theme, then
+# relaunch Dolphin so it picks up the new colors.
+#
+# Omarchy's theme switch rewrites qtengine's iconTheme to Adwaita in parallel;
+# the generator resets it to Folio and also points kdeglobals at Folio.
+# Dolphin caches its icons in memory and ignores iconChanged D-Bus signals and
+# cache invalidations, so the only reliable way to apply a new theme is a
+# restart. Existing windows are closed politely through D-Bus first.
+
+set -uo pipefail
+
+GEN="$HOME/.local/bin/folio-folder-icons"
+[[ -x "$GEN" ]] || exit 0
+"$GEN" >/dev/null 2>&1 || exit 0
+
+# Nothing to refresh if Dolphin is not running.
+pgrep -x dolphin >/dev/null || exit 0
+
+# Ask each Dolphin window to quit gracefully.
+if command -v gdbus >/dev/null; then
+  while read -r service; do
+    [[ -n $service ]] || continue
+    gdbus call --session --dest "$service" --object-path /dolphin/Dolphin_1 \
+      --method org.kde.dolphin.MainWindow.quit >/dev/null 2>&1
+  done < <(busctl --user list 2>/dev/null | grep -oE 'org\.kde\.dolphin-[0-9]+')
+fi
+
+sleep 1
+pkill -9 -x dolphin 2>/dev/null
+sleep 0.5
+nohup dolphin >/dev/null 2>&1 </dev/null &
+disown 2>/dev/null || true
+exit 0
