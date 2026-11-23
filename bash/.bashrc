@@ -121,3 +121,4 @@ cliamp() {
 
 
 export PATH="$HOME/.local/bin:$PATH"
+[ -f ~/.secrets/openrouter ] && source ~/.secrets/openrouter

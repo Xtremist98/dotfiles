@@ -21,9 +21,10 @@
         ],
         [
           "omarchy.tray",
+          "omarchy.agents",
           "wian47.removable-drives",
+          "linuxer.tailscale",
           "io.github.birajdotdev.omacore",
-          "local.dropbox",
           "local.cpu",
           "dim-separator",
           "local.memory",
@@ -113,7 +114,8 @@
             "qbittorrent",
             "discord",
             "vesktop",
-            "chatgpt"
+            "chatgpt",
+            "fluxdown-agent"
           ],
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/TrayPill.qml",
@@ -121,15 +123,20 @@
         },
         {
           "color": "color02",
+          "id": "omarchy.agents"
+        },
+        {
+          "color": "color02",
           "id": "wian47.removable-drives"
         },
         {
           "color": "color02",
-          "id": "io.github.birajdotdev.omacore"
+          "id": "linuxer.tailscale"
         },
         {
           "color": "color02",
-          "id": "local.dropbox"
+          "id": "io.github.birajdotdev.omacore",
+          "batteryDisplayMode": "1"
         },
         {
           "color": "color02",
@@ -203,6 +210,9 @@
     },
     {
       "id": "mirador"
+    },
+    {
+      "id": "io.github.smoothpixels.cursor-accent"
     }
   ],
   "version": 1

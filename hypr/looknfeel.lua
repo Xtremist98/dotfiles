@@ -3,13 +3,13 @@
 hl.config({
   general = {
     gaps_in = 4,
-    gaps_out = 12,
-    border_size = 2,
+    gaps_out = 10,
+    border_size = 1,
   },
-    decoration = {
-    rounding = 10,
-    rounding_power = 5,
-  },
+    --decoration = {
+    --rounding = 10,
+    --rounding_power = 5,
+  --},
 })
 
 -- Make mpv always tile (overrides default floating-window tag).
@@ -17,9 +17,6 @@ o.window("mpv", { tag = "-floating-window", tile = true })
 
 -- Make Windscribe always floating and centered.
 o.window("^Windscribe$", { float = true, center = true, {size =  350, 741} })
-
--- Omagrab Windowsrules
-o.window("^omagrab$", {float = true, center = true, {size = 520, 260} })
 
 -- FluxDown: keep auxiliary windows wide and short (IDM-style), main window tiled.
 -- The complete-window title is the file name, so float every com.fluxdown.app window,
@@ -42,7 +39,4 @@ hl.exec_cmd("gsettings set org.gnome.desktop.interface document-font-name 'Noto 
 -- o.transparent_window("my-app", "0.9 0.85") -- Custom active/inactive opacity.
 --o.transparent_window("(org.kde.dolphin|org.kde.ark|btrfs-assistant|ca.desrt.dconf-editor|org.gnome.DiskUtility|disktree|fdm|gpartedbin|org.kde.konsole|org.localsend.localsend_app| com.linuxer.NordvpnGui|org.pulseaudio.pavucontrol|vesktop|xed|org.telegram.desktop|com.tmog.taskmanager|io.github.lgse.Strata|qt5ct|qt6ct|org.rncbc.qpwgraph)")
 
--- Terminals (including TUIs) and these desktop apps opt in to full opaque.
-o.transparent_window({ tag = "terminal", "1.0 1.0" })
-o.transparent_window("(omawrite|1[pP]assword|com\\.onepassword\\.OnePassword|org\\.gnome\\.Nautilus)", "1.0 1.0")
 

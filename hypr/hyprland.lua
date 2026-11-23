@@ -12,7 +12,7 @@ dofile((os.getenv("OMARCHY_PATH") or "/usr/share/omarchy") .. "/default/hypr/boo
 
 -- Load Omarchy defaults.
 -- Your own gestures replace Omarchy's defaults.
-omarchy_default_gestures = false
+omarchy_default_gestures = no
 
 require("default.hypr.omarchy")
 

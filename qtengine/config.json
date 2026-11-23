@@ -1,0 +1,20 @@
+{
+  "theme": {
+    "colorScheme": "~/.local/state/omarchy/current/theme/qtengine.colors",
+    "iconTheme": "Papirus-espresso",
+    "style": "breeze",
+    "quickStyle": "Fusion",
+    "font": {
+      "family": "noto sans",
+      "size": 11
+    },
+    "fontFixed": {
+      "family": "JetBrainsMono Nerd Font",
+      "size": 11
+    }
+  },
+  "misc": {
+    "singleClickActivate": false,
+    "dialogTheme": "xdgdesktopportal"
+  }
+}

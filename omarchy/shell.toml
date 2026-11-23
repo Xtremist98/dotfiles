@@ -1,2 +1,12 @@
 # User overrides — the theme's shell.toml handles all styling.
 # Add per-key overrides here only to pin values across theme switches.
+
+[bar]
+# Uniform bar icon size = 12px.
+# Stock widgets and omacore (which renders through BarIconContent and is
+# hard-capped at this token) read icon-size directly; dropbox and cpu/memory
+# are pinned to 12 in their own plugin files. Capped at icon-canvas (16).
+icon-size = 12
+
+[font]
+base-size = 12

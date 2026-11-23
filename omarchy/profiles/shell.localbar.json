@@ -25,11 +25,11 @@
           "omarchy.power"
         ],
         [
-          "flux",
+          "omarchy.agents",
           "linuxer.tailscale",
           "wian47.removable-drives"
-        ],
-        [
+         ],
+         [
           "io.github.birajdotdev.omacore"
         ]
       ],
@@ -123,7 +123,8 @@
             "qbittorrent",
             "discord",
             "vesktop",
-            "dropbox"
+            "dropbox",
+            "fluxdown-agent"
           ],
           "id": "omarchy.tray",
           "source": "~/.config/omarchy/plugins/local.bar/widgets/Tray.qml",
@@ -131,7 +132,7 @@
         },
         {
           "color": "color02",
-          "id": "flux"
+          "id": "omarchy.agents"
         },
         {
           "color": "color02",
