@@ -31,6 +31,7 @@ Panel {
   readonly property var sink: Pipewire.defaultAudioSink
   readonly property var source: Pipewire.defaultAudioSource
   readonly property var nodes: Pipewire.nodes ? Pipewire.nodes.values : []
+  readonly property var links: Pipewire.links ? Pipewire.links.values : []
   readonly property var mprisPlayers: Mpris.players ? Mpris.players.values : []
   readonly property var mediaService: bar?.shell?.firstPartyServiceFor("omarchy.media")
   readonly property var activeMediaPlayer: mediaService ? mediaService.activePlayer : null
@@ -168,11 +169,82 @@ Panel {
     return sink
   }
 
+  function isPhysicalSink(node) {
+    if (!node) return false
+    var name = String(node.name || "")
+    if (name.indexOf("alsa_output.") === 0 || name.indexOf("bluez_output.") === 0) return true
+    var p = nodeProps(node)
+    var api = String(p["device.api"] || "")
+    return api === "alsa" || api.indexOf("bluez") === 0
+  }
+
+  // What the bar icon describes: the hardware output at the end of the chain,
+  // not the HeSuVi/EQ virtual sinks applications select. A filter-chain sink
+  // and its playback stream share node.link-group, and the stream is linked to
+  // the next sink, so follow those links until the last real device. This also
+  // catches HeSuVi -> EQ -> ALSA, which a single "default sink" lookup misses.
+  readonly property var physicalSink: {
+    var current = volumeSink || sink
+    var seen = ({})
+    for (var hop = 0; hop < 8 && current; hop++) {
+      if (isPhysicalSink(current)) return current
+      var name = String(current.name || "")
+      if (seen[name]) break
+      seen[name] = true
+      var group = String(nodeProps(current)["node.link-group"] || "")
+      if (group === "") break
+      var next = null
+      for (var i = 0; i < links.length; i++) {
+        var link = links[i]
+        var linkSource = link ? link.source : null
+        var linkTarget = link ? link.target : null
+        if (!linkSource || !linkTarget || !linkTarget.isSink || linkTarget.isStream) continue
+        if (String(nodeProps(linkSource)["node.link-group"] || "") !== group) continue
+        if (String(linkTarget.name || "") === name) continue
+        next = linkTarget
+        break
+      }
+      if (!next) break
+      current = next
+    }
+    return null
+  }
+
+  // The active ALSA port is not in a PwNode's properties. pactl below carries
+  // it (speaker vs headphones) and reassigning this map re-evaluates the icon.
+  property var activePorts: ({})
+  property bool activePortsStale: false
+  property int activePortsGeneration: 0
+  property int activePortsRequest: -1
+
+  readonly property bool physicalIsHeadphones: {
+    if (!physicalSink) return false
+    if (Model.isBluetoothSink(physicalSink)) return true
+    if (Model.isHeadphones(physicalSink)) return true
+    return Model.isHeadphonesPort(activePorts[String(physicalSink.name || "")])
+  }
+
+  function refreshActivePorts() {
+    if (!physicalSink || Model.isBluetoothSink(physicalSink)) {
+      activePortsGeneration++
+      activePorts = ({})
+      return
+    }
+    activePortsGeneration++
+    if (activePortsProc.running) {
+      activePortsStale = true
+      return
+    }
+    activePortsRequest = activePortsGeneration
+    activePortsProc.running = true
+  }
+
   // Re-resolve whenever the selected output changes, and when nodes or links
   // come and go: a tuning being applied or removed underneath us, or a DSP sink
   // rerouted to another output, shows up as exactly that.
   onSinkChanged: resolveVolumeSink()
   onNodesChanged: volumeSinkResolveTimer.restart()
+  onPhysicalSinkChanged: activePortRefreshTimer.restart()
 
   Connections {
     target: Pipewire.linkGroups
@@ -490,7 +562,7 @@ Panel {
     // Match the old Waybar pulseaudio glyph set. The Material Design speaker
     // icons render visually smaller in JetBrainsMono Nerd Font.
     if (!sink || !sink.audio) return ""
-    if (isHeadphones(sink)) return "󰋋"
+    if (physicalIsHeadphones) return ""
     if (outputMuted) return ""
     var v = volume === undefined ? outputVolume : volume
     if (v >= 0.67) return ""
@@ -718,6 +790,56 @@ Panel {
     }
   }
 
+  // A jack plug changes the ALSA sink's active port without changing any
+  // PwNode property, so listen to PipeWire's event stream and re-read the port
+  // with pactl. The timer coalesces the burst of events into one read.
+  Process {
+    id: activePortsProc
+    command: ["pactl", "-f", "json", "list", "sinks"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        if (root.activePortsRequest !== root.activePortsGeneration) return
+        root.activePorts = Model.parseActivePorts(text)
+      }
+    }
+    onExited: {
+      if (!root.activePortsStale) return
+      root.activePortsStale = false
+      Qt.callLater(root.refreshActivePorts)
+    }
+  }
+
+  Process {
+    id: audioEventsProc
+    command: ["pactl", "subscribe"]
+    running: true
+    stdout: SplitParser {
+      onRead: function(line) {
+        var event = String(line)
+        if (event.indexOf("on sink") !== -1 || event.indexOf("on card") !== -1)
+          activePortRefreshTimer.restart()
+      }
+    }
+    onExited: audioEventsRetryTimer.start()
+  }
+
+  Timer {
+    id: audioEventsRetryTimer
+    interval: 3000
+    onTriggered: {
+      if (audioEventsProc.running) return
+      audioEventsProc.running = true
+      root.refreshActivePorts()
+    }
+  }
+
+  Timer {
+    id: activePortRefreshTimer
+    interval: 250
+    onTriggered: root.refreshActivePorts()
+  }
+
   Timer {
     interval: 5000
     running: root.opened
@@ -739,7 +861,10 @@ Panel {
     onTriggered: root.resolveVolumeSink()
   }
 
-  Component.onCompleted: root.resolveVolumeSink()
+  Component.onCompleted: {
+    root.resolveVolumeSink()
+    root.refreshActivePorts()
+  }
 
   Timer {
     id: audioModelRefreshTimer
@@ -756,19 +881,24 @@ Panel {
     slotSize: Style.bar.iconCanvas - 1 + Style.spaceReal(6) * 2
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
-    text: ""
+    text: " "
     dimmed: root.outputMuted
-    iconComponent: Component {
-      Text {
-        anchors.centerIn: parent
-        text: "graphic_eq"
-        color: button.active && button.useActiveColor
-          ? button.activeColor : button.foreground
-        font.family: "Material Symbols Rounded"
-        font.pixelSize: Math.round(parent.height * 0.9)
-        font.variableAxes: ({ "FILL": 1 })
-        renderType: Text.QtRendering
-      }
+    iconComponent: Component { Item {} }
+    Text {
+      text: root.physicalIsHeadphones ? "" : "graphic_eq"
+      color: button.active && button.useActiveColor
+        ? button.activeColor : button.foreground
+      font.family: root.physicalIsHeadphones
+        ? (root.bar && root.bar.fontFamily ? root.bar.fontFamily : Style.font.family)
+        : "Material Symbols Rounded"
+      font.pixelSize: Style.bar.iconFont
+      font.variableAxes: ({ "FILL": 1, "wght": 700 })
+      renderType: Text.QtRendering
+      anchors.centerIn: parent
+      enabled: false
+      scale: button.pressScale
+      transformOrigin: Item.Center
+      z: 10
     }
     onPressed: function(b) {
       if (b === Qt.RightButton) root.toggleAllMuted()
@@ -852,9 +982,12 @@ Panel {
             Text {
               id: heroIcon
               textFormat: Text.PlainText
-              text: root.outputIcon()
+              text: root.physicalIsHeadphones ? root.outputIcon() : "graphic_eq"
               color: root.panelColor
-              font.family: root.bar.fontFamily
+              font.family: root.physicalIsHeadphones
+                ? root.bar.fontFamily : "Material Symbols Rounded"
+              font.variableAxes: root.physicalIsHeadphones
+                ? ({}) : ({ "FILL": 1, "wght": 700 })
               font.pixelSize: Style.font.display
               opacity: root.outputMuted ? 0.5 : 1.0
               anchors.left: parent.left

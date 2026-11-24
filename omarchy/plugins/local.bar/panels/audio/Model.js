@@ -114,9 +114,55 @@ function isHeadphones(node) {
     || blob.indexOf("airpod") !== -1
 }
 
+// Every Bluetooth audio sink is an ear-worn output for icon purposes, even
+// when its name is "Buds", "Soundcore" or a model number instead of
+// "headphones".
+function isBluetoothSink(node) {
+  if (!node) return false
+  var p = nodeProps(node)
+  var blob = String([
+    node.name, node.description, node.nickname,
+    p["device.api"] || "",
+    p["device.icon-name"] || "",
+    p["device.bus"] || "",
+    p["device.product.name"] || ""
+  ].join(" ")).toLowerCase()
+  return blob.indexOf("bluez") !== -1
+    || blob.indexOf("bluetooth") !== -1
+}
+
+// PulseAudio names an ALSA sink's active port after what is plugged into it,
+// for example analog-output-speaker or analog-output-headphones.
+function isHeadphonesPort(port) {
+  var value = String(port || "").toLowerCase()
+  return value.indexOf("headphone") !== -1
+    || value.indexOf("headset") !== -1
+    || value.indexOf("earbud") !== -1
+    || value.indexOf("earphone") !== -1
+    || value.indexOf("airpod") !== -1
+}
+
+// The active port is not one of the PwNode properties Quickshell exposes, so
+// read it from pactl's JSON and map sink name -> active port. An unreadable or
+// unexpected response leaves the previous/empty map in place.
+function parseActivePorts(raw) {
+  var ports = {}
+  try {
+    var sinks = JSON.parse(String(raw || "[]"))
+    if (!Array.isArray(sinks)) return ports
+    for (var i = 0; i < sinks.length; i++) {
+      var sink = sinks[i]
+      if (!sink || !sink.name) continue
+      ports[String(sink.name)] = sink.active_port ? String(sink.active_port) : ""
+    }
+  } catch (e) {
+  }
+  return ports
+}
+
 function sinkGlyph(node) {
   if (!node) return "󰓃"
-  if (isHeadphones(node)) return "󰋋"
+  if (isHeadphones(node)) return ""
   var p = nodeProps(node)
   var blob = String([
     node.name, node.description, node.nickname,
@@ -135,7 +181,7 @@ function sourceGlyph(node) {
     node.name, node.description, node.nickname,
     p["device.icon-name"] || ""
   ].join(" ")).toLowerCase()
-  if (blob.indexOf("headset") !== -1) return "󰋋"
+  if (blob.indexOf("headset") !== -1) return ""
   if (blob.indexOf("bluetooth") !== -1) return "󰂯"
   if (blob.indexOf("webcam") !== -1 || blob.indexOf("camera") !== -1) return "󰄀"
   return "󰍬"
@@ -285,6 +331,9 @@ if (typeof module !== "undefined") {
     nodeProps: nodeProps,
     nodeLabel: nodeLabel,
     isHeadphones: isHeadphones,
+    isBluetoothSink: isBluetoothSink,
+    isHeadphonesPort: isHeadphonesPort,
+    parseActivePorts: parseActivePorts,
     sinkGlyph: sinkGlyph,
     sourceGlyph: sourceGlyph,
     friendlyStreamLabel: friendlyStreamLabel,
