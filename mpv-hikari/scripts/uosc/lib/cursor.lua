@@ -494,4 +494,12 @@ mp.observe_property('user-data/mpv/console/open', 'bool', function(_, value)
 	else cursor:unregister_disabler('console') end
 end)
 
+-- Hikari's skip/next-button overlay can leave uosc held fully visible after
+-- `playlist-next`: the pointer sits over the controls, which intentionally
+-- disables cursor autohide, so the bar would stay up forever. A newly loaded
+-- file is a safe moment to re-arm autohide and let the interface fade again.
+mp.register_event('file-loaded', function()
+	if options.autohide then cursor:leave() end
+end)
+
 return cursor
