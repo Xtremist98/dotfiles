@@ -23,3 +23,6 @@ end
 table.insert(kept_path, 1, omarchy_bin)
 table.insert(kept_path, 1, (os.getenv("HOME") or "/home/linuxer") .. "/.local/bin")
 hl.env("PATH", table.concat(kept_path, ":"))
+
+-- Custom Folio dark text thumbnail plugin.
+hl.env("QT_PLUGIN_PATH", "/home/linuxer/.local/lib/qt6/plugins")

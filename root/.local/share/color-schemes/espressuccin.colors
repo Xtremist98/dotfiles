@@ -26,8 +26,8 @@ IntensityEffect=0
 [Colors:View]
 BackgroundAlternate=26,23,19
 BackgroundNormal=26,23,19
-DecorationFocus=167,192,128
-DecorationHover=167,192,128
+DecorationFocus=46,42,36
+DecorationHover=46,42,36
 ForegroundActive=167,192,128
 ForegroundInactive=138,130,116
 ForegroundLink=127,187,179
@@ -64,7 +64,7 @@ ForegroundPositive=131,192,146
 ForegroundVisited=138,130,116
 
 [Colors:Selection]
-BackgroundNormal=46,42,36
+BackgroundNormal=33,30,25
 ForegroundNormal=209,196,169
 
 [Colors:Tooltip]

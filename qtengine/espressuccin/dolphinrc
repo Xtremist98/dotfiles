@@ -45,7 +45,7 @@ warnAboutRisksBeforeActingAsAdmin=false
 IconSize=16
 
 [PreviewSettings]
-Plugins=ffmpegthumbnailer,glycin-image-rs,appimagethumbnail,audiothumbnail,glycin-heif,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,imagethumbnail,jpegthumbnail,glycin-jxl,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,opendocumentthumbnail,glycin-svg,svgthumbnail
+Plugins=ffmpegthumbnailer,glycin-image-rs,appimagethumbnail,audiothumbnail,glycin-heif,comicbookthumbnail,cursorthumbnail,djvuthumbnail,ebookthumbnail,exrthumbnail,imagethumbnail,jpegthumbnail,glycin-jxl,kraorathumbnail,windowsexethumbnail,windowsimagethumbnail,opendocumentthumbnail,glycin-svg,svgthumbnail,foliotext
 
 [Toolbar mainToolBar]
 IconSize=16

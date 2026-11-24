@@ -29,6 +29,7 @@ fi
 sleep 1
 pkill -9 -x dolphin 2>/dev/null
 sleep 0.5
+export QT_PLUGIN_PATH="$HOME/.local/lib/qt6/plugins${QT_PLUGIN_PATH:+:$QT_PLUGIN_PATH}"
 nohup dolphin >/dev/null 2>&1 </dev/null &
 disown 2>/dev/null || true
 exit 0

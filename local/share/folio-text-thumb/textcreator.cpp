@@ -1,0 +1,187 @@
+/*  This file is part of the KDE libraries
+    SPDX-FileCopyrightText: 2000, 2002 Carsten Pfeiffer <pfeiffer@kde.org>
+    SPDX-FileCopyrightText: 2000 Malte Starostik <malte@kde.org>
+
+    SPDX-License-Identifier: LGPL-2.0-or-later
+*/
+
+#include "textcreator.h"
+
+#include <QFile>
+#include <QFontDatabase>
+#include <QImage>
+#include <QPainter>
+#include <QPalette>
+#include <QStringDecoder>
+#include <QTextDocument>
+#include <QTextOption>
+#include <QFile>
+#include <QRegularExpression>
+
+#include <KDesktopFile>
+#include <KPluginFactory>
+
+// TODO Fix or remove kencodingprober code
+// #include <kencodingprober.h>
+
+
+
+TextCreator::TextCreator(QObject *parent, const QVariantList &args)
+    : KIO::ThumbnailCreator(parent, args)
+    , m_data(nullptr)
+    , m_dataSize(0)
+{
+}
+
+TextCreator::~TextCreator()
+{
+    delete[] m_data;
+}
+
+static QStringDecoder codecFromContent(const char *data, int dataSize)
+{
+#if 0 // ### Use this when KEncodingProber does not return junk encoding for UTF-8 data)
+    KEncodingProber prober;
+    prober.feed(data, dataSize);
+    return QStringDecoder(prober.encoding());
+#else
+    // try to detect UTF text, fall back to locale default (which is usually UTF-8)
+    return QStringDecoder(QStringDecoder::encodingForData(QByteArrayView(data, dataSize)).value_or(QStringDecoder::System));
+#endif
+}
+
+
+static QColor colorFromToml(const QString &key, const QColor &fallback)
+{
+    QFile f(QStringLiteral("/home/linuxer/.local/state/omarchy/current/theme/colors.toml"));
+    if (f.open(QIODevice::ReadOnly)) {
+        const QString text = QString::fromUtf8(f.readAll());
+        QRegularExpression re(QStringLiteral("^") + key + QStringLiteral("\\s*=\\s*\"(#[0-9a-fA-F]{6})\""), QRegularExpression::MultilineOption);
+        auto m = re.match(text);
+        if (m.hasMatch())
+            return QColor(m.captured(1));
+    }
+    return fallback;
+}
+
+KIO::ThumbnailResult TextCreator::create(const KIO::ThumbnailRequest &request)
+{
+    const QString path = request.url().toLocalFile();
+    // Desktop files, .directory files, and flatpakrefs aren't traditional
+    // text files, so their icons should be shown instead
+    if (KDesktopFile::isDesktopFile(path) || path.endsWith(QStringLiteral(".directory")) || path.endsWith(QStringLiteral(".flatpakref"))) {
+        return KIO::ThumbnailResult::fail();
+    }
+
+    bool ok = false;
+
+    // determine some sizes...
+    // example: width: 60, height: 64
+
+    const int width = request.targetSize().width();
+    const int height = request.targetSize().height();
+    const qreal dpr = request.devicePixelRatio();
+
+    QImage img;
+
+    QSize pixmapSize(width, height);
+    if (height * 3 > width * 4)
+        pixmapSize.setHeight(width * 4 / 3);
+    else
+        pixmapSize.setWidth(height * 3 / 4);
+
+    if (pixmapSize != m_pixmap.size()) {
+        m_pixmap = QPixmap(pixmapSize);
+        m_pixmap.setDevicePixelRatio(dpr);
+    }
+
+    // one pixel for the rectangle, the rest. whitespace
+    int xborder = 1 + pixmapSize.width() / 16 / dpr; // minimum x-border
+    int yborder = 1 + pixmapSize.height() / 16 / dpr; // minimum y-border
+
+    // this font is supposed to look good at small sizes
+    QFont font = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
+
+    font.setPixelSize(qMax(7.0, qMin(10.0, (pixmapSize.height() / dpr - 2 * yborder) / 16)));
+    QFontMetrics fm(font);
+
+    // calculate a better border so that the text is centered
+    const QSizeF canvasSize(pixmapSize.width() / dpr - 2 * xborder, pixmapSize.height() / dpr - 2 * yborder);
+    const int numLines = (int)(canvasSize.height() / fm.height());
+
+    // assumes an average line length of <= 120 chars
+    const int bytesToRead = 120 * numLines;
+
+    // create text-preview
+    QFile file(path);
+    if (file.open(QIODevice::ReadOnly)) {
+        if (!m_data || m_dataSize < bytesToRead + 1) {
+            delete[] m_data;
+            m_data = new char[bytesToRead + 1];
+            m_dataSize = bytesToRead + 1;
+        }
+
+        int read = file.read(m_data, bytesToRead);
+        if (read > 0) {
+            ok = true;
+            m_data[read] = '\0';
+            QString text = QString(codecFromContent(m_data, read).decode(QByteArrayView(m_data, read))).trimmed();
+            if (!text.isValidUtf16()) {
+                // See if we are unlucky and the last byte we read was half of a utf16 character
+                text.chop(1);
+                if (!text.isValidUtf16()) {
+                    return KIO::ThumbnailResult::fail();
+                }
+            }
+            // FIXME: maybe strip whitespace and read more?
+
+            // If the text contains tabs or consecutive spaces, it is probably
+            // formatted using white space. Use a fixed pitch font in this case.
+            const auto textLines = QStringView(text).split(QLatin1Char('\n'));
+            for (const auto &line : textLines) {
+                const auto trimmedLine = line.trimmed();
+                if (trimmedLine.contains('\t') || trimmedLine.contains(QLatin1String("  "))) {
+                    font.setFamily(QFontDatabase::systemFont(QFontDatabase::FixedFont).family());
+                    break;
+                }
+            }
+
+            QColor bg = colorFromToml(QStringLiteral("background"), QColor(QStringLiteral("#1a1713")));
+            QColor fg = colorFromToml(QStringLiteral("foreground"), QColor(QStringLiteral("#d1c4a9")));
+            QColor bgColor(QColor::fromRgbF(bg.redF()*0.92 + fg.redF()*0.08,
+                                            bg.greenF()*0.92 + fg.greenF()*0.08,
+                                            bg.blueF()*0.92 + fg.blueF()*0.08));
+            m_pixmap.fill(bgColor);
+
+            QPainter painter(&m_pixmap);
+
+            QTextDocument textDocument;
+            textDocument.setDocumentMargin(0);
+            textDocument.setPageSize(canvasSize);
+            textDocument.setDefaultFont(font);
+            textDocument.setDefaultStyleSheet(QStringLiteral("body { color: %1; }").arg(fg.name()));
+            textDocument.setPlainText(text);
+            QTextOption textOption(Qt::AlignTop | Qt::AlignLeft);
+            textOption.setTabStopDistance(8 * painter.fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+            textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+            textDocument.setDefaultTextOption(textOption);
+
+            // draw page-in-page, with clipping as needed
+            painter.translate(xborder, yborder);
+            textDocument.drawContents(&painter, QRectF(QPointF(0, 0), canvasSize));
+
+            painter.end();
+
+            img = m_pixmap.toImage();
+        }
+
+        file.close();
+    }
+    return ok ? KIO::ThumbnailResult::pass(img) : KIO::ThumbnailResult::fail();
+}
+
+#include "textcreator.moc"
+
+K_PLUGIN_CLASS_WITH_JSON(TextCreator, "foliotext.json")
+
+#include "moc_textcreator.cpp"
