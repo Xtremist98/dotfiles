@@ -500,6 +500,11 @@ end)
 -- file is a safe moment to re-arm autohide and let the interface fade again.
 mp.register_event('file-loaded', function()
 	if options.autohide then cursor:leave() end
+	-- Hikari's hold can survive the file switch; clear it once the new file
+	-- is up so the bar follows the cursor again.
+	mp.add_timeout(0.25, function()
+		mp.commandv('script-message-to', 'uosc', 'set-min-visibility', '0')
+	end)
 end)
 
 return cursor
