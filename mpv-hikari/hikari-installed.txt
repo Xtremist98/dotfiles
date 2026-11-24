@@ -1,11 +1,11 @@
 # Written by the hikari installer (install/hikari.sh). Used to update and uninstall; do not edit.
-hikari_version=0.11.5
+hikari_version=0.12.0
 hikari_commit=
 interface=uosc
 uosc_version=5.13.0
 uosc_sha256=4be9da3289285300fa374496c3f1bfd7bb20ac08e890d25bd5a06b28eebe4882
 thumbfast_commit=0f711de3138c9bd6718209d819ac54022c23ded2
-installed_at=2026-11-03T14:57:12
+installed_at=2026-11-24T11:03:03
 player=mpv
 player_exe=/usr/bin/mpv
 uosc_preexisting=yes
@@ -21,7 +21,7 @@ anime4k=declined
 anime4k_version=
 anime4k_sha256=
 first_backup=/home/linuxer/.config/mpv-respaldo-hikari-20261103-142220
-last_backup=/home/linuxer/.config/mpv-respaldo-hikari-20261103-145701
+last_backup=/home/linuxer/.config/mpv-respaldo-hikari-20261124-110235
 file=scripts/hikari-language.lua
 file=scripts/hikari-media-language.lua
 file=scripts/hikari-palettes.lua
