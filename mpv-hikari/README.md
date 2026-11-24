@@ -2,8 +2,8 @@
 
 Backup of `~/.config/mpv` after installing hikari 0.12.0, with the personal
 customisations merged back in (Espressuccin palette, slim timeline, smaller
-controls/top bar, volume settings, default directory `/mnt/media/Music-Video`,
-skip-button margin, ...).
+controls/top bar, Noto Sans OSD font, volume settings, default directory
+`/mnt/media/Music-Video`, skip-button margin, ...).
 
 ## Restore
 
