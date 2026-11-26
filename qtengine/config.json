@@ -1,16 +1,16 @@
 {
   "theme": {
     "colorScheme": "~/.local/state/omarchy/current/theme/qtengine.colors",
-    "iconTheme": "Papirus-espresso",
+    "iconTheme": "Folio",
     "style": "breeze",
     "quickStyle": "Fusion",
     "font": {
-      "family": "noto sans",
-      "size": 11
+      "family": "inter",
+      "size": 10
     },
     "fontFixed": {
       "family": "JetBrainsMono Nerd Font",
-      "size": 11
+      "size": 10
     }
   },
   "misc": {

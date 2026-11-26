@@ -31,6 +31,10 @@ dateFormat=ShortFormat
 Places Icons Auto-resize=false
 Places Icons Static Size=16
 
+[KDE]
+# Local proxy style: Breeze selection, outline-only hover (no fill).
+widgetStyle=folio
+
 [MainWindow]
 MenuBar=Disabled
 

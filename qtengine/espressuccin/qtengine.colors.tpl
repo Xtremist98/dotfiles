@@ -111,7 +111,7 @@ DecorationFocus={{ accent_rgb }}
 DecorationHover={{ accent_rgb }}
 
 [Colors:Selection]
-BackgroundNormal={{ selection_rgb }}
+BackgroundNormal={{ mix_rgb background accent 36% }}
 BackgroundAlternate={{ mix_rgb selection foreground 10% }}
 ForegroundNormal={{ foreground_rgb }}
 ForegroundInactive={{ muted_rgb }}
@@ -125,7 +125,7 @@ DecorationFocus={{ accent_rgb }}
 DecorationHover={{ accent_rgb }}
 
 [Colors:Selection][Inactive]
-BackgroundNormal={{ selection_rgb }}
+BackgroundNormal={{ mix_rgb background accent 36% }}
 BackgroundAlternate={{ mix_rgb selection foreground 10% }}
 ForegroundNormal={{ foreground_rgb }}
 ForegroundInactive={{ muted_rgb }}
