@@ -37,7 +37,7 @@ Panel {
   property var hostWidget: null
   readonly property var barIdentity: hostWidget || root
 
-  // ---- Today. SystemClock keeps this honest across midnight so the
+  // ---- Today. The wall clock keeps this honest across midnight so the
   //      highlight rolls over without the panel being reopened.
   property date today: new Date()
   readonly property string todayKey: Model.keyForDate(today)
@@ -47,7 +47,9 @@ Panel {
   property int viewYear: today.getFullYear()
   property int viewMonth: today.getMonth()
 
-  readonly property date viewDate: new Date(viewYear, viewMonth, 1)
+  // Local noon, so a first of the month with no midnight (Havana, April 2012)
+  // still names its own month; UTC would name the previous one west of Greenwich.
+  readonly property date viewDate: new Date(viewYear, viewMonth, 1, 12)
   readonly property bool viewingCurrentMonth: viewYear === today.getFullYear() && viewMonth === today.getMonth()
 
   // Pinned to today, not to the month being browsed — stepping through the
@@ -70,8 +72,17 @@ Panel {
   // starts out matching the rest of the desktop rather than a hardcoded
   // convention. Clicking the grid's "W" heading writes the choice back to
   // shell.json.
-  readonly property int weekStart: Model.normalizedWeekStart(setting("weekStartDay", null), Qt.locale().firstDayOfWeek)
-  readonly property string nextWeekStartLabel: Qt.locale().dayName(Model.toggledWeekStart(weekStart), Locale.LongFormat)
+  readonly property int weekStart: Model.normalizedWeekStart(setting("weekStartDay", null), labelLocale.firstDayOfWeek)
+  // Names and the default week start follow the Omarchy language rather than
+  // the system locale, which only catches up at the next login.
+  readonly property var labelLocale: Qt.locale(Commons.I18n.formatLocale)
+  // Qt's MMMM is the genitive form ("октября"), right beside a day but not
+  // in a month heading, so the title takes the standalone name ("октябрь")
+  // and lets each language order it against the year.
+  readonly property string monthYearLabel: Commons.I18n.t("clock.monthYear")
+    .arg(labelLocale.standaloneMonthName(viewMonth, Locale.LongFormat))
+    .arg(viewDate.toLocaleDateString(labelLocale, "yyyy"))
+  readonly property string nextWeekStartLabel: labelLocale.dayName(Model.toggledWeekStart(weekStart), Locale.LongFormat)
   readonly property var weekdays: Model.weekdayOrder(weekStart)
   readonly property var weeks: Model.monthGrid(viewYear, viewMonth, weekStart, todayKey)
 
@@ -90,18 +101,9 @@ Panel {
   function open() {
     refresh()
     root.controller.show()
-    // Set after showing, not before: showing hands the popout coordinator
-    // over, which closes whichever panel was open, and that close clears the
-    // shared flag. Deferring means the panel taking over always wins, while
-    // a handoff to a panel that does not manage the flag still leaves it
-    // cleared rather than stuck on.
-    Qt.callLater(function() {
-      if (root.opened) setCenterHoverRevealSuppressed(true)
-    })
   }
 
   function close() {
-    setCenterHoverRevealSuppressed(false)
     // Dismissing the panel mid-edit would otherwise leave the inputs up,
     // waiting behind a closed popup for the next time it opens.
     if (root.editingLife) root.cancelEditingLife()
@@ -119,16 +121,16 @@ Panel {
     return false
   }
 
-  // Summoning by hotkey moves no pointer, so a hover the bar was still
-  // holding must not keep the center indicators revealed behind the panel.
-  function setCenterHoverRevealSuppressed(value) {
-    if (root.bar && "centerHoverRevealSuppressed" in root.bar)
-      root.bar.centerHoverRevealSuppressed = value
-  }
-
   function refresh() {
     root.today = new Date()
     root.goToToday()
+  }
+
+  // The same catch-up for the calendar's own clock, which is how today moves
+  // after a sleep that crossed midnight. Its onDateChanged keeps a browsed
+  // month, where refresh() would send it back to today.
+  function resync() {
+    clock.resync()
   }
 
   function goToToday() {
@@ -172,6 +174,10 @@ Panel {
   function startEditingLife() {
     root.editingLife = true
     Qt.callLater(function() {
+      var content = panel.loadedContent
+      if (!content) return
+      var bornField = content.bornField
+      var expectancyField = content.expectancyField
       bornField.text = root.birthYear > 0 ? String(root.birthYear) : ""
       expectancyField.text = String(root.lifeExpectancy)
       bornField.selectAll()
@@ -181,7 +187,7 @@ Panel {
 
   function cancelEditingLife() {
     root.editingLife = false
-    Qt.callLater(function() { if (keyCatcher) keyCatcher.forceActiveFocus() })
+    Qt.callLater(function() { if (panel.loadedContent) panel.loadedContent.forceActiveFocus() })
   }
 
   // Shared by both fields: Tab hops to the other one, Enter commits the pair,
@@ -209,6 +215,10 @@ Panel {
   }
 
   function commitLife() {
+    var content = panel.loadedContent
+    if (!content) return
+    var bornField = content.bornField
+    var expectancyField = content.expectancyField
     var born = Model.parseBirthYear(bornField.text, today.getFullYear())
     var span = Model.parseLifeExpectancy(expectancyField.text)
     if (born !== root.birthYear || span !== root.lifeExpectancy)
@@ -220,15 +230,13 @@ Panel {
     setWeekStart(Model.toggledWeekStart(root.weekStart))
   }
 
-  // Locale short day names, trimmed of the trailing period some locales
-  // carry ("man." -> "MAN") so the header row stays a clean band of caps.
+  // English short day names, matching the rest of the interface.
   function weekdayLabel(weekday) {
-    return String(Qt.locale().dayName(weekday, Locale.ShortFormat)).replace(/\.$/, "").toUpperCase()
+    return String(labelLocale.dayName(weekday, Locale.ShortFormat)).toUpperCase()
   }
 
-  SystemClock {
+  WallClock {
     id: clock
-    precision: SystemClock.Minutes
     onDateChanged: {
       if (Model.keyForDate(clock.date) === String(root.todayKey)) return
       var followToday = root.viewingCurrentMonth
@@ -243,13 +251,18 @@ Panel {
     owner: root.barIdentity
     bar: root.bar
     open: root.opened
-    centerOnBar: true
-    focusTarget: keyCatcher
+    // Anchor under the widget rather than the middle of the bar, so the
+    // popup follows wherever the widget is placed.
+    centerOnBar: false
+    focusTarget: panel.loadedContent
     contentWidth: panel.fittedContentWidth(Style.space(560))
-    contentHeight: panel.fittedContentHeight(calendarColumn.implicitHeight)
+    contentHeight: panel.fittedContentHeight(panel.loadedContentHeight)
 
-    PanelKeyCatcher {
+    content: PanelKeyCatcher {
       id: keyCatcher
+      property alias bornField: bornField
+      property alias expectancyField: expectancyField
+      implicitHeight: calendarColumn.implicitHeight
       anchors.fill: parent
       blocked: root.editingLife
       onMoveRequested: function(dx, dy) {
@@ -315,8 +328,9 @@ Panel {
 
               Text {
                 id: heroDate
+                textFormat: Text.PlainText
                 anchors.verticalCenter: parent.verticalCenter
-                text: Qt.formatDate(root.today, "MMMM d")
+                text: root.today.toLocaleDateString(root.labelLocale, Commons.I18n.t("clock.dayMonthFormat"))
                 color: heroMouse.containsMouse
                   ? Style.hoverStateColor(root.contentForeground, Commons.Color.accent)
                   : root.contentForeground
@@ -339,7 +353,7 @@ Panel {
 
               PanelToolTip {
                 visible: heroMouse.containsMouse
-                text: "Back to today"
+                text: Commons.I18n.t("clock.backToToday")
                 fontFamily: root.contentFontFamily
               }
             }
@@ -372,7 +386,8 @@ Panel {
 
                 Text {
                   anchors.verticalCenter: parent.verticalCenter
-                  text: "BORN"
+                  text: Commons.I18n.t("clock.born")
+                  textFormat: Text.PlainText
                   color: Qt.darker(root.contentForeground, 1.5)
                   font.family: root.contentFontFamily
                   font.pixelSize: Style.font.bodySmall
@@ -383,7 +398,7 @@ Panel {
                   id: bornField
                   width: Style.space(70)
                   anchors.verticalCenter: parent.verticalCenter
-                  placeholderText: "year"
+                  placeholderText: Commons.I18n.t("clock.year")
                   foreground: root.contentForeground
                   font.family: root.contentFontFamily
                   inputMethodHints: Qt.ImhDigitsOnly
@@ -395,7 +410,8 @@ Panel {
                   anchors.verticalCenter: parent.verticalCenter
                   anchors.verticalCenterOffset: 0
                   leftPadding: Style.space(6)
-                  text: "LIVE TO"
+                  text: Commons.I18n.t("clock.liveTo")
+                  textFormat: Text.PlainText
                   color: Qt.darker(root.contentForeground, 1.5)
                   font.family: root.contentFontFamily
                   font.pixelSize: Style.font.bodySmall
@@ -417,10 +433,11 @@ Panel {
 
               Text {
                 id: yearLabel
+                textFormat: Text.PlainText
                 visible: !root.editingLife
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.today.getFullYear()
+                text: Commons.I18n.formatNumber(root.today.getFullYear())
                 color: Qt.darker(root.contentForeground, 1.5)
                 font.family: root.contentFontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -429,10 +446,11 @@ Panel {
 
               Text {
                 id: yearPercent
+                textFormat: Text.PlainText
                 visible: !root.editingLife
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.yearDonePercent + "%"
+                text: Commons.I18n.formatNumber(root.yearDonePercent) + "%"
                 color: root.contentForeground
                 font.family: root.contentFontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -456,7 +474,7 @@ Panel {
                   radius: parent.radius
                   color: root.contentForeground
 
-                  Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                  Behavior on width { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
                 }
               }
             }
@@ -480,7 +498,8 @@ Panel {
                 id: lifeLabel
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: "LIFE"
+                text: Commons.I18n.t("clock.life")
+                textFormat: Text.PlainText
                 color: Qt.darker(root.contentForeground, 1.5)
                 font.family: root.contentFontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -489,9 +508,10 @@ Panel {
 
               Text {
                 id: lifePercent
+                textFormat: Text.PlainText
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.lifeDonePercent + "%"
+                text: Commons.I18n.formatNumber(root.lifeDonePercent) + "%"
                 color: root.contentForeground
                 font.family: root.contentFontFamily
                 font.pixelSize: Style.font.bodySmall
@@ -513,7 +533,7 @@ Panel {
                   radius: parent.radius
                   color: root.contentForeground
 
-                  Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                  Behavior on width { NumberAnimation { duration: Style.duration(160); easing.type: Easing.OutCubic } }
                 }
               }
 
@@ -578,7 +598,8 @@ Panel {
 
                   Text {
                     anchors.centerIn: parent
-                    text: "W"
+                    textFormat: Text.PlainText
+                    text: Commons.I18n.t("clock.weekShort")
                     color: weekStartMouse.containsMouse
                       ? Style.hoverStateColor(root.contentForeground, Commons.Color.accent)
                       : Qt.darker(root.contentForeground, 1.9)
@@ -598,7 +619,7 @@ Panel {
 
                   PanelToolTip {
                     visible: weekStartMouse.containsMouse
-                    text: "Start weeks on " + root.nextWeekStartLabel
+                    text: Commons.I18n.t("clock.startWeeksOn").arg(root.nextWeekStartLabel)
                     fontFamily: root.contentFontFamily
                   }
                 }
@@ -612,6 +633,7 @@ Panel {
                   model: root.weekdays
 
                   Text {
+                    textFormat: Text.PlainText
                     required property var modelData
                     width: root.cellWidth
                     height: Style.space(16)
@@ -635,11 +657,12 @@ Panel {
                   spacing: root.cellSpacing
 
                   Text {
+                    textFormat: Text.PlainText
                     width: root.weekColumnWidth
                     height: root.cellHeight
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
-                    text: modelData.week
+                    text: Commons.I18n.formatNumber(modelData.week)
                     color: Qt.darker(root.contentForeground, 1.9)
                     font.family: root.contentFontFamily
                     font.pixelSize: Style.font.caption
@@ -666,8 +689,9 @@ Panel {
                       border.color: Style.normalBorderFor(root.contentForeground, Commons.Color.accent)
 
                       Text {
+                        textFormat: Text.PlainText
                         anchors.centerIn: parent
-                        text: modelData.day
+                        text: Commons.I18n.formatNumber(modelData.day)
                         color: modelData.inMonth
                           ? (modelData.weekend ? Qt.darker(root.contentForeground, 1.45) : root.contentForeground)
                           : Qt.darker(root.contentForeground, 2.2)
@@ -682,9 +706,13 @@ Panel {
             }
 
             // Hairline down the week-number gutter, drawn only beside the
-            // day rows so it does not cut through the header band.
+            // day rows so it does not cut through the header band. Placed
+            // by x, so it follows the rows to the right edge when mirrored.
             Rectangle {
-              x: gridColumn.x + root.weekColumnWidth + root.cellSpacing + Math.round((root.gutterWidth - width) / 2)
+              readonly property real gutterOffset: root.weekColumnWidth + root.cellSpacing + Math.round((root.gutterWidth - width) / 2)
+              x: LayoutMirroring.enabled
+                ? gridColumn.x + gridColumn.width - gutterOffset - width
+                : gridColumn.x + gutterOffset
               y: gridColumn.y + headerRow.height + gridColumn.spacing
               width: Style.spacing.hairline
               height: gridColumn.height - headerRow.height - gridColumn.spacing
@@ -711,13 +739,14 @@ Panel {
 
               Text {
                 id: monthLabel
+                textFormat: Text.PlainText
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.verticalCenter
                 // Fixed width so the chevrons hold still between a
                 // "MAY 2026" and a "SEPTEMBER 2026".
                 width: Style.space(130)
                 horizontalAlignment: Text.AlignHCenter
-                text: Qt.formatDate(root.viewDate, "MMMM yyyy").toUpperCase()
+                text: root.monthYearLabel.toUpperCase()
                 color: Qt.darker(root.contentForeground, 1.4)
                 font.family: root.contentFontFamily
                 font.pixelSize: Style.font.body
@@ -730,8 +759,9 @@ Panel {
                 anchors.left: parent.left
                 anchors.leftMargin: -Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
-                iconText: "󰅁"
-                tooltipText: "Previous month"
+                // Previous points back along the reading direction.
+                iconText: Commons.I18n.rightToLeft ? "󰅂" : "󰅁"
+                tooltipText: Commons.I18n.t("clock.previousMonth")
                 foreground: root.contentForeground
                 fontFamily: root.contentFontFamily
                 onClicked: root.moveMonth(-1)
@@ -741,8 +771,8 @@ Panel {
                 anchors.right: parent.right
                 anchors.rightMargin: -Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
-                iconText: "󰅂"
-                tooltipText: "Next month"
+                iconText: Commons.I18n.rightToLeft ? "󰅁" : "󰅂"
+                tooltipText: Commons.I18n.t("clock.nextMonth")
                 foreground: root.contentForeground
                 fontFamily: root.contentFontFamily
                 onClicked: root.moveMonth(1)

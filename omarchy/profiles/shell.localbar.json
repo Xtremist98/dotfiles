@@ -1,8 +1,8 @@
 {
   "bar": {
     "edgeLine": false,
-    "transparent": true,
-    "barMode": 0,
+    "transparent": false,
+    "barMode": 2,
     "box": {
       "groups": [
         [
@@ -25,11 +25,12 @@
           "omarchy.power"
         ],
         [
+          "omarchy.mv7plus",
           "omarchy.agents",
           "linuxer.tailscale",
           "wian47.removable-drives"
-         ],
-         [
+        ],
+        [
           "io.github.birajdotdev.omacore"
         ]
       ],
@@ -131,6 +132,9 @@
           "type": "qml"
         },
         {
+          "id": "omarchy.mv7plus"
+        },
+        {
           "color": "color02",
           "id": "omarchy.agents"
         },
@@ -145,7 +149,7 @@
         {
           "color": "color02",
           "id": "io.github.birajdotdev.omacore",
-          "batteryDisplayMode": "1"
+          "batteryDisplayMode": 1
         },
         {
           "color": "color02",

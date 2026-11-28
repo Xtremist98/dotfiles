@@ -678,7 +678,19 @@ Panel {
     foreground: root.glyphColor
     opticalSize: Style.bar.iconCanvas - 1
     fontSize: Style.bar.iconFont - 1
-    text: root.icon
+    text: " "
+    iconComponent: Component { Item {} }
+    Text {
+      text: root.icon
+      color: button.active && button.useActiveColor ? button.activeColor : button.foreground
+      font.family: root.bar.fontFamily
+      font.pixelSize: Style.bar.iconFont - 1
+      anchors.centerIn: parent
+      enabled: false
+      scale: button.pressScale * 1.1
+      transformOrigin: Item.Center
+      z: 10
+    }
     onPressed: function(b) {
       if (b === Qt.RightButton) root.toggleBluetooth()
       else root.toggle()
