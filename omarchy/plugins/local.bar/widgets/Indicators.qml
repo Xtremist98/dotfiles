@@ -22,7 +22,9 @@ BarWidget {
   property bool indicatorAreaHovered: false
   property bool indicatorItemHovered: false
   readonly property bool alwaysShowIndicators: setting("alwaysShow", false) === true
-  readonly property bool revealInactiveIndicators: alwaysShowIndicators || indicatorAreaHovered || indicatorItemHovered || (bar && bar.centerSectionRevealHeld === true && bar.centerHoverRevealSuppressed !== true)
+  // Reveal only from the indicators' own area, like the stock bar. The local
+  // bar's center section spans the whole bar, so its hover must not count here.
+  readonly property bool revealInactiveIndicators: alwaysShowIndicators || indicatorAreaHovered || indicatorItemHovered
 
   signal refreshRequested()
 
@@ -284,6 +286,28 @@ BarWidget {
 
   HoverHandler {
     onHoveredChanged: root.setIndicatorAreaHovered(hovered)
+  }
+
+  // Stock-style peek zone: only the space the hidden indicators would occupy
+  // (plus the active icons) reveals them, never the empty rest of the bar.
+  // Half the reach once open so the widget re-centering does not drop the
+  // pointer and flicker the icons closed again.
+  Item {
+    z: -1
+
+    readonly property real reach: (root.vertical
+      ? inactiveVerticalBlock.implicitHeight
+      : inactiveHorizontalBlock.implicitWidth) * (root.revealInactiveIndicators ? 0.5 : 1)
+
+    // In this layout the inactive block grows to the left / top of the active one.
+    x: root.vertical ? 0 : -reach
+    y: root.vertical ? -reach : 0
+    width: root.vertical ? root.implicitWidth : root.implicitWidth + reach
+    height: root.vertical ? root.implicitHeight + reach : root.implicitHeight
+
+    HoverHandler {
+      onHoveredChanged: root.setIndicatorAreaHovered(hovered)
+    }
   }
 
   component ActiveIndicatorBlock: Item {
