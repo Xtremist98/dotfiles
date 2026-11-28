@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# After Omarchy updates packages, rebuild the patched Folio if - and only if -
+# the installed Folio version changed since the last patch.
+log="$HOME/.local/state/folio-rebuild.log"
+
+if ! "$HOME/.local/bin/folio-rebuild" > "$log" 2>&1; then
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "Folio patch rebuild failed" "Check $log" >/dev/null 2>&1 || true
+    fi
+fi
