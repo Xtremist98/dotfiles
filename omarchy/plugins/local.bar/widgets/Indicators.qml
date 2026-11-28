@@ -15,16 +15,20 @@ BarWidget {
   readonly property color panelColor: bar && bar.panelForeground !== undefined
     ? bar.panelForeground : Commons.Color.foreground
 
-  readonly property var defaultIndicatorEntries: [ "PasswordlessSudo", "ScreenRecording", "Reminder", "NightLight", "Dnd", "StayAwake", "TextExtraction" ]
+  readonly property var defaultIndicatorEntries: [ "PasswordlessSudo", "PasswordlessLogin", "ScreenRecording", "RemoteSession", "Reminder", "NightLight", "Dnd", "StayAwake", "TextExtraction" ]
   readonly property var indicatorEntries: indicatorEntriesFromSettings(settings)
   property var activeIndicatorIds: []
   property var indicatorActiveStates: ({})
   property bool indicatorAreaHovered: false
-  property bool indicatorItemHovered: false
+  property var hoveredIndicatorItems: []
+  readonly property bool indicatorItemHovered: hoveredIndicatorItems.length > 0
+  // Held briefly after hover ends so the relayout of a reveal (or an icon's
+  // MouseArea taking over from the peek zone) cannot blink the icons away.
+  property bool hoverRevealHeld: false
   readonly property bool alwaysShowIndicators: setting("alwaysShow", false) === true
   // Reveal only from the indicators' own area, like the stock bar. The local
   // bar's center section spans the whole bar, so its hover must not count here.
-  readonly property bool revealInactiveIndicators: alwaysShowIndicators || indicatorAreaHovered || indicatorItemHovered
+  readonly property bool revealInactiveIndicators: alwaysShowIndicators || hoverRevealHeld
 
   signal refreshRequested()
 
@@ -76,14 +80,20 @@ BarWidget {
 
   function setIndicatorAreaHovered(hovered) {
     indicatorAreaHovered = hovered
-    if (hovered) indicatorHideTimer.stop()
-    else indicatorHideTimer.restart()
+    syncHoverReveal()
   }
 
-  function setIndicatorItemHovered(hovered) {
-    if (hovered) {
-      indicatorItemHovered = true
+  function setIndicatorItemHovered(hovered, item) {
+    var items = hoveredIndicatorItems.filter(function(hoveredItem) { return hoveredItem !== item })
+    if (hovered) items.push(item)
+    hoveredIndicatorItems = items
+    syncHoverReveal()
+  }
+
+  function syncHoverReveal() {
+    if (indicatorAreaHovered || indicatorItemHovered) {
       indicatorHideTimer.stop()
+      hoverRevealHeld = true
     } else {
       indicatorHideTimer.restart()
     }
@@ -191,8 +201,8 @@ BarWidget {
     id: indicatorHideTimer
     interval: 120
     onTriggered: {
-      if (!root.indicatorAreaHovered)
-        root.indicatorItemHovered = false
+      if (!root.indicatorAreaHovered && !root.indicatorItemHovered)
+        root.hoverRevealHeld = false
     }
   }
 
@@ -290,20 +300,22 @@ BarWidget {
 
   // Stock-style peek zone: only the space the hidden indicators would occupy
   // (plus the active icons) reveals them, never the empty rest of the bar.
-  // Half the reach once open so the widget re-centering does not drop the
-  // pointer and flicker the icons closed again.
   Item {
     z: -1
 
-    readonly property real reach: (root.vertical
+    readonly property real reach: root.vertical
       ? inactiveVerticalBlock.implicitHeight
-      : inactiveHorizontalBlock.implicitWidth) * (root.revealInactiveIndicators ? 0.5 : 1)
+      : inactiveHorizontalBlock.implicitWidth
+    // The inactive block grows to the left/top while the widget's other edge
+    // stays pinned. Drop the offset once revealed so this zone keeps the exact
+    // same screen area: otherwise the relayout moves it out from under the
+    // pointer and the icons blink closed and open.
+    readonly property real offset: root.revealInactiveIndicators ? 0 : reach
 
-    // In this layout the inactive block grows to the left / top of the active one.
-    x: root.vertical ? 0 : -reach
-    y: root.vertical ? -reach : 0
-    width: root.vertical ? root.implicitWidth : root.implicitWidth + reach
-    height: root.vertical ? root.implicitHeight + reach : root.implicitHeight
+    x: root.vertical ? 0 : -offset
+    y: root.vertical ? -offset : 0
+    width: root.vertical ? root.implicitWidth : root.implicitWidth + offset
+    height: root.vertical ? root.implicitHeight + offset : root.implicitHeight
 
     HoverHandler {
       onHoveredChanged: root.setIndicatorAreaHovered(hovered)
