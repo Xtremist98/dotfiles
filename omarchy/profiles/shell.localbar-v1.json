@@ -21,7 +21,7 @@
         ],
         [
           "omarchy.tray",
-          "omarchy.agents",
+          "linuxer.agents",
           "wian47.removable-drives",
           "linuxer.tailscale",
           "io.github.birajdotdev.omacore",
@@ -123,7 +123,7 @@
         },
         {
           "color": "color02",
-          "id": "omarchy.agents"
+          "id": "linuxer.agents"
         },
         {
           "color": "color02",

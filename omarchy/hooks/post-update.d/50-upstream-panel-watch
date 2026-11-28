@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Run on every `omarchy update`: compare the packaged panel/widget sources with
+# the baseline recorded after the last check, so cloned panels can be merged
+# with upstream as soon as an update lands.
+#
+# The watcher is silent when nothing changed; when it does, it writes
+# ~/.local/state/omarchy/upstream-watch/report.txt and sends a notification.
+
+set -u
+
+watcher="$HOME/.config/omarchy/scripts/watch-upstream-panels.sh"
+[[ -x $watcher ]] || exit 0
+
+"$watcher" || true

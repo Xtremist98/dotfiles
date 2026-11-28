@@ -26,7 +26,7 @@
         ],
         [
           "omarchy.mv7plus",
-          "omarchy.agents",
+          "linuxer.agents",
           "linuxer.tailscale",
           "wian47.removable-drives"
         ],
@@ -57,11 +57,11 @@
           "type": "qml"
         },
         {
+          "id": "local.clock",
           "birthYear": 1991,
           "color": "color02",
-          "format": "dddd hh:mm A",
+          "format": "dddd h:mm AP",
           "formatAlt": "d MMMM 'W'ww yyyy",
-          "id": "local.clock",
           "lifeExpectancy": 90,
           "source": "~/.config/omarchy/plugins/local.clock/BarWidget.qml",
           "type": "qml",
@@ -136,7 +136,7 @@
         },
         {
           "color": "color02",
-          "id": "omarchy.agents"
+          "id": "linuxer.agents"
         },
         {
           "color": "color02",
