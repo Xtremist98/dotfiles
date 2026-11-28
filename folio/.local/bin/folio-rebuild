@@ -144,6 +144,51 @@ patch("src/Sidebar.qml",
         leftPadding: mirrored ? endPadding : (compact ? 10 : 14)
         rightPadding: mirrored ? (compact ? 10 : 14) : endPadding
 """)
+
+# Split-window button in the top-right bar, between help and the view buttons.
+patch("src/Glyph.qml",
+      '        case "columns": return box(3, 4, 18, 16, r) + "M9 4v16M15 4v16"\n',
+      '        case "columns": return box(3, 4, 18, 16, r) + "M9 4v16M15 4v16"\n'
+      '        case "split": return box(3, 4, 8, 16, r / 2) + box(13, 4, 8, 16, r / 2)\n')
+patch("src/PathBar.qml",
+      "    // The right pane of a split has a close button (Ctrl+W).\n"
+      "    property bool closable: false\n"
+      "    signal closeRequested()\n",
+      "    // The right pane of a split has a close button (Ctrl+W).\n"
+      "    property bool closable: false\n"
+      "    property bool split: false\n"
+      "    signal closeRequested()\n"
+      "    signal splitRequested()\n")
+patch("src/PathBar.qml",
+      "        // Shows the current view; clicking moves to the next one.\n"
+      "        IconButton {\n"
+      "            glyph: bar.viewMode\n",
+      "        IconButton {\n"
+      "            visible: !chooser && !bar.closable\n"
+      "            glyph: \"split\"\n"
+      "            active: bar.split\n"
+      "            text: bar.split ? qsTr(\"Close split\") : qsTr(\"Split window\")\n"
+      "            onClicked: bar.splitRequested()\n"
+      "        }\n"
+      "        // Shows the current view; clicking moves to the next one.\n"
+      "        IconButton {\n"
+      "            glyph: bar.viewMode\n")
+patch("src/FolderPane.qml",
+      "        viewMode: pane.viewMode\n"
+      "        closable: pane.closable\n"
+      "        onCycleView: pane.cycleView()\n",
+      "        viewMode: pane.viewMode\n"
+      "        closable: pane.closable\n"
+      "        split: !!pane.host && pane.host.split\n"
+      "        onCycleView: pane.cycleView()\n"
+      "        onSplitRequested: {\n"
+      "            if (!pane.host)\n"
+      "                return\n"
+      "            if (pane.host.split)\n"
+      "                pane.host.closeSplit()\n"
+      "            else\n"
+      "                pane.host.openSplit()\n"
+      "        }\n")
 PY
 
 cmake -S "$work/src" -B "$work/build" -G Ninja -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release >/dev/null
