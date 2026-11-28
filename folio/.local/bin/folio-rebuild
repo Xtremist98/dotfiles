@@ -145,6 +145,12 @@ patch("src/Sidebar.qml",
         rightPadding: mirrored ? (compact ? 10 : 14) : endPadding
 """)
 
+# Reveal the window even when a cold start delays the first frame swap.
+patch("src/Main.qml",
+      "    Timer { id: settleTimer; interval: 150; onTriggered: win.settled = true }\n",
+      "    Timer { id: settleTimer; interval: 150; onTriggered: win.settled = true }\n"
+      "    Timer { interval: 1000; running: true; onTriggered: if (!win.settled) win.settled = true }\n")
+
 # Faster scrolling: a scrollSpeed multiplier from folio.conf drives flick
 # velocity/deceleration in the views and the mouse-wheel step in KineticScroll.
 patch("src/main.cpp",
