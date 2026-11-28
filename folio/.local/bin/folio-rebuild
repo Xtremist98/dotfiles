@@ -145,6 +145,41 @@ patch("src/Sidebar.qml",
         rightPadding: mirrored ? (compact ? 10 : 14) : endPadding
 """)
 
+# Faster scrolling: a scrollSpeed multiplier from folio.conf drives flick
+# velocity/deceleration in the views and the mouse-wheel step in KineticScroll.
+patch("src/main.cpp",
+      "    Session() : plugins(translator.language()), windows(&engine, &plugins, &places) {\n",
+      "    Session() : plugins(translator.language()), windows(&engine, &plugins, &places) {\n"
+      "        QSettings settings;\n"
+      "        engine.rootContext()->setContextProperty(\"scrollSpeed\",\n"
+      "            qBound(0.5, settings.value(QStringLiteral(\"scrollSpeed\"), 2.0).toDouble(), 4.0));\n")
+patch("src/kineticscroll.h",
+      "    QVariantAnimation m_wheelAnim;\n    qreal m_wheelTarget = 0;\n",
+      "    QVariantAnimation m_wheelAnim;\n"
+      "    qreal m_stepPixels = 96;\n"
+      "    qreal m_wheelTarget = 0;\n")
+patch("src/kineticscroll.cpp",
+      "#include <QMetaObject>\n#include <QWheelEvent>",
+      "#include <QMetaObject>\n#include <QSettings>\n#include <QWheelEvent>")
+patch("src/kineticscroll.cpp",
+      "KineticScroll::KineticScroll(QObject *parent) : QObject(parent) {\n"
+      "    m_clock.start();\n"
+      "    m_wheelAnim.setDuration(kWheelDurationMs);\n",
+      "KineticScroll::KineticScroll(QObject *parent) : QObject(parent) {\n"
+      "    QSettings settings;\n"
+      "    const qreal speed = qBound(0.5, settings.value(QStringLiteral(\"scrollSpeed\"), 2.0).toDouble(), 4.0);\n"
+      "    m_stepPixels = kWheelStepPixels * speed;\n"
+      "    m_clock.start();\n"
+      "    m_wheelAnim.setDuration(qMax(40, int(kWheelDurationMs / speed)));\n")
+patch("src/kineticscroll.cpp",
+      "    const qreal step = -(qreal(delta) / 120.0) * kWheelStepPixels;",
+      "    const qreal step = -(qreal(delta) / 120.0) * m_stepPixels;")
+for rel in ("src/FolderGrid.qml", "src/FileListView.qml"):
+    patch(rel,
+          "    flickDeceleration: 1800\n    maximumFlickVelocity: 5000\n",
+          "    flickDeceleration: 1800 / scrollSpeed\n"
+          "    maximumFlickVelocity: 5000 * scrollSpeed\n")
+
 # Split-window button in the top-right bar, between help and the view buttons.
 patch("src/Glyph.qml",
       '        case "columns": return box(3, 4, 18, 16, r) + "M9 4v16M15 4v16"\n',

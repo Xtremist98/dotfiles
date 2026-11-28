@@ -1,0 +1,160 @@
+================================================================================
+FOLIO (Omarchy file manager) - patched build + persistent settings
+================================================================================
+
+This folder holds everything needed to reproduce our Folio setup on a fresh
+Omarchy machine:
+
+  * hidden files shown on every launch (and remembered when toggled)
+  * Noto Sans font instead of Omarchy's monospace default
+  * a narrower, more compact sidebar
+  * an optional startup folder
+  * a split-window button in the top-right bar, between ? and the view icon
+  * faster, tunable scrolling (scrollSpeed in folio.conf)
+  * a "Phones" sidebar section for GVfs-mounted Android (MTP), iPhone (AFC)
+    and camera (gphoto2) devices
+
+All of it lives in ~/.config/folio/folio.conf. The app itself is patched so it
+actually reads those keys, and an Omarchy hook keeps the patch after updates.
+
+--------------------------------------------------------------------------------
+1. WHAT IS IN THIS FOLDER
+--------------------------------------------------------------------------------
+
+  .config/folio/folio.conf                         settings (edit this)
+  .config/folio/folio.conf.bak.1795849176          original stock config
+  .config/omarchy/hooks/post-update.d/50-folio-rebuild   auto-rebuild hook
+  .local/bin/folio-rebuild                         rebuild script
+  .local/bin/folio                                 prebuilt patched binary
+  .local/share/dbus-1/services/                    makes D-Bus-launched windows
+    org.freedesktop.FileManager1.service             use the patched binary
+    org.freedesktop.impl.portal.desktop.folio.service
+  .local/share/folio/plugins/phones/               phone sidebar plugin
+    manifest.json / phones / phone.svg
+
+The binary is a build artifact (about 6.4 MB). You do NOT have to copy it -
+step 3 rebuilds it from source anyway. The version marker and hook log under
+~/.local/state are generated automatically and are intentionally not stored
+here.
+
+Note: the real D-Bus filename is org.freedesktop.FileManager1.service
+(capital M in "Manager").
+
+--------------------------------------------------------------------------------
+2. INSTALL ON A NEW MACHINE
+--------------------------------------------------------------------------------
+
+Prerequisites: a working Omarchy install with folio installed. git, cmake,
+ninja, g++ and the Qt6 development headers are already present on Omarchy;
+an internet connection is needed to fetch the Folio source.
+
+From a terminal, with DOTS set to the path of this folder:
+
+    DOTS=/mnt/media/Dots/folio          # change if your Dots is elsewhere
+
+    # Copy every file into $HOME, merging with existing folders.
+    cp -a "$DOTS"/. "$HOME"/
+
+    # Scripts should be executable (cp -a normally preserves this).
+    chmod +x "$HOME/.local/bin/folio-rebuild" \
+             "$HOME/.config/omarchy/hooks/post-update.d/50-folio-rebuild"
+
+    # Build the patched binary for the Folio version installed on this machine.
+    ~/.local/bin/folio-rebuild
+
+    # Confirm the patched binary is the one that will be launched.
+    which folio            # must print: /home/<user>/.local/bin/folio
+
+The D-Bus service files are picked up automatically. If a chooser dialog or
+"Show in folder" still uses the stock app, log out and back in once.
+
+--------------------------------------------------------------------------------
+3. VERIFY
+--------------------------------------------------------------------------------
+
+    folio
+
+Check that:
+  - hidden folders (.config, .ssh, ...) are visible immediately
+  - the toolbar has a two-pane split button between ? and the view icon,
+    and clicking it opens a second pane; clicking again closes it
+  - the sidebar is narrow and its rows are compact
+  - text is rendered in Noto Sans
+  - scrolling a folder with many files moves quickly on wheel and touchpad
+
+--------------------------------------------------------------------------------
+4. CONFIG KEYS (~/.config/folio/folio.conf)
+--------------------------------------------------------------------------------
+
+  [General]
+  viewMode=grid          columns / list / grid (stock Folio setting)
+  zoom=0.8               tile zoom (stock Folio setting)
+  showHidden=true        show dotfiles; toggling with Ctrl+H updates this file
+  font=Noto Sans         any installed font family; remove the key to follow
+                         Omarchy's system font again
+  fontSize=11            point size; remove the key to use the system text size
+  sidebarWidth=170       sidebar width in pixels (stock default: 190)
+  sidebarCompact=true    tighter sidebar spacing; false restores roomy rows
+  scrollSpeed=3.0        scrolling multiplier: wheel notches, touchpad flick
+                         velocity and glide length. 1.0 is Folio's stock
+                         speed; 3.0 is our default; allowed range 0.5-4.0.
+                         Requires restarting Folio to take effect.
+  # startAt=/path/to/dir  uncomment to open a folder other than home on launch
+
+Stock Folio also stores per-folder sort orders in a "sorts" array in the same
+file; those are untouched.
+
+About the Phones plugin:
+  The plugin at ~/.local/share/folio/plugins/phones polls every 10 seconds for
+  GVfs mounts named mtp:*, afc:* or gphoto2:* under $XDG_RUNTIME_DIR/gvfs and
+  lists them in a "Phones" sidebar section. Opening a row goes straight to
+  that mount folder. It needs the GVfs backends (gvfs-mtp, gvfs-afc and
+  gvfs-gphoto2, all installed by Omarchy) and the phone must be plugged in,
+  unlocked and approved on the device so GVfs mounts it. Folio loads plugins
+  at startup and again on F5. The section only appears while a device is
+  mounted. To test the poll script by hand:
+
+    cd ~/.local/share/folio/plugins/phones && ./phones | jq .
+
+--------------------------------------------------------------------------------
+5. HOW IT STAYS PATCHED AFTER UPDATES
+--------------------------------------------------------------------------------
+
+The hook ~/.config/omarchy/hooks/post-update.d/50-folio-rebuild runs during
+"omarchy update", after packages are upgraded. It calls folio-rebuild, which:
+
+  - compares the installed Folio version with
+    ~/.local/state/folio-patched-version
+  - does nothing if the version has not changed
+  - otherwise clones that exact Folio release, reapplies every patch, builds,
+    and installs to ~/.local/bin/folio
+  - logs to ~/.local/state/folio-rebuild.log and shows a notification on failure
+
+Manual use:
+
+    folio-rebuild              rebuild only if the Folio version changed
+    folio-rebuild --force      rebuild unconditionally
+
+If the upstream Folio source changes enough that a patch no longer matches,
+the script stops with "patch pattern not found exactly once in <file>". In that
+case the patches in folio-rebuild need updating for the new release.
+
+Caveats:
+  - A plain "sudo pacman -Syu" does not run Omarchy hooks. Run folio-rebuild
+    yourself afterward if it upgraded folio.
+  - "omarchy reinstall configs" or "omarchy refresh config folio/folio.conf"
+    will overwrite folio.conf. Back it up first; the patched binary is not
+    affected.
+
+--------------------------------------------------------------------------------
+6. UNDO
+--------------------------------------------------------------------------------
+
+    rm -f ~/.local/bin/folio ~/.local/bin/folio-rebuild \
+          ~/.config/omarchy/hooks/post-update.d/50-folio-rebuild \
+          ~/.local/share/dbus-1/services/org.freedesktop.FileManager1.service \
+          ~/.local/share/dbus-1/services/org.freedesktop.impl.portal.desktop.folio.service \
+          ~/.local/state/folio-patched-version ~/.local/state/folio-rebuild.log
+    cp ~/.config/folio/folio.conf.bak.1795849176 ~/.config/folio/folio.conf
+
+Then launch Folio once so the system binary at /usr/bin/folio is used again.
